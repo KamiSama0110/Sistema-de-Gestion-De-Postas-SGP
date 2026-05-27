@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+venv/
+.venv/
+*.egg-info/
+
+# Alembic
+alembic/versions/*.pyc
+
+# Variables de entorno
+.env
+*.env
+
+# Base de datos
+*.db
+*.sqlite
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Frontend (cuando lo creemos)
+node_modules/
+dist/
+.nuxt/

@@ -8,6 +8,22 @@ from app.models.enums import (
 )
 
 
+def _non_empty_str(value: str, field_name: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} debe ser un string")
+    if len(value.strip()) < 1:
+        raise ValueError(f"{field_name} no puede estar vacio ni solo espacios")
+    return value
+
+
+def _add_years(base_date: date, years: int) -> date:
+    try:
+        return base_date.replace(year=base_date.year + years)
+    except ValueError:
+        # Ajuste para 29 de febrero en anos no bisiestos
+        return base_date.replace(year=base_date.year + years, month=2, day=28)
+
+
 class ASPBase(BaseModel):
     ci: str
     nombre: str
@@ -28,12 +44,46 @@ class ASPBase(BaseModel):
             raise ValueError("El CI debe tener exactamente 11 dígitos numéricos")
         return v
 
+    @field_validator("nombre", "apellidos", "direccion", "observaciones")
+    @classmethod
+    def validar_textos_no_vacios(cls, v: Optional[str], info) -> Optional[str]:
+        if v is None:
+            return v
+        return _non_empty_str(v, info.field_name)
+
+    @field_validator("telefono")
+    @classmethod
+    def validar_telefono(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not isinstance(v, str):
+            raise ValueError("telefono debe ser un string")
+        if not v.isdigit() or len(v) != 8:
+            raise ValueError("telefono debe tener exactamente 8 digitos numericos")
+        return v
+
+    @field_validator("fecha_nacimiento")
+    @classmethod
+    def validar_fecha_nacimiento(cls, v: date) -> date:
+        hoy = date.today()
+        limite = _add_years(hoy, -18)
+        if v > limite:
+            raise ValueError("La fecha de nacimiento debe ser de al menos 18 anos")
+        return v
+
     @field_validator("fecha_ingreso")
     @classmethod
     def validar_fecha_ingreso(cls, v: date, info) -> date:
+        hoy = date.today()
         fecha_nacimiento = info.data.get("fecha_nacimiento")
-        if fecha_nacimiento and v < fecha_nacimiento:
-            raise ValueError("La fecha de ingreso no puede ser anterior al nacimiento")
+        if v > hoy:
+            raise ValueError("La fecha de ingreso no puede ser posterior a hoy")
+        if fecha_nacimiento:
+            minimo_ingreso = _add_years(fecha_nacimiento, 18)
+            if v < minimo_ingreso:
+                raise ValueError(
+                    "La fecha de ingreso debe ser al menos 18 anos despues del nacimiento"
+                )
         return v
 
 
@@ -52,6 +102,52 @@ class ASPUpdate(BaseModel):
     fecha_ingreso: Optional[date] = None
     cargo_id: Optional[int] = None
     observaciones: Optional[str] = None
+
+    @field_validator("nombre", "apellidos", "direccion", "observaciones")
+    @classmethod
+    def validar_textos_no_vacios(cls, v: Optional[str], info) -> Optional[str]:
+        if v is None:
+            return v
+        return _non_empty_str(v, info.field_name)
+
+    @field_validator("telefono")
+    @classmethod
+    def validar_telefono(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not isinstance(v, str):
+            raise ValueError("telefono debe ser un string")
+        if not v.isdigit() or len(v) != 8:
+            raise ValueError("telefono debe tener exactamente 8 digitos numericos")
+        return v
+
+    @field_validator("fecha_nacimiento")
+    @classmethod
+    def validar_fecha_nacimiento(cls, v: Optional[date]) -> Optional[date]:
+        if v is None:
+            return v
+        hoy = date.today()
+        limite = _add_years(hoy, -18)
+        if v > limite:
+            raise ValueError("La fecha de nacimiento debe ser de al menos 18 anos")
+        return v
+
+    @field_validator("fecha_ingreso")
+    @classmethod
+    def validar_fecha_ingreso(cls, v: Optional[date], info) -> Optional[date]:
+        if v is None:
+            return v
+        hoy = date.today()
+        if v > hoy:
+            raise ValueError("La fecha de ingreso no puede ser posterior a hoy")
+        fecha_nacimiento = info.data.get("fecha_nacimiento")
+        if fecha_nacimiento:
+            minimo_ingreso = _add_years(fecha_nacimiento, 18)
+            if v < minimo_ingreso:
+                raise ValueError(
+                    "La fecha de ingreso debe ser al menos 18 anos despues del nacimiento"
+                )
+        return v
 
 
 class ASPCambiarEstado(BaseModel):

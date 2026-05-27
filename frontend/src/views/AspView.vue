@@ -402,6 +402,20 @@ function formatFecha(fecha) {
   return d.toISOString().split('T')[0]
 }
 
+function limpiarOpcionales(payload, campos) {
+  campos.forEach(campo => {
+    const valor = payload[campo]
+    if (valor == null) {
+      delete payload[campo]
+      return
+    }
+    if (typeof valor === 'string' && valor.trim() === '') {
+      delete payload[campo]
+    }
+  })
+  return payload
+}
+
 async function guardar() {
   error.value = ''
   guardando.value = true
@@ -411,6 +425,7 @@ async function guardar() {
       fecha_nacimiento: formatFecha(form.value.fecha_nacimiento),
       fecha_ingreso: formatFecha(form.value.fecha_ingreso),
     }
+    limpiarOpcionales(datos, ['telefono', 'direccion', 'observaciones'])
     if (editando.value) {
       await aspApi.actualizar(editando.value.id, datos)
       toast.add({ severity: 'success', summary: 'ASP actualizado', detail: 'El ASP se actualizo correctamente', life: 3000 })
@@ -431,7 +446,8 @@ async function guardarEstado() {
   error.value = ''
   guardando.value = true
   try {
-    await aspApi.cambiarEstado(aspSeleccionado.value.id, formEstado.value)
+    const datos = limpiarOpcionales({ ...formEstado.value }, ['observacion'])
+    await aspApi.cambiarEstado(aspSeleccionado.value.id, datos)
     toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del ASP se actualizo', life: 3000 })
     cerrarModalEstado()
     await cargarAsp()

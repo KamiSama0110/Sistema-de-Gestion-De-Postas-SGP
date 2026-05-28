@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import date
@@ -24,6 +24,11 @@ async def reporte_cobertura(
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
+    if fecha_desde > fecha_hasta:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La fecha desde no puede ser posterior a la fecha hasta",
+        )
     return await reporte_service.reporte_cobertura(db, fecha_desde, fecha_hasta)
 
 
@@ -34,6 +39,11 @@ async def reporte_ausentismo(
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
+    if fecha_desde > fecha_hasta:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La fecha desde no puede ser posterior a la fecha hasta",
+        )
     return await reporte_service.reporte_ausentismo(db, fecha_desde, fecha_hasta)
 
 
@@ -44,6 +54,11 @@ async def reporte_horas(
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
+    if fecha_desde > fecha_hasta:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La fecha desde no puede ser posterior a la fecha hasta",
+        )
     return await reporte_service.reporte_horas(db, fecha_desde, fecha_hasta)
 
 
@@ -56,6 +71,11 @@ async def reporte_incidencias(
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
+    if fecha_desde > fecha_hasta:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La fecha desde no puede ser posterior a la fecha hasta",
+        )
     return await reporte_service.reporte_incidencias(
         db, fecha_desde, fecha_hasta, severidad, posta_id
     )
@@ -69,6 +89,11 @@ async def reporte_tardanzas(
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
+    if fecha_desde > fecha_hasta:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La fecha desde no puede ser posterior a la fecha hasta",
+        )
     return await reporte_service.reporte_tardanzas(
         db, fecha_desde, fecha_hasta, asp_id
     )

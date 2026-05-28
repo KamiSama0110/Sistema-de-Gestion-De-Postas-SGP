@@ -1,5 +1,5 @@
 from datetime import time
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
 from app.models.enums import TipoPostaEnum
 
@@ -17,6 +17,12 @@ class TurnoPostaBase(BaseModel):
             raise ValueError("El turno debe requerir al menos un ASP")
         return v
 
+    @model_validator(mode="after")
+    def validar_horas(self):
+        if self.hora_inicio > self.hora_fin:
+            raise ValueError("La hora de inicio no puede ser posterior a la hora de fin")
+        return self
+
 
 class TurnoPostaCreate(TurnoPostaBase):
     pass
@@ -27,6 +33,14 @@ class TurnoPostaUpdate(BaseModel):
     hora_inicio: Optional[time] = None
     hora_fin: Optional[time] = None
     asp_requeridos: Optional[int] = None
+
+    @model_validator(mode="after")
+    def validar_horas(self):
+        if self.hora_inicio is None or self.hora_fin is None:
+            return self
+        if self.hora_inicio > self.hora_fin:
+            raise ValueError("La hora de inicio no puede ser posterior a la hora de fin")
+        return self
 
 
 class TurnoPostaResponse(TurnoPostaBase):

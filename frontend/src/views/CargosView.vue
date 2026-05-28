@@ -125,11 +125,15 @@ async function guardar() {
   error.value = ''
   guardando.value = true
   try {
+    const datos = { ...form.value }
+    if (typeof datos.descripcion === 'string' && datos.descripcion.trim() === '') {
+      delete datos.descripcion
+    }
     if (editando.value) {
-      await cargoApi.actualizar(editando.value.id, form.value)
+      await cargoApi.actualizar(editando.value.id, datos)
       toast.add({ severity: 'success', summary: 'Cargo actualizado', detail: 'El cargo se actualizo correctamente', life: 3000 })
     } else {
-      await cargoApi.crear(form.value)
+      await cargoApi.crear(datos)
       toast.add({ severity: 'success', summary: 'Cargo creado', detail: 'El cargo se creo correctamente', life: 3000 })
     }
     cerrarModal()

@@ -329,4 +329,23 @@ onMounted(cargarCatalogos)
 	margin: 6px 0 0;
 	font-size: 20px;
 }
+
+@media (max-width: 960px) {
+	.filtros {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.filtros :deep(.p-select),
+	.filtros :deep(.p-datepicker),
+	.filtros :deep(.p-button) {
+		width: 100%;
+	}
+}
+
+@media (max-width: 640px) {
+	.summary-grid {
+		grid-template-columns: 1fr;
+	}
+}
 </style>

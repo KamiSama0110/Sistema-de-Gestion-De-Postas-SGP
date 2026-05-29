@@ -549,6 +549,38 @@ onMounted(async () => {
 .span-2 {
   grid-column: span 2;
 }
+
+@media (max-width: 960px) {
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtros :deep(.p-iconfield),
+  .filtros :deep(.p-select),
+  .filtros :deep(.p-inputtext) {
+    width: 100%;
+  }
+
+  .form-grid,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .actions {
+    width: 100%;
+  }
+
+  .actions > * {
+    flex: 1 1 auto;
+  }
+}
 </style>
 
 <style>

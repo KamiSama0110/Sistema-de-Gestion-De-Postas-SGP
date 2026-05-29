@@ -1139,6 +1139,68 @@ onMounted(async () => {
   grid-column: span 2;
 }
 
+@media (max-width: 960px) {
+  .filtros-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtros-actions,
+  .wizard-actions,
+  .turno-actions,
+  .novedad-actions {
+    justify-content: stretch;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .filtros-actions > *,
+  .wizard-actions > *,
+  .turno-actions > *,
+  .novedad-actions > * {
+    flex: 1 1 150px;
+  }
+
+  .resume-grid,
+  .novedad-form,
+  .info-grid,
+  .turno-form {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2,
+  .novedad-actions {
+    grid-column: auto;
+  }
+
+  .steps {
+    flex-direction: column;
+  }
+
+  .step {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .filtros-chips {
+    width: 100%;
+  }
+
+  .chip {
+    width: 100%;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions > * {
+    flex: 1 1 auto;
+  }
+}
+
 .wizard {
   display: flex;
   flex-direction: column;

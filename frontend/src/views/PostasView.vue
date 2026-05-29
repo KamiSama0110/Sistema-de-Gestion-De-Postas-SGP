@@ -722,6 +722,56 @@ onMounted(cargarPostas)
 .span-2 {
   grid-column: span 2;
 }
+
+@media (max-width: 960px) {
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtros :deep(.p-inputtext),
+  .filtros :deep(.p-select) {
+    width: 100%;
+  }
+
+  .form-grid,
+  .turno-form,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .turnos-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .turno-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .turno-actions > * {
+    flex: 1 1 150px;
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .turno-form {
+    gap: 10px;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions > * {
+    flex: 1 1 auto;
+  }
+}
 </style>
 
 <style>

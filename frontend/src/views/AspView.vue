@@ -342,10 +342,10 @@ async function abrirModal(a = null) {
       ci: aspData.ci,
       nombre: aspData.nombre,
       apellidos: aspData.apellidos,
-      fecha_nacimiento: aspData.fecha_nacimiento ? new Date(aspData.fecha_nacimiento) : null,
+      fecha_nacimiento: parseDateOnly(aspData.fecha_nacimiento),
       sexo: aspData.sexo,
       nivel_escolaridad: aspData.nivel_escolaridad,
-      fecha_ingreso: aspData.fecha_ingreso ? new Date(aspData.fecha_ingreso) : null,
+      fecha_ingreso: parseDateOnly(aspData.fecha_ingreso),
       cargo_id: aspData.cargo_id,
       telefono: aspData.telefono || '',
       direccion: aspData.direccion || '',
@@ -397,9 +397,20 @@ function cerrarModalInfo() {
 
 function formatFecha(fecha) {
   if (!fecha) return null
-  if (typeof fecha === 'string') return fecha
-  const d = new Date(fecha)
-  return d.toISOString().split('T')[0]
+  if (typeof fecha === 'string') return fecha.split('T')[0]
+  const year = fecha.getFullYear()
+  const month = String(fecha.getMonth() + 1).padStart(2, '0')
+  const day = String(fecha.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function parseDateOnly(value) {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value !== 'string') return null
+  const [year, month, day] = value.split('T')[0].split('-').map(Number)
+  if (!year || !month || !day) return null
+  return new Date(year, month - 1, day, 12, 0, 0)
 }
 
 function limpiarOpcionales(payload, campos) {

@@ -155,8 +155,19 @@ class ASPCambiarEstado(BaseModel):
     observacion: Optional[str] = None
 
 
-class ASPResponse(ASPBase):
+class ASPResponse(BaseModel):
     id: int
+    ci: str
+    nombre: str
+    apellidos: str
+    fecha_nacimiento: date
+    sexo: SexoEnum
+    nivel_escolaridad: EscolaridadEnum
+    telefono: Optional[str] = None
+    direccion: Optional[str] = None
+    fecha_ingreso: date
+    cargo_id: int
+    observaciones: Optional[str] = None
     estado: EstadoASPEnum
     creado_en: datetime
     actualizado_en: datetime

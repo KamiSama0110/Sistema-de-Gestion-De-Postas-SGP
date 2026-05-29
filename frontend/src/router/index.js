@@ -26,6 +26,11 @@ const router = createRouter({
           component: () => import('../views/CargosView.vue'),
         },
         {
+          path: 'turnos',
+          name: 'turnos',
+          component: () => import('../views/TurnosView.vue'),
+        },
+        {
           path: 'asp',
           name: 'asp',
           component: () => import('../views/AspView.vue'),

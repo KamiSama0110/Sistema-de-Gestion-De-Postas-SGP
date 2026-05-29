@@ -18,6 +18,10 @@
           <i class="pi pi-id-card nav-icon"></i>
           <span class="nav-label">Cargos</span>
         </RouterLink>
+        <RouterLink to="/turnos" class="nav-item" :class="{ active: route.name === 'turnos' }" @click="closeMenu">
+          <i class="pi pi-clock nav-icon"></i>
+          <span class="nav-label">Turnos</span>
+        </RouterLink>
         <RouterLink to="/postas" class="nav-item" :class="{ active: route.name === 'postas' }" @click="closeMenu">
           <i class="pi pi-map-marker nav-icon"></i>
           <span class="nav-label">Postas</span>
@@ -72,6 +76,7 @@ const sectionLabel = computed(() => {
     dashboard: 'Dashboard',
     asp: 'ASP',
     cargos: 'Cargos',
+    turnos: 'Turnos',
     postas: 'Postas',
     guardias: 'Guardias',
     reportes: 'Reportes',

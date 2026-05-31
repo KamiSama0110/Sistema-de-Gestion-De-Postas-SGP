@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="page-header">
+  <div class="guardias-page">
+    <div class="page-header guardias-header">
       <div class="page-title-block">
         <div class="page-title-icon">
           <i class="pi pi-shield"></i>
@@ -10,22 +10,50 @@
           <p class="page-subtitle">Gestion de guardias y novedades</p>
         </div>
       </div>
-      <Button label="Nueva guardia" icon="pi pi-plus" @click="abrirModal()" />
+
+      <div class="header-actions">
+        <Button type="button" @click="abrirModal()">
+          <i class="pi pi-plus button-icon"></i>
+          Nueva guardia
+        </Button>
+      </div>
     </div>
 
-    <Card style="margin-bottom: 16px">
+    <Card class="panel-card filters-card" style="margin-bottom: 16px">
       <template #content>
-        <div class="filtros-bar">
-          <div class="filtros-chips">
-            <span class="chip">ASP: {{ filtroAspSeleccionado ? `${filtroAspSeleccionado.nombre}
-              ${filtroAspSeleccionado.apellidos}` : 'Todos' }}</span>
-            <span class="chip">Posta: {{ filtroPostaSeleccionada ? filtroPostaSeleccionada.nombre : 'Todas' }}</span>
-            <span class="chip">Fecha: {{ filtros.fecha ? formatFecha(filtros.fecha) : 'Todas' }}</span>
-            <span class="chip">Estado: {{ filtros.estado ? labelEstado(filtros.estado) : 'Todos' }}</span>
+        <div class="filters-top">
+          <div class="filters-summary">
+            <span class="filters-summary-label">Filtros actuales</span>
+            <span class="filters-summary-value">
+              <Tag :value="`ASP: ${filtroAspSeleccionado ? `${filtroAspSeleccionado.nombre} ${filtroAspSeleccionado.apellidos}` : 'Todos'}`" severity="info" />
+              <Tag :value="`Posta: ${filtroPostaSeleccionada ? filtroPostaSeleccionada.nombre : 'Todas'}`" severity="info" />
+              <Tag :value="`Fecha: ${filtros.fecha ? formatFecha(filtros.fecha) : 'Todas'}`" severity="secondary" />
+              <Tag v-if="filtros.estado" :value="labelEstado(filtros.estado)" :severity="severidadEstado(filtros.estado)" />
+              <Tag v-else value="Estado: Todos" severity="secondary" />
+            </span>
           </div>
-          <div class="filtros-actions">
-            <Button label="Filtros" icon="pi pi-filter" @click="abrirModalFiltros" />
-            <Button label="Limpiar" severity="secondary" text @click="limpiarFiltros" />
+
+          <div class="filter-state-box">
+            <label for="filtroEstado">Estado</label>
+            <div class="filter-state-controls">
+              <Select
+                id="filtroEstado"
+                v-model="filtros.estado"
+                :options="opcionesEstado"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Todos"
+                @update:modelValue="cargarGuardias"
+              />
+              <Button type="button" severity="secondary" outlined @click="abrirModalFiltros">
+                <i class="pi pi-filter button-icon"></i>
+                Filtros
+              </Button>
+              <Button type="button" severity="secondary" text @click="limpiarFiltros">
+                <i class="pi pi-times button-icon"></i>
+                Limpiar
+              </Button>
+            </div>
           </div>
         </div>
       </template>
@@ -42,7 +70,6 @@
 
         <div v-if="filtroPaso === 1" class="step-content">
           <div class="field">
-            <label>Buscar ASP</label>
             <InputText v-model="filtroAspFiltro" placeholder="Nombre o CI..." />
           </div>
 
@@ -119,161 +146,264 @@
       </template>
     </Dialog>
 
-    <Card>
+    <Card class="panel-card table-card">
       <template #content>
         <div v-if="cargando" class="empty-state">
-          Cargando...
+          <div class="spinner"></div>
+          <p>Cargando...</p>
         </div>
 
         <div v-else-if="guardias.length === 0" class="empty-state">
-          No hay guardias registradas
+          <i class="pi pi-shield empty-icon"></i>
+          <div>
+            <p class="empty-title">No hay guardias registradas</p>
+            <p class="empty-subtitle">Comienza creando una guardia nueva</p>
+          </div>
         </div>
-        <DataTable v-else :value="guardias" :loading="cargando" stripedRows size="small"
-          emptyMessage="No hay guardias registradas">
-          <Column header="Fecha">
-            <template #body="{ data }">
-              {{ formatFecha(data.fecha) || '-' }}
-            </template>
-          </Column>
-          <Column header="ASP">
-            <template #body="{ data }">
-              {{ nombreAsp(data.asp_id) }}
-            </template>
-          </Column>
-          <Column header="Posta / Turno">
-            <template #body="{ data }">
-              {{ labelTurno(data.turno_posta_id) }}
-            </template>
-          </Column>
-          <Column header="Estado">
-            <template #body="{ data }">
-              <Tag :value="labelEstado(data.estado)" :severity="severidadEstado(data.estado)" />
-            </template>
-          </Column>
-          <Column header="Tardanza (min)">
-            <template #body="{ data }">
-              {{ data.tardanza_minutos ?? '-' }}
-            </template>
-          </Column>
-          <Column header="Acciones">
-            <template #body="{ data }">
-              <div class="actions">
-                <Button icon="pi pi-eye" size="small" severity="info" text @click="abrirModalInfo(data)" />
-                <Button icon="pi pi-pencil" size="small" severity="secondary" text @click="abrirModal(data)" />
-                <Button icon="pi pi-user-minus" size="small" severity="danger" text @click="abrirModalAusencia(data)" />
-                <Button icon="pi pi-sign-in" size="small" severity="info" text @click="abrirModalLlegada(data)" />
-                <Button icon="pi pi-flag" size="small" severity="success" text @click="abrirModalFinalizar(data)" />
-                <Button icon="pi pi-exclamation-triangle" size="small" severity="warn" text
-                  @click="abrirModalNovedad(data)" />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
+        <div v-else class="table-shell">
+          <table class="guardias-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>ASP</th>
+                <th>Posta / Turno</th>
+                <th>Estado</th>
+                <th>Tardanza (min)</th>
+                <th class="actions-col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="guardia in guardias" :key="guardia.id">
+                <td class="mono">{{ formatFecha(guardia.fecha) || '-' }}</td>
+                <td><span class="name-main">{{ nombreAsp(guardia.asp_id) }}</span></td>
+                <td class="cell-muted">{{ labelTurno(guardia.turno_posta_id) }}</td>
+                <td>
+                  <Tag :value="labelEstado(guardia.estado)" :severity="severidadEstado(guardia.estado)" />
+                </td>
+                <td>{{ guardia.tardanza_minutos ?? '-' }}</td>
+                <td class="actions-col">
+                  <div class="actions">
+                    <Button class="action-button" icon="pi pi-eye" size="small" severity="info" text title="Ver informacion" aria-label="Ver informacion" @click="abrirModalInfo(guardia)" />
+                    <Button v-if="puedeMostrarAccion(guardia.estado, 'editar')" class="action-button" icon="pi pi-pencil" size="small" severity="secondary" text title="Editar guardia" aria-label="Editar guardia" @click="abrirModal(guardia)" />
+                    <Button v-if="puedeMostrarAccion(guardia.estado, 'ausencia')" class="action-button" icon="pi pi-user-minus" size="small" severity="danger" text title="Marcar ausencia" aria-label="Marcar ausencia" @click="abrirModalAusencia(guardia)" />
+                    <Button v-if="puedeMostrarAccion(guardia.estado, 'llegada')" class="action-button" icon="pi pi-sign-in" size="small" severity="info" text title="Confirmar llegada" aria-label="Confirmar llegada" @click="abrirModalLlegada(guardia)" />
+                    <Button v-if="puedeMostrarAccion(guardia.estado, 'finalizar')" class="action-button" icon="pi pi-flag" size="small" severity="success" text title="Finalizar guardia" aria-label="Finalizar guardia" @click="abrirModalFinalizar(guardia)" />
+                    <Button v-if="puedeMostrarAccion(guardia.estado, 'novedad')" class="action-button" icon="pi pi-exclamation-triangle" size="small" severity="warn" text title="Registrar novedad" aria-label="Registrar novedad" @click="abrirModalNovedad(guardia)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </template>
     </Card>
 
     <Dialog v-model:visible="modalVisible" :header="editando ? 'Editar guardia' : 'Nueva guardia'"
-      :style="{ width: editando ? '560px' : '760px' }" modal :closable="true">
-      <div class="p-fluid">
+      :style="{ width: '980px' }" modal :closable="true">
+      <div class="p-fluid wizard-layout">
         <Message v-if="error" severity="error" :closable="false" style="margin-bottom: 12px">
           {{ error }}
         </Message>
 
-        <div class="wizard">
-          <div class="steps">
-            <div :class="['step', { active: paso === 1 }]">1. ASP</div>
-            <div :class="['step', { active: paso === 2 }]">2. Posta</div>
-            <div :class="['step', { active: paso === 3 }]">3. Turno y fecha</div>
+        <div class="wizard-steps">
+          <div class="wizard-step" :class="{ active: paso === 1, done: paso > 1 }">
+            <span class="wizard-step-index">1</span>
+            <div>
+              <strong>ASP</strong>
+              <small>Selecciona el ASP</small>
+            </div>
           </div>
-
-          <div v-if="paso === 1" class="step-content">
-            <div class="field">
-              <label>Buscar ASP</label>
-              <InputText v-model="aspFiltro" placeholder="Nombre o CI..." />
+          <div class="wizard-step" :class="{ active: paso === 2, done: paso > 2 }">
+            <span class="wizard-step-index">2</span>
+            <div>
+              <strong>Posta</strong>
+              <small>Elige la posta</small>
             </div>
-            <DataTable :value="aspsFiltrados" v-model:selection="aspSeleccionado" selectionMode="single" dataKey="id"
-              size="small" paginator :rows="wizardRows" emptyMessage="No hay ASP encontrados"
-              @rowSelect="seleccionarAsp">
-              <Column field="ci" header="CI" />
-              <Column header="Nombre">
-                <template #body="{ data }">
-                  {{ data.nombre }} {{ data.apellidos }}
-                </template>
-              </Column>
-            </DataTable>
           </div>
-
-          <div v-else-if="paso === 2" class="step-content">
-            <div class="field">
-              <label>Buscar posta</label>
-              <InputText v-model="postaFiltro" placeholder="Nombre de posta..." />
-            </div>
-            <DataTable :value="postasFiltradas" v-model:selection="postaSeleccionada" selectionMode="single"
-              dataKey="id" size="small" paginator :rows="wizardRows" emptyMessage="No hay postas encontradas"
-              @rowSelect="seleccionarPosta">
-              <Column field="nombre" header="Posta" />
-              <Column header="Tipo">
-                <template #body="{ data }">
-                  {{ labelTipoPosta(data.tipo) }}
-                </template>
-              </Column>
-              <Column header="Turnos">
-                <template #body="{ data }">
-                  {{ turnosActivosPorPosta(data.id).length }}
-                </template>
-              </Column>
-            </DataTable>
-          </div>
-
-          <div v-else class="step-content">
-            <div class="resume-grid">
-              <div>
-                <p class="resume-label">ASP seleccionado</p>
-                <p class="resume-value">{{ aspSeleccionado ? `${aspSeleccionado.nombre} ${aspSeleccionado.apellidos}` :
-                  '-'
-                  }}</p>
-              </div>
-              <div>
-                <p class="resume-label">Posta</p>
-                <p class="resume-value">{{ postaSeleccionada ? postaSeleccionada.nombre : '-' }}</p>
-              </div>
-            </div>
-
-            <div class="field">
-              <label>Buscar turno</label>
-              <InputText v-model="turnoFiltro" placeholder="Nombre del turno..." />
-            </div>
-            <DataTable :value="turnosFiltrados" v-model:selection="turnoSeleccionado" selectionMode="single"
-              dataKey="id" size="small" paginator :rows="wizardRows" emptyMessage="No hay turnos disponibles"
-              @rowSelect="seleccionarTurno">
-              <Column field="nombre" header="Turno" />
-              <Column header="Horario">
-                <template #body="{ data }">
-                  {{ formatHora(data.hora_inicio) }} - {{ formatHora(data.hora_fin) }}
-                </template>
-              </Column>
-              <Column field="asp_requeridos" header="ASP" />
-            </DataTable>
-
-            <div class="form-grid" style="margin-top: 12px">
-              <div class="field">
-                <label>Fecha *</label>
-                <DatePicker v-model="form.fecha" dateFormat="yy-mm-dd" showIcon />
-              </div>
-              <div class="field" style="grid-column: span 2">
-                <label>Observaciones</label>
-                <Textarea v-model="form.observaciones" rows="2" autoResize />
-              </div>
+          <div class="wizard-step" :class="{ active: paso === 3 }">
+            <span class="wizard-step-index">3</span>
+            <div>
+              <strong>Turno y fecha</strong>
+              <small>Completa datos finales</small>
             </div>
           </div>
         </div>
+
+        <section v-if="paso === 1" class="form-section">
+          <div class="section-head">
+            <h3>Seleccionar ASP</h3>
+            <p>Busca el ASP antes de continuar con el horario.</p>
+          </div>
+
+          <div class="field">
+            <label for="aspFiltro">Buscar</label>
+            <div class="search-inline">
+              <div class="search-field search-field-flex">
+                <i class="pi pi-search search-icon"></i>
+                <InputText id="aspFiltro" v-model="aspFiltro" class="search-input" placeholder="Nombre o CI..." />
+              </div>
+            </div>
+          </div>
+
+          <div class="results-shell wizard-results-shell">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>CI</th>
+                  <th>Nombre</th>
+                  <th class="actions-col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="asp in aspsFiltrados" :key="asp.id" :class="{ selected: aspSeleccionado?.id === asp.id }">
+                  <td class="mono">{{ asp.ci }}</td>
+                  <td><span class="name-main">{{ asp.nombre }} {{ asp.apellidos }}</span></td>
+                  <td class="actions-col">
+                    <Button type="button" size="small" severity="secondary" text :label="aspSeleccionado?.id === asp.id ? 'Elegido' : 'Elegir'" @click="seleccionarAsp({ data: asp })" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div v-if="aspsFiltrados.length === 0" class="empty-state compact-empty">
+              <i class="pi pi-search empty-icon"></i>
+              <div>
+                <p class="empty-title">No hay ASP encontrados</p>
+                <p class="empty-subtitle">Prueba con otro criterio de búsqueda</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-else-if="paso === 2" class="form-section">
+          <div class="section-head">
+            <h3>Seleccionar posta</h3>
+            <p>Busca la posta antes de continuar con el horario.</p>
+          </div>
+
+          <div class="field">
+            <label for="postaFiltro">Buscar</label>
+            <div class="search-inline">
+              <div class="search-field search-field-flex">
+                <i class="pi pi-search search-icon"></i>
+                <InputText id="postaFiltro" v-model="postaFiltro" class="search-input" placeholder="Nombre de posta..." />
+              </div>
+            </div>
+          </div>
+
+          <div class="results-shell wizard-results-shell">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Posta</th>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Turnos</th>
+                  <th class="actions-col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="posta in postasFiltradas" :key="posta.id" :class="{ selected: postaSeleccionada?.id === posta.id }">
+                  <td><span class="name-main">{{ posta.nombre }}</span></td>
+                  <td>{{ labelTipoPosta(posta.tipo) }}</td>
+                  <td><Tag :value="posta.activa ? 'Activa' : 'Inactiva'" :severity="posta.activa ? 'success' : 'secondary'" /></td>
+                  <td>{{ turnosActivosPorPosta(posta.id).length }}</td>
+                  <td class="actions-col">
+                    <Button type="button" size="small" severity="secondary" text :label="postaSeleccionada?.id === posta.id ? 'Elegida' : 'Elegir'" @click="seleccionarPosta({ data: posta })" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div v-if="postasFiltradas.length === 0" class="empty-state compact-empty">
+              <i class="pi pi-search empty-icon"></i>
+              <div>
+                <p class="empty-title">No hay postas encontradas</p>
+                <p class="empty-subtitle">Prueba con otro criterio de búsqueda</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-else class="form-section">
+          <div class="section-head">
+            <h3>Turno y fecha</h3>
+            <p>Define el turno, la fecha y las observaciones.</p>
+          </div>
+
+          <div class="selected-posta-banner resume-grid">
+            <div>
+              <p class="resume-label">ASP seleccionado</p>
+              <p class="resume-value">{{ aspSeleccionado ? `${aspSeleccionado.nombre} ${aspSeleccionado.apellidos}` : '-' }}</p>
+            </div>
+            <div>
+              <p class="resume-label">Posta</p>
+              <p class="resume-value">{{ postaSeleccionada ? postaSeleccionada.nombre : '-' }}</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="turnoFiltro">Buscar</label>
+            <div class="search-inline">
+              <div class="search-field search-field-flex">
+                <i class="pi pi-search search-icon"></i>
+                <InputText id="turnoFiltro" v-model="turnoFiltro" class="search-input" placeholder="Nombre del turno..." />
+              </div>
+            </div>
+          </div>
+
+          <div class="results-shell wizard-results-shell">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Turno</th>
+                  <th>Horario</th>
+                  <th>ASP</th>
+                  <th class="actions-col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="turno in turnosFiltrados" :key="turno.id" :class="{ selected: turnoSeleccionado?.id === turno.id }">
+                  <td><span class="name-main">{{ turno.nombre }}</span></td>
+                  <td>{{ formatHora(turno.hora_inicio) }} - {{ formatHora(turno.hora_fin) }}</td>
+                  <td>{{ turno.asp_requeridos }}</td>
+                  <td class="actions-col">
+                    <Button type="button" size="small" severity="secondary" text :label="turnoSeleccionado?.id === turno.id ? 'Elegido' : 'Elegir'" @click="seleccionarTurno({ data: turno })" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div v-if="turnosFiltrados.length === 0" class="empty-state compact-empty">
+              <i class="pi pi-search empty-icon"></i>
+              <div>
+                <p class="empty-title">No hay turnos disponibles</p>
+                <p class="empty-subtitle">Prueba con otro criterio de búsqueda</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Fecha *</label>
+              <DatePicker v-model="form.fecha" dateFormat="yy-mm-dd" showIcon />
+            </div>
+            <div class="field span-2">
+              <label>Observaciones</label>
+              <Textarea v-model="form.observaciones" rows="2" autoResize />
+            </div>
+          </div>
+        </section>
       </div>
       <template #footer>
-        <Button label="Cancelar" severity="secondary" text @click="cerrarModal" />
-        <Button v-if="paso > 1" label="Atras" severity="secondary" text @click="retrocederPaso" />
-        <Button v-if="paso < 3" label="Siguiente" icon="pi pi-arrow-right" @click="avanzarPaso" />
-        <Button v-if="paso === 3" label="Guardar" icon="pi pi-check" :loading="guardando"
-          @click="guardar" />
+        <div class="dialog-footer wizard-footer">
+          <Button type="button" label="Cancelar" severity="secondary" text @click="cerrarModal" />
+          <div class="dialog-actions">
+            <Button v-if="paso > 1" type="button" label="Atras" severity="secondary" outlined @click="retrocederPaso" />
+            <Button v-if="paso < 3" type="button" label="Siguiente" icon="pi pi-arrow-right" @click="avanzarPaso" />
+            <Button v-if="paso === 3" type="button" label="Guardar" icon="pi pi-check" :loading="guardando" @click="guardar" />
+          </div>
+        </div>
       </template>
     </Dialog>
 
@@ -631,6 +761,18 @@ function severidadEstado(estado) {
     cancelada: 'danger',
   }
   return map[estado] || 'secondary'
+}
+
+function puedeMostrarAccion(estado, accion) {
+  const reglas = {
+    editar: ['planificada', 'activa', 'ausente', 'cancelada'],
+    ausencia: ['planificada'],
+    llegada: ['planificada'],
+    finalizar: ['activa'],
+    novedad: ['activa'],
+  }
+
+  return reglas[accion]?.includes(estado) || false
 }
 
 function labelTipoNovedad(tipo) {
@@ -1062,263 +1204,161 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-title-block {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.guardias-page { display: flex; flex-direction: column; gap: 1rem; }
+.guardias-header { align-items: center; gap: 1rem; flex-wrap: wrap; }
+.page-title-block { display: flex; align-items: center; gap: 0.875rem; }
+.page-title-icon { width: 2.625rem; height: 2.625rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; background: var(--brand-50); color: var(--brand-600); font-size: 1.25rem; }
+.page-title { margin: 0; font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); }
+.page-subtitle { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--text-muted); }
+.header-actions { display: flex; gap: 0.75rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
+.button-icon { margin-right: 0.5rem; }
 
-.page-title-icon {
-  width: 42px;
-  height: 42px;
-  background: var(--brand-50);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: var(--brand-600);
-}
+.panel-card { border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); box-shadow: 0 16px 50px rgba(15, 23, 42, 0.05); }
 
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
+.filters-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.filters-summary { display: flex; flex-direction: column; gap: 0.4rem; }
+.filters-summary-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+.filters-summary-value { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.filter-state-box { display: flex; flex-direction: column; gap: 0.35rem; min-width: 240px; }
+.filter-state-box label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+.filter-state-controls { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.filter-state-controls :deep(.p-select) { min-width: 190px; }
 
-.filtros-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
+.table-shell { overflow-x: auto; }
+.guardias-table { width: 100%; border-collapse: collapse; }
+.guardias-table thead th { padding: 0.9rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
+.guardias-table tbody td { padding: 0.95rem 1rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }
+.guardias-table tbody tr:hover { background: color-mix(in srgb, var(--surface) 86%, transparent); }
+.actions-col { width: 14rem; text-align: center; }
+.actions { display: flex; justify-content: center; gap: 0.4rem; flex-wrap: wrap; }
+.action-button { flex: 0 0 auto; }
+.name-main { display: block; font-weight: 600; color: var(--text); }
+.cell-muted { color: var(--text-muted); }
+.mono { font-variant-numeric: tabular-nums; }
 
-.filtros-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+.empty-state { min-height: 16rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; color: var(--text-muted); text-align: center; }
+.empty-icon { font-size: 2rem; }
+.empty-title { margin: 0; font-weight: 600; color: var(--text); }
+.empty-subtitle { margin: 0.25rem 0 0; font-size: 0.875rem; }
+.spinner { width: 1.8rem; height: 1.8rem; border-radius: 9999px; border: 3px solid var(--brand-500); border-top-color: transparent; animation: spin 0.85s linear infinite; }
 
-.chip {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 600;
-}
+.wizard-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+.wizard { display: flex; flex-direction: column; gap: 1.25rem; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.step { padding: 1rem 1.1rem; border-radius: 1rem; border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text-muted); font-size: 12px; font-weight: 600; }
+.step.active { border-color: color-mix(in srgb, var(--brand-500) 35%, var(--border)); background: color-mix(in srgb, var(--brand-50) 50%, var(--surface)); color: var(--text); }
+.step-content { display: flex; flex-direction: column; gap: 1.25rem; }
 
-.filtros-actions {
-  display: flex;
-  gap: 8px;
-}
+.wizard-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.wizard-step { display: flex; align-items: center; gap: 1rem; border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); border-radius: 1rem; padding: 1rem 1.1rem; background: color-mix(in srgb, var(--surface) 92%, transparent); }
+.wizard-step.active { border-color: color-mix(in srgb, var(--brand-500) 35%, var(--border)); background: color-mix(in srgb, var(--brand-50) 50%, var(--surface)); }
+.wizard-step.done { border-color: color-mix(in srgb, var(--brand-500) 22%, var(--border)); }
+.wizard-step-index { width: 2rem; height: 2rem; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; background: var(--brand-50); color: var(--brand-600); flex: 0 0 auto; }
+.wizard-step strong { display: block; font-size: 0.95rem; color: var(--text); }
+.wizard-step small { display: block; margin-top: 0.15rem; color: var(--text-muted); }
 
-.field label {
-  display: block;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
+.section-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); }
+.section-head p { margin: 0.35rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
 
-.actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
+.search-inline { display: flex; align-items: center; gap: 1rem; }
+.search-field { position: relative; }
+.search-field-flex { flex: 1 1 auto; }
+.search-icon { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+.search-input { width: 100%; padding-left: 2.4rem; }
+.search-inline .p-button { flex: 0 0 auto; }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 20px;
-}
+.results-shell { overflow: hidden; border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); border-radius: 1rem; margin-top: 0.35rem; }
+.wizard-results-shell { max-height: 320px; overflow: auto; }
+.results-table { width: 100%; border-collapse: collapse; }
+.results-table thead th { padding: 0.95rem 1.1rem; text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); background: color-mix(in srgb, var(--surface) 95%, transparent); }
+.results-table tbody td { padding: 1rem 1.1rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }
+.results-table tbody tr:hover, .results-table tbody tr.selected { background: color-mix(in srgb, var(--brand-50) 42%, var(--surface)); }
 
-.span-2 {
-  grid-column: span 2;
-}
+.selected-posta-banner { border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); background: color-mix(in srgb, var(--surface) 92%, transparent); border-radius: 1rem; padding: 1rem 1.1rem; }
+.selected-posta-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.selected-posta-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+
+.dialog-footer { display: flex; justify-content: space-between; gap: 1rem; padding-top: 0.75rem; align-items: center; width: 100%; }
+.dialog-actions { display: flex; gap: 0.75rem; align-items: center; }
+.wizard-footer { margin-top: 0.75rem; }
+
+.compact-empty { min-height: 10rem; }
+
+.results-table .actions-col { width: 9rem; }
+
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+.span-2 { grid-column: span 2; }
+.resume-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); background: color-mix(in srgb, var(--surface) 92%, transparent); border-radius: 12px; padding: 12px 14px; }
+.resume-label { margin: 0; color: var(--text-muted); font-size: 12px; }
+.resume-value { margin: 4px 0 0; font-weight: 600; }
+.wizard-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+.novedad-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-bottom: 12px; }
+.novedad-actions { grid-column: span 2; display: flex; justify-content: flex-end; }
+
+.info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); background: color-mix(in srgb, var(--surface) 92%, transparent); }
+.info-col { display: flex; flex-direction: column; gap: 12px; }
+.info-item { display: flex; flex-direction: column; justify-content: space-between; padding: 10px 12px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); background: color-mix(in srgb, var(--surface) 88%, transparent); }
+.info-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--brand-700); margin-bottom: 6px; }
+.info-value { display: block; font-weight: 600; color: var(--text); }
+.info-section { margin-top: 14px; }
+.info-section h4 { margin: 0 0 8px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 960px) {
-  .filtros-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filtros-actions,
-  .wizard-actions,
-  .turno-actions,
-  .novedad-actions {
-    justify-content: stretch;
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .filtros-actions > *,
-  .wizard-actions > *,
-  .turno-actions > *,
-  .novedad-actions > * {
-    flex: 1 1 150px;
-  }
-
+  .guardias-header { align-items: flex-start; }
+  .header-actions { margin-left: 0; width: 100%; }
+  .filters-top { align-items: stretch; }
+  .filter-state-box { min-width: 0; width: 100%; }
+  .filter-state-controls { width: 100%; }
+  .filter-state-controls > * { flex: 1 1 180px; }
+  .steps,
   .resume-grid,
   .novedad-form,
   .info-grid,
-  .turno-form {
+  .form-grid {
     grid-template-columns: 1fr;
   }
-
   .span-2,
   .novedad-actions {
     grid-column: auto;
   }
-
-  .steps {
-    flex-direction: column;
-  }
-
-  .step {
+  .wizard-actions,
+  .novedad-actions {
     width: 100%;
-    text-align: center;
+    flex-wrap: wrap;
+  }
+  .wizard-actions > *,
+  .novedad-actions > * {
+    flex: 1 1 150px;
+  }
+  .wizard-steps,
+  .steps,
+  .form-grid,
+  .resume-grid,
+  .novedad-form,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-inline > * {
+    width: 100%;
   }
 }
 
 @media (max-width: 640px) {
-  .filtros-chips {
-    width: 100%;
-  }
-
-  .chip {
-    width: 100%;
-  }
-
-  .actions {
-    width: 100%;
-  }
-
-  .actions > * {
-    flex: 1 1 auto;
-  }
+  .actions { width: 100%; }
+  .actions > * { flex: 1 1 auto; }
+  .page-title { font-size: 1.35rem; }
+  .actions-col { width: auto; }
+  .dialog-actions, .header-actions { width: 100%; flex-direction: column; }
+  .dialog-actions > *, .header-actions > * { width: 100%; }
 }
-
-.wizard {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.steps {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.step {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.step.active {
-  background: var(--brand-50);
-  color: var(--brand-700);
-}
-
-.step-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.resume-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.resume-label {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.resume-value {
-  margin: 4px 0 0;
-  font-weight: 600;
-}
-
-.wizard-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.novedad-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 16px;
-  margin-bottom: 12px;
-}
-
-.novedad-actions {
-  grid-column: span 2;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--surface-border);
-  background: var(--surface-card);
-}
-
-.info-col {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--surface-border);
-  background: var(--surface-ground);
-}
-
-.info-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--brand-700);
-  margin-bottom: 6px;
-}
-
-.info-value {
-  display: block;
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.info-section {
-  margin-top: 14px;
-}
-
-.info-section h4 {
-  margin: 0 0 8px;
-}
-
 </style>
 
 <style>

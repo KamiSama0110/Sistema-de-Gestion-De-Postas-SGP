@@ -12,14 +12,6 @@
       </div>
 
       <div class="header-actions">
-        <Button type="button" severity="secondary" outlined @click="openFilterDialog">
-          <i class="pi pi-filter button-icon"></i>
-          Filtro
-        </Button>
-        <Button type="button" severity="secondary" text :disabled="!hasActiveFilters" @click="clearFilters">
-          <i class="pi pi-times button-icon"></i>
-          Limpiar
-        </Button>
         <Button type="button" @click="openCreateDialog">
           <i class="pi pi-plus button-icon"></i>
           Nuevo Turno
@@ -41,7 +33,17 @@
 
           <div class="filter-state-box">
             <label for="filterActivo">Estado</label>
-            <Select id="filterActivo" v-model="filterActivo" :options="stateOptions" optionLabel="label" optionValue="value" placeholder="Todos" />
+            <div class="filter-state-controls">
+              <Select id="filterActivo" v-model="filterActivo" :options="stateOptions" optionLabel="label" optionValue="value" placeholder="Todos" />
+              <Button type="button" severity="secondary" outlined @click="openFilterDialog">
+                <i class="pi pi-filter button-icon"></i>
+                Filtro
+              </Button>
+              <Button type="button" severity="secondary" text :disabled="!hasActiveFilters" @click="clearFilters">
+                <i class="pi pi-times button-icon"></i>
+                Limpiar
+              </Button>
+            </div>
           </div>
         </div>
       </template>
@@ -685,6 +687,8 @@ watch(
 .filters-summary-value { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .muted { color: var(--text-muted); }
 .filter-state-box { display: flex; flex-direction: column; gap: 0.35rem; min-width: 220px; }
+.filter-state-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.filter-state-controls :deep(.p-select) { min-width: 190px; }
 .dialog-shell { display: flex; flex-direction: column; gap: 1rem; }
 .section-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); }
 .section-head p { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
@@ -745,6 +749,8 @@ watch(
   .header-actions { margin-left: 0; width: 100%; }
   .filters-top { align-items: stretch; }
   .filter-state-box { min-width: 0; width: 100%; }
+  .filter-state-controls { width: 100%; }
+  .filter-state-controls > * { flex: 1 1 180px; }
   .filter-grid, .form-grid, .wizard-steps { grid-template-columns: 1fr; }
   .span-2 { grid-column: auto; }
   .search-inline { flex-direction: column; align-items: stretch; }

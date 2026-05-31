@@ -116,7 +116,12 @@ async function handleLogin() {
     await auth.login(form.username, form.password)
     router.push({ name: 'dashboard' })
   } catch (err) {
-    error.value = normalizeApiError(err, 'Error al iniciar sesión. Verifique sus credenciales.')
+    if (err?.response?.status === 401) {
+      error.value = 'Usuario o contraseña incorrectos'
+      return
+    }
+
+    error.value = normalizeApiError(err, 'Error al iniciar sesión. Intente nuevamente.')
   } finally {
     loading.value = false
   }

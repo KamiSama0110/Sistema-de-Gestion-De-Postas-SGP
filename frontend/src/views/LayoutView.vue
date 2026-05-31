@@ -237,6 +237,10 @@ async function handleLogout() {
   backdrop-filter: blur(14px);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
 }
+
+.menu-button {
+  display: none;
+}
 .topbar-copy {
   display: flex;
   flex-direction: column;

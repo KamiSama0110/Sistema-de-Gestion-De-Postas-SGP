@@ -210,4 +210,31 @@ body {
   .p-dialog .p-dialog-footer > * {
     flex: 1 1 140px;
   }
+
+    .app-toast.p-toast {
+      width: min(calc(100vw - 1rem), 32rem);
+      left: 50% !important;
+      right: auto !important;
+      bottom: 0.75rem !important;
+      top: auto !important;
+      transform: translateX(-50%) !important;
+    }
+
+    .app-toast .p-toast-message {
+      margin-bottom: 0;
+    }
+
+    .app-toast .p-toast-message-content {
+      align-items: flex-start;
+      padding: 0.9rem 1rem;
+    }
+
+    .app-toast .p-toast-summary {
+      font-size: 0.95rem;
+    }
+
+    .app-toast .p-toast-detail {
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
 }

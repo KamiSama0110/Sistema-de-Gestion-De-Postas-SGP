@@ -1,3 +1,4 @@
+from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -6,6 +7,23 @@ from app.models.asp import ASP
 from app.models.enums import EstadoASPEnum
 from app.schemas.asp import ASPCreate, ASPUpdate, ASPCambiarEstado
 from fastapi import HTTPException, status
+
+
+def validar_relacion_fechas_asp(fecha_nacimiento, fecha_ingreso) -> None:
+    if fecha_nacimiento and fecha_ingreso:
+        try:
+            minimo_ingreso = fecha_nacimiento.replace(year=fecha_nacimiento.year + 18)
+        except ValueError:
+            minimo_ingreso = fecha_nacimiento.replace(
+                year=fecha_nacimiento.year + 18,
+                month=2,
+                day=28,
+            )
+        if fecha_ingreso < minimo_ingreso:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La fecha de ingreso debe ser al menos 18 anos despues del nacimiento",
+            )
 
 
 async def get_asp_by_id(db: AsyncSession, asp_id: int) -> ASP:
@@ -77,6 +95,8 @@ async def actualizar_asp(db: AsyncSession, asp_id: int, datos: ASPUpdate) -> ASP
     update_data = datos.model_dump(exclude_unset=True)
     for campo, valor in update_data.items():
         setattr(asp, campo, valor)
+
+    validar_relacion_fechas_asp(asp.fecha_nacimiento, asp.fecha_ingreso)
 
     await db.commit()
     await db.refresh(asp)

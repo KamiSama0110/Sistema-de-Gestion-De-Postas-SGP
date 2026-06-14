@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { authApi } from '../api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('token') || null)
+  const token = ref(sessionStorage.getItem('token') || null)
   const usuario = ref(null)
 
   const isAuthenticated = computed(() => !!token.value)
@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(username, password) {
     const response = await authApi.login({ username, password })
     token.value = response.data.access_token
-    localStorage.setItem('token', token.value)
+    sessionStorage.setItem('token', token.value)
   }
 
   async function logout() {
@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       token.value = null
       usuario.value = null
-      localStorage.removeItem('token')
+      sessionStorage.removeItem('token')
     }
   }
 

@@ -19,12 +19,12 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # Seguridad
-    SECRET_KEY: str = "clave-segura"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_HOURS: int = 8
 
-    ADMIN_USERNAME: str = "admin"
-    ADMIN_PASSWORD: str = "admin1234"
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
 
     # CORS (lista separada por comas)
     CORS_ORIGINS: str = "http://localhost:5173"

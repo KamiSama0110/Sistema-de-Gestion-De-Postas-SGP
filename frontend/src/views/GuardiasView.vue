@@ -793,11 +793,26 @@ function severidadNovedad(severidad) {
   return map[severidad] || 'secondary'
 }
 
+function parseFecha(value) {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value === 'string') {
+    const [year, month, day] = value.split('T')[0].split('-').map(Number)
+    if (year && month && day) {
+      return new Date(year, month - 1, day)
+    }
+  }
+  return new Date(value)
+}
+
 function formatFecha(value) {
   if (!value) return ''
   if (typeof value === 'string') return value.split('T')[0]
-  const d = new Date(value)
-  return d.toISOString().split('T')[0]
+  const d = value instanceof Date ? value : new Date(value)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function formatHora(value) {
@@ -909,7 +924,7 @@ function abrirModal(guardia = null) {
     form.value = {
       asp_id: guardia.asp_id,
       turno_posta_id: guardia.turno_posta_id,
-      fecha: guardia.fecha ? new Date(guardia.fecha) : null,
+      fecha: parseFecha(guardia.fecha),
       observaciones: guardia.observaciones || '',
     }
   } else {

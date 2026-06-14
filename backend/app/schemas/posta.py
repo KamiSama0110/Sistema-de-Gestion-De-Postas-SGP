@@ -19,8 +19,8 @@ class TurnoPostaBase(BaseModel):
 
     @model_validator(mode="after")
     def validar_horas(self):
-        if self.hora_inicio > self.hora_fin:
-            raise ValueError("La hora de inicio no puede ser posterior a la hora de fin")
+        if self.hora_inicio == self.hora_fin:
+            raise ValueError("La hora de inicio y la hora de fin no pueden ser iguales")
         return self
 
 
@@ -38,8 +38,8 @@ class TurnoPostaUpdate(BaseModel):
     def validar_horas(self):
         if self.hora_inicio is None or self.hora_fin is None:
             return self
-        if self.hora_inicio > self.hora_fin:
-            raise ValueError("La hora de inicio no puede ser posterior a la hora de fin")
+        if self.hora_inicio == self.hora_fin:
+            raise ValueError("La hora de inicio y la hora de fin no pueden ser iguales")
         return self
 
 

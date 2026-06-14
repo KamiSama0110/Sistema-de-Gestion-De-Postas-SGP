@@ -1,6 +1,7 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from typing import Optional
 from app.models.guardia import Guardia, Novedad
@@ -30,6 +31,79 @@ def calcular_tardanza(
     diferencia = (hora_llegada - hora_inicio).total_seconds() / 60
     return max(0, int(diferencia))
 
+
+def construir_intervalo_turno(fecha_turno: date, turno: TurnoPosta) -> tuple[datetime, datetime]:
+    inicio = datetime.combine(fecha_turno, turno.hora_inicio)
+    if turno.cruza_medianoche:
+        fin = datetime.combine(fecha_turno + timedelta(days=1), turno.hora_fin)
+    else:
+        fin = datetime.combine(fecha_turno, turno.hora_fin)
+    return inicio, fin
+
+
+async def get_turno_by_id(db: AsyncSession, turno_posta_id: int) -> TurnoPosta:
+    result = await db.execute(
+        select(TurnoPosta).where(TurnoPosta.id == turno_posta_id)
+    )
+    turno = result.scalar_one_or_none()
+    if not turno:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Turno con id {turno_posta_id} no encontrado",
+        )
+    return turno
+
+
+async def validar_conflictos_guardia(
+    db: AsyncSession,
+    asp_id: int,
+    turno: TurnoPosta,
+    fecha: date,
+    excluir_id: Optional[int] = None,
+) -> None:
+    exacta_query = select(Guardia.id).where(
+        Guardia.asp_id == asp_id,
+        Guardia.turno_posta_id == turno.id,
+        Guardia.fecha == fecha,
+    )
+    if excluir_id is not None:
+        exacta_query = exacta_query.where(Guardia.id != excluir_id)
+
+    exacta_result = await db.execute(exacta_query)
+    if exacta_result.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una guardia asignada con el mismo ASP, turno y fecha",
+        )
+
+    inicio_nuevo, fin_nuevo = construir_intervalo_turno(fecha, turno)
+    query = select(Guardia).options(selectinload(Guardia.turno_posta)).where(
+        and_(
+            Guardia.asp_id == asp_id,
+            Guardia.fecha == fecha,
+            Guardia.estado != EstadoGuardiaEnum.cancelada,
+            Guardia.turno_posta_id != turno.id,
+        )
+    )
+    if excluir_id is not None:
+        query = query.where(Guardia.id != excluir_id)
+
+    result = await db.execute(query)
+    guardias_existentes = result.scalars().all()
+
+    for guardia_existente in guardias_existentes:
+        turno_existente = guardia_existente.turno_posta
+        if not turno_existente:
+            continue
+        inicio_existente, fin_existente = construir_intervalo_turno(
+            guardia_existente.fecha, turno_existente
+        )
+        if inicio_nuevo < fin_existente and inicio_existente < fin_nuevo:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="El ASP ya tiene una guardia asignada que se solapa en ese horario",
+            )
+
 async def get_guardia_by_id(db: AsyncSession, guardia_id: int) -> Guardia:
     result = await db.execute(
         select(Guardia)
@@ -43,41 +117,6 @@ async def get_guardia_by_id(db: AsyncSession, guardia_id: int) -> Guardia:
             detail=f"Guardia con id {guardia_id} no encontrada",
         )
     return guardia
-
-
-async def verificar_solapamiento(
-    db: AsyncSession, asp_id: int, turno_posta_id: int, fecha: date, excluir_id: Optional[int] = None
-) -> bool:
-    turno_result = await db.execute(
-        select(TurnoPosta).where(TurnoPosta.id == turno_posta_id)
-    )
-    turno = turno_result.scalar_one_or_none()
-    if not turno:
-        return False
-
-    query = select(Guardia).where(
-        and_(
-            Guardia.asp_id == asp_id,
-            Guardia.fecha == fecha,
-            Guardia.estado != EstadoGuardiaEnum.cancelada,
-            Guardia.turno_posta_id != turno_posta_id,
-        )
-    )
-    if excluir_id:
-        query = query.where(Guardia.id != excluir_id)
-
-    result = await db.execute(query)
-    guardias_existentes = result.scalars().all()
-
-    for g in guardias_existentes:
-        turno_existente = await db.execute(
-            select(TurnoPosta).where(TurnoPosta.id == g.turno_posta_id)
-        )
-        te = turno_existente.scalar_one_or_none()
-        if te:
-            if not (turno.hora_fin <= te.hora_inicio or turno.hora_inicio >= te.hora_fin):
-                return True
-    return False
 
 
 async def listar_guardias(
@@ -134,33 +173,25 @@ async def crear_guardia(db: AsyncSession, datos: GuardiaCreate) -> Guardia:
             detail="El ASP no está activo",
         )
 
-    turno_result = await db.execute(
-        select(TurnoPosta).where(TurnoPosta.id == datos.turno_posta_id)
-    )
-    turno = turno_result.scalar_one_or_none()
-    if not turno:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Turno con id {datos.turno_posta_id} no encontrado",
-        )
+    turno = await get_turno_by_id(db, datos.turno_posta_id)
     if not turno.activo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El turno seleccionado esta inactivo",
         )
 
-    solapamiento = await verificar_solapamiento(
-        db, datos.asp_id, datos.turno_posta_id, datos.fecha
-    )
-    if solapamiento:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="El ASP ya tiene una guardia asignada que se solapa en ese horario",
-        )
+    await validar_conflictos_guardia(db, datos.asp_id, turno, datos.fecha)
 
     guardia = Guardia(**datos.model_dump())
     db.add(guardia)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una guardia asignada con el mismo ASP, turno y fecha",
+        )
     return await get_guardia_by_id(db, guardia.id)
 
 
@@ -253,14 +284,32 @@ async def actualizar_guardia(
                 detail="El ASP sustituto no existe o no está activo",
             )
 
+    asp_nuevo = update_data.get("asp_id", guardia.asp_id)
+    if asp_nuevo != guardia.asp_id:
+        turno = await get_turno_by_id(db, guardia.turno_posta_id)
+        await validar_conflictos_guardia(
+            db,
+            asp_nuevo,
+            turno,
+            guardia.fecha,
+            excluir_id=guardia.id,
+        )
+
     motivo_enviado = "motivo_ausencia" in update_data
-    if update_data.get("asp_id") or update_data.get("asp_id") == 0 or motivo_enviado:
+    if asp_nuevo != guardia.asp_id or motivo_enviado:
         guardia.estado = EstadoGuardiaEnum.ausente
 
     for campo, valor in update_data.items():
         setattr(guardia, campo, valor)
 
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una guardia asignada con el mismo ASP, turno y fecha",
+        )
     return await get_guardia_by_id(db, guardia_id)
 
 async def get_guardia_con_tardanza(db: AsyncSession, guardia_id: int) -> dict:

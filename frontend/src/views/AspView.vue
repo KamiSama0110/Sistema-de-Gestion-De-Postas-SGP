@@ -194,6 +194,8 @@
                 v-model="formData.fecha_nacimiento"
                 dateFormat="yy-mm-dd"
                 showIcon
+                :minDate="fechaNacimientoMinima"
+                :maxDate="fechaNacimientoMaxima"
                 :class="{ invalid: hasError('fecha_nacimiento') }"
               />
               <small v-if="hasError('fecha_nacimiento')" class="field-error">{{ formErrors.fecha_nacimiento }}</small>
@@ -248,7 +250,13 @@
 
             <div class="field">
               <label for="telefono">Telefono</label>
-              <InputText id="telefono" v-model="formData.telefono" :class="{ invalid: hasError('telefono') }" />
+               <InputText
+                 id="telefono"
+                 v-model="formData.telefono"
+                 maxlength="11"
+                 placeholder="+53XXXXXXXX"
+                 :class="{ invalid: hasError('telefono') }"
+               />
               <small v-if="hasError('telefono')" class="field-error">{{ formErrors.telefono }}</small>
             </div>
 
@@ -513,6 +521,34 @@ function parseDateOnly(value) {
   return new Date(year, month - 1, day, 12, 0, 0)
 }
 
+function formatFechaNacimientoCi(value) {
+  if (!value) return ''
+  const dateValue = value instanceof Date ? value : parseDateOnly(value)
+  if (!dateValue) return ''
+  const day = String(dateValue.getDate()).padStart(2, '0')
+  const month = String(dateValue.getMonth() + 1).padStart(2, '0')
+  const year = String(dateValue.getFullYear()).slice(-2)
+  return `${year}${month}${day}`
+}
+
+function normalizeTelefono(value) {
+  const raw = String(value || '').trim().replace(/[\s-]/g, '')
+  if (!raw) return ''
+  if (/^\+53\d{8}$/.test(raw)) return raw
+  if (/^\d{8}$/.test(raw)) return `+53${raw}`
+  return raw
+}
+
+function addYears(baseDate, years) {
+  const nextDate = new Date(baseDate)
+  nextDate.setFullYear(nextDate.getFullYear() + years)
+  return nextDate
+}
+
+const hoy = new Date()
+const fechaNacimientoMinima = addYears(hoy, -100)
+const fechaNacimientoMaxima = addYears(hoy, -18)
+
 function clearFormErrors() {
   formErrors.value = {}
   formMessage.value = ''
@@ -552,7 +588,7 @@ async function openEditDialog(asp) {
     formData.fecha_nacimiento = parseDateOnly(item.fecha_nacimiento)
     formData.sexo = item.sexo || 'masculino'
     formData.nivel_escolaridad = item.nivel_escolaridad || 'tecnico_medio'
-    formData.telefono = item.telefono || ''
+    formData.telefono = normalizeTelefono(item.telefono)
     formData.direccion = item.direccion || ''
     formData.fecha_ingreso = parseDateOnly(item.fecha_ingreso)
     formData.cargo_id = item.cargo_id || null
@@ -611,9 +647,27 @@ function closeInfoDialog() {
 
 function validateForm() {
   const errors = {}
+  const telefonoNormalizado = normalizeTelefono(formData.telefono)
 
   if (!formData.ci || !/^\d{11}$/.test(formData.ci)) {
     errors.ci = 'El CI debe tener exactamente 11 digitos'
+  } else if (!formData.fecha_nacimiento || !formData.sexo) {
+    errors.ci = 'Completa fecha de nacimiento y sexo para validar el CI'
+  } else {
+    const birthDate = formData.fecha_nacimiento instanceof Date
+      ? formData.fecha_nacimiento
+      : parseDateOnly(formData.fecha_nacimiento)
+    const fechaCi = formatFechaNacimientoCi(birthDate)
+    const septimoDigito = Number(formData.ci.charAt(6))
+
+    if (!birthDate || !fechaCi || formData.ci.slice(0, 6) !== fechaCi) {
+      errors.ci = 'El CI no coincide con la fecha de nacimiento'
+    } else if (
+      (formData.sexo === 'masculino' && septimoDigito % 2 !== 0) ||
+      (formData.sexo === 'femenino' && septimoDigito % 2 === 0)
+    ) {
+      errors.ci = 'El CI no coincide con el sexo'
+    }
   }
 
   if (!formData.nombre || formData.nombre.trim().length < 2) {
@@ -627,11 +681,13 @@ function validateForm() {
   if (!formData.fecha_nacimiento) {
     errors.fecha_nacimiento = 'Fecha de nacimiento requerida'
   } else {
-    const birthDate = new Date(formatDate(formData.fecha_nacimiento))
-    const today = new Date()
-    const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
-    if (birthDate > eighteenYearsAgo) {
-      errors.fecha_nacimiento = 'Debe ser mayor de 18 anos'
+    const birthDate = formData.fecha_nacimiento instanceof Date
+      ? formData.fecha_nacimiento
+      : parseDateOnly(formData.fecha_nacimiento)
+    if (!birthDate) {
+      errors.fecha_nacimiento = 'Fecha de nacimiento invalida'
+    } else if (birthDate < fechaNacimientoMinima || birthDate > fechaNacimientoMaxima) {
+      errors.fecha_nacimiento = 'Debe tener entre 18 y 100 anos'
     }
   }
 
@@ -651,8 +707,8 @@ function validateForm() {
     errors.cargo_id = 'Cargo requerido'
   }
 
-  if (formData.telefono && !/^\d{8}$/.test(formData.telefono)) {
-    errors.telefono = 'El telefono debe tener 8 digitos'
+  if (telefonoNormalizado && !/^\+53\d{8}$/.test(telefonoNormalizado)) {
+    errors.telefono = 'El telefono debe tener formato +53 seguido de 8 digitos'
   }
 
   if (formData.direccion && formData.direccion.trim().length < 3) {
@@ -664,6 +720,8 @@ function validateForm() {
 }
 
 function buildPayload() {
+  const telefono = normalizeTelefono(formData.telefono)
+
   return {
     ci: formData.ci.trim(),
     nombre: formData.nombre.trim(),
@@ -671,7 +729,7 @@ function buildPayload() {
     fecha_nacimiento: formatDate(formData.fecha_nacimiento),
     sexo: formData.sexo,
     nivel_escolaridad: formData.nivel_escolaridad,
-    telefono: formData.telefono.trim() || null,
+    telefono: telefono || null,
     direccion: formData.direccion.trim() || null,
     fecha_ingreso: formatDate(formData.fecha_ingreso),
     cargo_id: formData.cargo_id,

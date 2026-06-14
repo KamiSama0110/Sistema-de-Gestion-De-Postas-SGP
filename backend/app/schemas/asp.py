@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
 from app.models.enums import (
     SexoEnum,
@@ -24,6 +24,36 @@ def _add_years(base_date: date, years: int) -> date:
         return base_date.replace(year=base_date.year + years, month=2, day=28)
 
 
+def _normalizar_telefono(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return v
+    if not isinstance(v, str):
+        raise ValueError("telefono debe ser un string")
+    raw = v.strip().replace(" ", "").replace("-", "")
+    if not raw:
+        return None
+    if raw.startswith("+53") and len(raw) == 11 and raw[3:].isdigit():
+        return raw
+    if raw.isdigit() and len(raw) == 8:
+        return f"+53{raw}"
+    raise ValueError("telefono debe tener formato +53 seguido de 8 digitos")
+
+
+def _validar_ci_cubano(ci: str, fecha_nacimiento: date, sexo: SexoEnum) -> str:
+    if not ci.isdigit() or len(ci) != 11:
+        raise ValueError("El CI debe tener exactamente 11 dígitos numéricos")
+
+    if ci[:6] != fecha_nacimiento.strftime("%y%m%d"):
+        raise ValueError("El CI debe coincidir con la fecha de nacimiento")
+
+    septimo_digito = int(ci[6])
+    if sexo == SexoEnum.masculino and septimo_digito % 2 != 0:
+        raise ValueError("El séptimo dígito del CI debe ser par para masculino")
+    if sexo == SexoEnum.femenino and septimo_digito % 2 == 0:
+        raise ValueError("El séptimo dígito del CI debe ser impar para femenino")
+    return ci
+
+
 class ASPBase(BaseModel):
     ci: str
     nombre: str
@@ -40,8 +70,6 @@ class ASPBase(BaseModel):
     @field_validator("ci")
     @classmethod
     def validar_ci(cls, v: str) -> str:
-        if not v.isdigit() or len(v) != 11:
-            raise ValueError("El CI debe tener exactamente 11 dígitos numéricos")
         return v
 
     @field_validator("nombre", "apellidos", "direccion", "observaciones")
@@ -54,21 +82,16 @@ class ASPBase(BaseModel):
     @field_validator("telefono")
     @classmethod
     def validar_telefono(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
-        if not isinstance(v, str):
-            raise ValueError("telefono debe ser un string")
-        if not v.isdigit() or len(v) != 8:
-            raise ValueError("telefono debe tener exactamente 8 digitos numericos")
-        return v
+        return _normalizar_telefono(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
     def validar_fecha_nacimiento(cls, v: date) -> date:
         hoy = date.today()
-        limite = _add_years(hoy, -18)
-        if v > limite:
-            raise ValueError("La fecha de nacimiento debe ser de al menos 18 anos")
+        limite_minimo = _add_years(hoy, -100)
+        limite_maximo = _add_years(hoy, -18)
+        if v < limite_minimo or v > limite_maximo:
+            raise ValueError("La fecha de nacimiento debe estar entre 18 y 100 anos")
         return v
 
     @field_validator("fecha_ingreso")
@@ -85,6 +108,11 @@ class ASPBase(BaseModel):
                     "La fecha de ingreso debe ser al menos 18 anos despues del nacimiento"
                 )
         return v
+
+    @model_validator(mode="after")
+    def validar_ci_consistente(self):
+        _validar_ci_cubano(self.ci, self.fecha_nacimiento, self.sexo)
+        return self
 
 
 class ASPCreate(ASPBase):
@@ -113,13 +141,7 @@ class ASPUpdate(BaseModel):
     @field_validator("telefono")
     @classmethod
     def validar_telefono(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
-        if not isinstance(v, str):
-            raise ValueError("telefono debe ser un string")
-        if not v.isdigit() or len(v) != 8:
-            raise ValueError("telefono debe tener exactamente 8 digitos numericos")
-        return v
+        return _normalizar_telefono(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
@@ -127,9 +149,10 @@ class ASPUpdate(BaseModel):
         if v is None:
             return v
         hoy = date.today()
-        limite = _add_years(hoy, -18)
-        if v > limite:
-            raise ValueError("La fecha de nacimiento debe ser de al menos 18 anos")
+        limite_minimo = _add_years(hoy, -100)
+        limite_maximo = _add_years(hoy, -18)
+        if v < limite_minimo or v > limite_maximo:
+            raise ValueError("La fecha de nacimiento debe estar entre 18 y 100 anos")
         return v
 
     @field_validator("fecha_ingreso")

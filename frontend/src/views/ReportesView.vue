@@ -10,6 +10,7 @@
           <p class="page-subtitle">Metricas operativas del sistema</p>
         </div>
       </div>
+
     </div>
 
     <Card class="panel-card filters-card">
@@ -105,7 +106,10 @@
             <h3>{{ reporteActual.label }}</h3>
             <p>{{ reporteDescripcion }}</p>
           </div>
-          <Tag :value="reporteActual.label" severity="success" />
+          <div class="report-head-actions">
+            <Tag :value="reporteActual.label" severity="success" />
+            <Button label="Exportar PDF" icon="pi pi-file-pdf" severity="primary" class="report-export-button" @click="exportarPdf" />
+          </div>
         </div>
 
         <div v-if="tipoReporte === 'cobertura'">
@@ -235,6 +239,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -309,6 +315,257 @@ function formatFecha(value) {
   if (typeof value === 'string') return value.split('T')[0]
   const d = new Date(value)
   return d.toISOString().split('T')[0]
+}
+
+function formatNumero(value, decimals = 0) {
+  if (value === null || value === undefined || value === '') return '-'
+  const number = Number(value)
+  if (Number.isNaN(number)) return String(value)
+  return decimals > 0 ? number.toFixed(decimals) : String(Math.round(number))
+}
+
+function getFiltroDescripcionPdf() {
+  const partes = [
+    `Reporte: ${reporteActual.value.label}`,
+    `Periodo: ${filtros.value.fecha_desde ? formatFecha(filtros.value.fecha_desde) : '-'}  -  ${filtros.value.fecha_hasta ? formatFecha(filtros.value.fecha_hasta) : '-'}`,
+  ]
+
+  if (tipoReporte.value === 'incidencias') {
+    partes.push(`Severidad: ${filtros.value.severidad || 'Todas'}`)
+    const posta = opcionesPosta.value.find((item) => item.value === filtros.value.posta_id)
+    partes.push(`Posta: ${posta?.label || 'Todas'}`)
+  }
+
+  if (tipoReporte.value === 'tardanzas') {
+    const asp = opcionesAsp.value.find((item) => item.value === filtros.value.asp_id)
+    partes.push(`ASP: ${asp?.label || 'Todos'}`)
+  }
+
+  return partes
+}
+
+function buildPdfTable() {
+  if (!reporte.value) return null
+
+  if (tipoReporte.value === 'cobertura') {
+    return {
+      title: 'Cobertura por posta',
+      head: [['Posta', 'Planificadas', 'Finalizadas', 'Ausentes', 'Cobertura %']],
+      body: (reporte.value.por_posta || []).map((item) => [
+        item.posta_nombre,
+        formatNumero(item.planificadas),
+        formatNumero(item.finalizadas),
+        formatNumero(item.ausentes),
+        `${formatNumero(item.porcentaje_cobertura, 2)}%`,
+      ]),
+    }
+  }
+
+  if (tipoReporte.value === 'ausentismo') {
+    return {
+      title: 'Ausentismo por ASP',
+      head: [['ASP', 'Ausencias', 'Justificadas', 'Injustificadas']],
+      body: (reporte.value.por_asp || []).map((item) => [
+        item.asp_nombre,
+        formatNumero(item.total_ausencias),
+        formatNumero(item.justificadas),
+        formatNumero(item.injustificadas),
+      ]),
+    }
+  }
+
+  if (tipoReporte.value === 'horas') {
+    return {
+      title: 'Horas por ASP',
+      head: [['ASP', 'Guardias', 'Horas']],
+      body: (reporte.value.por_asp || []).map((item) => [
+        item.asp_nombre,
+        formatNumero(item.total_guardias),
+        formatNumero(item.total_horas, 2),
+      ]),
+    }
+  }
+
+  if (tipoReporte.value === 'incidencias') {
+    return {
+      title: 'Incidencias',
+      head: [['Fecha', 'Posta', 'ASP', 'Tipo', 'Severidad', 'Descripcion']],
+      body: (reporte.value.items || []).map((item) => [
+        formatFecha(item.fecha),
+        item.posta_nombre,
+        item.asp_nombre,
+        item.tipo,
+        item.severidad,
+        item.descripcion,
+      ]),
+    }
+  }
+
+  if (tipoReporte.value === 'tardanzas') {
+    return {
+      title: 'Tardanzas por ASP',
+      head: [['ASP', 'Tardanzas', 'Promedio', 'Maximo']],
+      body: (reporte.value.por_asp || []).map((item) => [
+        item.asp_nombre,
+        formatNumero(item.total_tardanzas),
+        formatNumero(item.promedio_minutos, 2),
+        formatNumero(item.max_minutos),
+      ]),
+    }
+  }
+
+  return null
+}
+
+function exportarPdf() {
+  if (!reporte.value) return
+
+  const table = buildPdfTable()
+  if (!table) return
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const marginLeft = 14
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const colors = {
+    band: [15, 23, 42],
+    accent: [217, 119, 6],
+    ink: [17, 24, 39],
+    muted: [100, 116, 139],
+    border: [203, 213, 225],
+    soft: [248, 250, 252],
+    white: [255, 255, 255],
+  }
+
+  const drawHeader = () => {
+    doc.setFillColor(...colors.band)
+    doc.rect(0, 0, pageWidth, 24, 'F')
+    doc.setFillColor(...colors.accent)
+    doc.circle(marginLeft + 7, 12, 5.5, 'F')
+    doc.setTextColor(...colors.white)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.text('SISTEMA DE GESTION DE POSTAS', marginLeft + 17, 10)
+    doc.setFontSize(15)
+    doc.text('Reporte operativo', marginLeft + 17, 16)
+  }
+
+  const drawFooter = () => {
+    const totalPages = doc.getNumberOfPages()
+    for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
+      doc.setPage(pageNumber)
+      doc.setDrawColor(...colors.border)
+      doc.line(marginLeft, pageHeight - 14, pageWidth - marginLeft, pageHeight - 14)
+      doc.setTextColor(...colors.muted)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.text(`Pagina ${pageNumber} de ${totalPages}`, pageWidth - marginLeft, pageHeight - 8, { align: 'right' })
+      doc.text(`Generado: ${new Date().toLocaleString()}`, marginLeft, pageHeight - 8)
+    }
+  }
+
+  let currentY = 33
+  doc.setTextColor(...colors.ink)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(18)
+  doc.text(`Reporte ${reporteActual.value.label}`, marginLeft, currentY)
+
+  currentY += 7
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(...colors.muted)
+  doc.text(reporteDescripcion.value, marginLeft, currentY)
+
+  currentY += 9
+  doc.setFillColor(...colors.soft)
+  doc.setDrawColor(...colors.border)
+  doc.roundedRect(marginLeft, currentY, pageWidth - (marginLeft * 2), 22, 2, 2, 'FD')
+  doc.setTextColor(...colors.ink)
+  doc.setFontSize(9)
+  getFiltroDescripcionPdf().forEach((linea, index) => {
+    const columnWidth = (pageWidth - (marginLeft * 2) - 8) / 2
+    const x = marginLeft + 4 + (index % 2) * (columnWidth + 4)
+    const y = currentY + 7 + Math.floor(index / 2) * 7
+    doc.text(linea, x, y)
+  })
+
+  let summaryLines = []
+  if (tipoReporte.value === 'cobertura') {
+    summaryLines = [
+      ['Cobertura general', `${formatNumero(reporte.value.cobertura_general, 2)}%`],
+      ['Planificadas', formatNumero(reporte.value.total_planificadas)],
+      ['Finalizadas', formatNumero(reporte.value.total_finalizadas)],
+      ['Sin cubrir', formatNumero(reporte.value.total_sin_cubrir)],
+    ]
+  } else if (tipoReporte.value === 'ausentismo') {
+    summaryLines = [
+      ['Planificadas', formatNumero(reporte.value.total_planificadas)],
+      ['Ausencias', formatNumero(reporte.value.total_ausencias)],
+      ['Porcentaje', `${formatNumero(reporte.value.porcentaje_ausentismo, 2)}%`],
+      ['Sin cubrir', formatNumero(reporte.value.guardias_sin_cubrir)],
+    ]
+  } else if (tipoReporte.value === 'horas') {
+    summaryLines = [['Cantidad de ASP', String((reporte.value.por_asp || []).length)]]
+  } else if (tipoReporte.value === 'incidencias') {
+    summaryLines = [['Total incidencias', formatNumero(reporte.value.total_incidencias)]]
+  } else if (tipoReporte.value === 'tardanzas') {
+    summaryLines = [
+      ['Guardias', formatNumero(reporte.value.total_guardias)],
+      ['Tardanzas', formatNumero(reporte.value.total_tardanzas)],
+    ]
+  }
+
+  if (summaryLines.length) {
+    currentY += 28
+    summaryLines.forEach(([label, value], index) => {
+      const cardWidth = (pageWidth - (marginLeft * 2) - 8) / 2
+      const x = marginLeft + (index % 2) * (cardWidth + 4)
+      const y = currentY + Math.floor(index / 2) * 14
+      doc.setFillColor(...colors.white)
+      doc.setDrawColor(...colors.border)
+      doc.roundedRect(x, y, cardWidth, 12, 2, 2, 'FD')
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(...colors.muted)
+      doc.text(label, x + 3, y + 4)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.setTextColor(...colors.ink)
+      doc.text(value, x + 3, y + 9)
+    })
+    currentY += Math.ceil(summaryLines.length / 2) * 14 + 4
+  }
+
+  autoTable(doc, {
+    head: table.head,
+    body: table.body,
+    startY: currentY,
+    theme: 'grid',
+    styles: {
+      fontSize: 9,
+      cellPadding: 2,
+      overflow: 'linebreak',
+      valign: 'middle',
+    },
+    headStyles: {
+      fillColor: colors.band,
+      textColor: 255,
+      fontStyle: 'bold',
+    },
+    alternateRowStyles: {
+      fillColor: colors.soft,
+    },
+    margin: { left: marginLeft, right: marginLeft },
+    didDrawPage: () => {
+      drawHeader()
+    },
+  })
+
+  drawFooter()
+
+  const safeDate = `${new Date().toISOString().slice(0, 10)}`
+  const filename = `reporte_${tipoReporte.value}_${safeDate}.pdf`
+  doc.save(filename)
 }
 
 async function cargarCatalogos() {
@@ -491,6 +748,7 @@ onMounted(cargarCatalogos)
   justify-content: flex-end;
   flex: 0 0 160px;
   min-width: 160px;
+  align-items: stretch;
 }
 
 .report-filter-action :deep(.p-button) {
@@ -530,6 +788,27 @@ onMounted(cargarCatalogos)
   justify-content: space-between;
   gap: 12px;
   align-items: flex-start;
+}
+
+.report-section-head {
+  align-items: center;
+}
+
+.report-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.report-export-button {
+  border-radius: 9999px;
+  padding-inline: 1rem;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+}
+
+.report-export-button :deep(.p-button-icon) {
+  font-size: 0.9rem;
 }
 
 .section-head h3 {
@@ -597,6 +876,18 @@ onMounted(cargarCatalogos)
 
   .section-head {
     flex-direction: column;
+  }
+
+  .report-section-head {
+    align-items: stretch;
+  }
+
+  .report-head-actions {
+    width: 100%;
+  }
+
+  .report-head-actions :deep(.p-button) {
+    width: 100%;
   }
 }
 

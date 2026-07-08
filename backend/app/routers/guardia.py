@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import date
@@ -11,6 +11,7 @@ from app.schemas.guardia import (
     GuardiaUpdate,
     GuardiaResponse,
     GuardiaListResponse,
+    PaginatedGuardia,
     ConfirmarLlegadaRequest,
     FinalizarGuardiaRequest,
     NovedadCreate,
@@ -21,8 +22,10 @@ from app.services import guardia_service
 router = APIRouter(prefix="/guardias", tags=["Guardias"])
 
 
-@router.get("", response_model=list[GuardiaListResponse])
+@router.get("", response_model=PaginatedGuardia)
 async def listar_guardias(
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
     fecha: Optional[date] = None,
     estado: Optional[EstadoGuardiaEnum] = None,
     asp_id: Optional[int] = None,
@@ -30,7 +33,9 @@ async def listar_guardias(
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    return await guardia_service.listar_guardias(db, fecha, estado, asp_id, posta_id)
+    return await guardia_service.listar_guardias(
+        db, page, size, fecha, estado, asp_id, posta_id
+    )
 
 
 @router.post("", response_model=GuardiaResponse, status_code=201)

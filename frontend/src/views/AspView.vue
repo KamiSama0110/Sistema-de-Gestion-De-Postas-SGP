@@ -809,7 +809,7 @@ async function fetchASPs() {
   try {
     const params = {
       page: currentPage.value,
-      size: 20,
+      size: 10,
     }
 
     if (search.value.trim()) {

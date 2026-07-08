@@ -69,3 +69,10 @@ class GuardiaListResponse(BaseModel):
     tardanza_minutos: Optional[int] = None
 
     model_config = {"from_attributes": True}
+
+
+class PaginatedGuardia(BaseModel):
+    total: int
+    page: int
+    size: int
+    items: list[GuardiaListResponse]

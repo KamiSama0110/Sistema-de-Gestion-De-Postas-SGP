@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from typing import Optional
@@ -121,11 +121,13 @@ async def get_guardia_by_id(db: AsyncSession, guardia_id: int) -> Guardia:
 
 async def listar_guardias(
     db: AsyncSession,
+    page: int = 1,
+    size: int = 10,
     fecha: Optional[date] = None,
     estado: Optional[EstadoGuardiaEnum] = None,
     asp_id: Optional[int] = None,
     posta_id: Optional[int] = None,
-) -> list[Guardia]:
+) -> dict:
     query = select(Guardia).options(
         selectinload(Guardia.novedades),
         selectinload(Guardia.turno_posta),
@@ -138,6 +140,12 @@ async def listar_guardias(
         query = query.where(Guardia.asp_id == asp_id)
     if posta_id:
         query = query.join(TurnoPosta).where(TurnoPosta.posta_id == posta_id)
+
+    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = total_result.scalar()
+
+    query = query.order_by(Guardia.fecha.desc(), Guardia.id.desc())
+    query = query.offset((page - 1) * size).limit(size)
     result = await db.execute(query)
     guardias = result.scalars().all()
 
@@ -156,7 +164,7 @@ async def listar_guardias(
             "tardanza_minutos": tardanza,
         })
 
-    return data
+    return {"total": total, "page": page, "size": size, "items": data}
 
 
 async def crear_guardia(db: AsyncSession, datos: GuardiaCreate) -> Guardia:

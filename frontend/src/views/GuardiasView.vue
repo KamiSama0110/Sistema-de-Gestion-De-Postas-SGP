@@ -195,6 +195,12 @@
             </tbody>
           </table>
         </div>
+
+        <div v-if="totalPages > 1" class="pagination-bar">
+          <Button icon="pi pi-chevron-left" severity="secondary" text :disabled="currentPage === 1" @click="cambiarPagina(-1)" />
+          <span>Página {{ currentPage }} de {{ totalPages }}</span>
+          <Button icon="pi pi-chevron-right" severity="secondary" text :disabled="currentPage >= totalPages" @click="cambiarPagina(1)" />
+        </div>
       </template>
     </Card>
 
@@ -614,6 +620,10 @@ import { normalizeApiError } from '../utils/error'
 
 const guardias = ref([])
 const cargando = ref(true)
+const currentPage = ref(1)
+const totalPages = ref(1)
+const total = ref(0)
+const pageSize = 10
 const modalVisible = ref(false)
 const modalFiltrosVisible = ref(false)
 const modalLlegadaVisible = ref(false)
@@ -696,17 +706,6 @@ const turnoFiltro = ref('')
 
 const aspsActivos = computed(() => asps.value.filter(a => a.estado === 'activo'))
 
-const opcionesPosta = computed(() => [
-  { label: 'Todas', value: null },
-  ...postas.value.map(p => ({ label: p.nombre, value: p.id })),
-])
-
-const opcionesTurno = computed(() => {
-  if (!postaSeleccionada.value) return []
-  return turnos.value
-    .filter(t => t.posta_id === postaSeleccionada.value.id && t.activo)
-    .map(t => ({ label: labelTurno(t.id), value: t.id }))
-})
 
 const filtroAspsFiltrados = computed(() => {
   const query = filtroAspFiltro.value.trim().toLowerCase()
@@ -890,18 +889,27 @@ async function cargarTurnos() {
 async function cargarGuardias() {
   cargando.value = true
   try {
-    const params = {}
+    const params = { page: currentPage.value, size: pageSize }
     if (filtros.value.fecha) params.fecha = formatFecha(filtros.value.fecha)
     if (filtros.value.estado) params.estado = filtros.value.estado
     if (filtros.value.asp_id) params.asp_id = filtros.value.asp_id
     if (filtros.value.posta_id) params.posta_id = filtros.value.posta_id
     const res = await guardiaApi.listar(params)
-    guardias.value = res.data
+    guardias.value = res.data.items || []
+    total.value = res.data.total || 0
+    totalPages.value = Math.max(1, Math.ceil(total.value / res.data.size))
   } catch (e) {
     console.error(e)
   } finally {
     cargando.value = false
   }
+}
+
+function cambiarPagina(delta) {
+  const siguiente = currentPage.value + delta
+  if (siguiente < 1 || siguiente > totalPages.value) return
+  currentPage.value = siguiente
+  cargarGuardias()
 }
 
 function abrirModal(guardia = null) {
@@ -971,10 +979,12 @@ function limpiarFiltros() {
   filtroAspFiltro.value = ''
   filtroPostaFiltro.value = ''
   filtroPaso.value = 1
+  currentPage.value = 1
   cargarGuardias()
 }
 
 function aplicarFiltros() {
+  currentPage.value = 1
   cargarGuardias()
   cerrarModalFiltros()
 }
@@ -1240,6 +1250,7 @@ onMounted(async () => {
 .filter-state-controls :deep(.p-select) { min-width: 190px; }
 
 .table-shell { overflow-x: auto; }
+.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 .guardias-table { width: 100%; border-collapse: collapse; }
 .guardias-table thead th { padding: 0.9rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
 .guardias-table tbody td { padding: 0.95rem 1rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }

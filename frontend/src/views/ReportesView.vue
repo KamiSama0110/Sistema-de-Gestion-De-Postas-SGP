@@ -108,11 +108,26 @@
           </div>
           <div class="report-head-actions">
             <Tag :value="reporteActual.label" severity="success" />
-            <Button label="Exportar PDF" icon="pi pi-file-pdf" severity="primary" class="report-export-button" @click="exportarPdf" />
+            <Button
+              label="Exportar PDF"
+              icon="pi pi-file-pdf"
+              severity="primary"
+              class="report-export-button"
+              :disabled="!puedeExportar"
+              @click="exportarPdf"
+            />
           </div>
         </div>
 
-        <div v-if="tipoReporte === 'cobertura'">
+        <div v-if="!reporteEsActual" class="stale-report-state">
+          <i class="pi pi-info-circle stale-report-icon"></i>
+          <div>
+            <p class="stale-report-title">Este reporte cambió de filtros o de tipo</p>
+            <p class="stale-report-text">Presiona Generar para actualizar los datos y habilitar la exportación.</p>
+          </div>
+        </div>
+
+        <div v-else-if="tipoReporte === 'cobertura'">
           <div class="summary-grid">
             <div class="summary-card">
               <p class="summary-label">Cobertura general</p>
@@ -297,6 +312,21 @@ const opcionesAsp = computed(() => [
 ])
 
 const reporteActual = computed(() => opcionesReporte.find(o => o.value === tipoReporte.value) || opcionesReporte[0])
+const reporteGeneradoClave = ref('')
+
+function buildReporteClave() {
+  return JSON.stringify({
+    tipo: tipoReporte.value,
+    fecha_desde: formatFecha(filtros.value.fecha_desde),
+    fecha_hasta: formatFecha(filtros.value.fecha_hasta),
+    severidad: filtros.value.severidad || '',
+    posta_id: filtros.value.posta_id ?? null,
+    asp_id: filtros.value.asp_id ?? null,
+  })
+}
+
+const reporteEsActual = computed(() => Boolean(reporte.value) && reporteGeneradoClave.value === buildReporteClave())
+const puedeExportar = computed(() => reporteEsActual.value && Boolean(buildPdfTable()))
 
 const reporteDescripcion = computed(() => {
   const descripciones = {
@@ -418,7 +448,7 @@ function buildPdfTable() {
 }
 
 function exportarPdf() {
-  if (!reporte.value) return
+  if (!puedeExportar.value) return
 
   const table = buildPdfTable()
   if (!table) return
@@ -614,6 +644,7 @@ async function generarReporte() {
       const res = await reporteApi.tardanzas(params)
       reporte.value = res.data
     }
+    reporteGeneradoClave.value = buildReporteClave()
   } catch (e) {
     error.value = normalizeApiError(e, 'Error al generar reporte')
   } finally {
@@ -809,6 +840,39 @@ onMounted(cargarCatalogos)
 
 .report-export-button :deep(.p-button-icon) {
   font-size: 0.9rem;
+}
+
+.report-export-button:disabled {
+  opacity: 0.72;
+}
+
+.stale-report-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-top: 18px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 28%, var(--border));
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface-2));
+}
+
+.stale-report-icon {
+  margin-top: 2px;
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.stale-report-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stale-report-text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
 .section-head h3 {

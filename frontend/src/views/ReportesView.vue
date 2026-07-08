@@ -127,6 +127,14 @@
           </div>
         </div>
 
+        <div v-else-if="reporteSinDatos" class="empty-report-state">
+          <i class="pi pi-folder-open empty-report-icon"></i>
+          <div>
+            <p class="empty-report-title">No hay datos para este reporte</p>
+            <p class="empty-report-text">El periodo o los filtros seleccionados no devolvieron resultados. Ajusta los criterios y vuelve a generar.</p>
+          </div>
+        </div>
+
         <div v-else-if="tipoReporte === 'cobertura'">
           <div class="summary-grid">
             <div class="summary-card">
@@ -199,7 +207,7 @@
         <div v-else-if="tipoReporte === 'incidencias'">
           <div class="summary-grid">
             <div class="summary-card">
-              <p class="summary-label">Total incidencias</p>
+              <p class="summary-label">Total novedades</p>
               <h3>{{ reporte.total_incidencias }}</h3>
             </div>
           </div>
@@ -289,7 +297,7 @@ const opcionesReporte = [
   { label: 'Cobertura', value: 'cobertura' },
   { label: 'Ausentismo', value: 'ausentismo' },
   { label: 'Horas por ASP', value: 'horas' },
-  { label: 'Incidencias', value: 'incidencias' },
+  { label: 'Novedades', value: 'incidencias' },
   { label: 'Tardanzas', value: 'tardanzas' },
 ]
 
@@ -326,14 +334,26 @@ function buildReporteClave() {
 }
 
 const reporteEsActual = computed(() => Boolean(reporte.value) && reporteGeneradoClave.value === buildReporteClave())
-const puedeExportar = computed(() => reporteEsActual.value && Boolean(buildPdfTable()))
+const reporteSinDatos = computed(() => {
+  if (!reporteEsActual.value || !reporte.value) return false
+
+  if (tipoReporte.value === 'cobertura') return (reporte.value.total_planificadas || 0) === 0
+  if (tipoReporte.value === 'ausentismo') return (reporte.value.total_planificadas || 0) === 0
+  if (tipoReporte.value === 'horas') return (reporte.value.por_asp || []).length === 0
+  if (tipoReporte.value === 'incidencias') return (reporte.value.total_incidencias || 0) === 0
+  if (tipoReporte.value === 'tardanzas') return (reporte.value.total_guardias || 0) === 0
+
+  return false
+})
+
+const puedeExportar = computed(() => reporteEsActual.value && !reporteSinDatos.value && Boolean(buildPdfTable()))
 
 const reporteDescripcion = computed(() => {
   const descripciones = {
     cobertura: 'Mide la cobertura por posta y el volumen de guardias completadas.',
     ausentismo: 'Resume ausencias por ASP y su nivel de justificacion.',
     horas: 'Compara la carga de guardias y las horas acumuladas por ASP.',
-    incidencias: 'Lista los eventos relevantes ocurridos en el periodo seleccionado.',
+    incidencias: 'Lista las novedades relevantes ocurridas en el periodo seleccionado.',
     tardanzas: 'Muestra el retraso acumulado y su promedio por ASP.',
   }
 
@@ -418,7 +438,7 @@ function buildPdfTable() {
 
   if (tipoReporte.value === 'incidencias') {
     return {
-      title: 'Incidencias',
+      title: 'Novedades',
       head: [['Fecha', 'Posta', 'ASP', 'Tipo', 'Severidad', 'Descripcion']],
       body: (reporte.value.items || []).map((item) => [
         formatFecha(item.fecha),
@@ -537,7 +557,7 @@ function exportarPdf() {
   } else if (tipoReporte.value === 'horas') {
     summaryLines = [['Cantidad de ASP', String((reporte.value.por_asp || []).length)]]
   } else if (tipoReporte.value === 'incidencias') {
-    summaryLines = [['Total incidencias', formatNumero(reporte.value.total_incidencias)]]
+    summaryLines = [['Total novedades', formatNumero(reporte.value.total_incidencias)]]
   } else if (tipoReporte.value === 'tardanzas') {
     summaryLines = [
       ['Guardias', formatNumero(reporte.value.total_guardias)],
@@ -870,6 +890,35 @@ onMounted(cargarCatalogos)
 }
 
 .stale-report-text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.empty-report-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-top: 18px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 75%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 78%, white);
+}
+
+.empty-report-icon {
+  margin-top: 2px;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+
+.empty-report-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.empty-report-text {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.95rem;

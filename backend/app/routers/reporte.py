@@ -5,6 +5,7 @@ from datetime import date
 from app.core.database import get_db
 from app.routers.auth import get_current_user
 from app.models.usuario import Usuario
+from app.models.enums import SeveridadEnum
 from app.schemas.reporte import (
     ReporteCoberturaResponse,
     ReporteAusentismoResponse,
@@ -66,7 +67,7 @@ async def reporte_horas(
 async def reporte_incidencias(
     fecha_desde: date = Query(...),
     fecha_hasta: date = Query(...),
-    severidad: Optional[str] = None,
+    severidad: Optional[SeveridadEnum] = None,
     posta_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),

@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from app.models.guardia import Guardia, Novedad
 from app.models.posta import Posta, TurnoPosta
 from app.models.asp import ASP
-from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum
+from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum, SeveridadEnum
 from app.services.guardia_service import calcular_tardanza
 from app.schemas.reporte import (
     ReporteCoberturaResponse, CoberturaPosta,
@@ -174,7 +174,7 @@ async def reporte_horas(
 
 async def reporte_incidencias(
     db: AsyncSession, fecha_desde: date, fecha_hasta: date,
-    severidad: str = None, posta_id: int = None
+    severidad: SeveridadEnum = None, posta_id: int = None
 ) -> ReporteIncidenciasResponse:
     query = (
         select(Novedad)
@@ -186,7 +186,9 @@ async def reporte_incidencias(
             and_(
                 Guardia.fecha >= fecha_desde,
                 Guardia.fecha <= fecha_hasta,
-                Novedad.tipo == TipoNovedadEnum.incidente,
+                Novedad.tipo.in_(
+                    [TipoNovedadEnum.incidente, TipoNovedadEnum.comunicado]
+                ),
             )
         )
         .options(
@@ -224,7 +226,13 @@ async def reporte_incidencias(
             severidad=n.severidad.value,
         ))
 
-    items.sort(key=lambda x: x.severidad, reverse=True)
+    severidad_orden = {
+        SeveridadEnum.baja.value: 0,
+        SeveridadEnum.media.value: 1,
+        SeveridadEnum.alta.value: 2,
+        SeveridadEnum.critica.value: 3,
+    }
+    items.sort(key=lambda x: severidad_orden.get(x.severidad, -1), reverse=True)
 
     return ReporteIncidenciasResponse(
         fecha_desde=fecha_desde,

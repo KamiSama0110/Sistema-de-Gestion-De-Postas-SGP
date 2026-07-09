@@ -4,6 +4,9 @@ export const postaApi = {
   listar(params = {}) {
     return api.get('/postas', { params })
   },
+  listarTurnos(params = {}) {
+    return api.get('/postas/turnos', { params })
+  },
   obtener(id) {
     return api.get(`/postas/${id}`)
   },

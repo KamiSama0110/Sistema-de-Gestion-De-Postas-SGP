@@ -56,7 +56,7 @@
           <p>Cargando...</p>
         </div>
 
-        <div v-else-if="turnosFiltrados.length === 0" class="empty-state">
+        <div v-else-if="turnos.length === 0" class="empty-state">
           <i class="pi pi-clock empty-icon"></i>
           <div>
             <p class="empty-title">No hay turnos registrados</p>
@@ -78,9 +78,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="turno in turnosFiltrados" :key="turno.id">
+              <tr v-for="turno in turnos" :key="turno.id">
                 <td><span class="name-main">{{ turno.nombre }}</span></td>
-                <td><span class="cell-muted">{{ getPostaNombre(turno.posta_id) }}</span></td>
+                <td><span class="cell-muted">{{ turno.posta_nombre }}</span></td>
                 <td class="mono">{{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}</td>
                 <td>{{ turno.asp_requeridos }}</td>
                 <td>
@@ -107,6 +107,12 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div v-if="totalPages > 1" class="pagination-bar">
+          <Button icon="pi pi-chevron-left" severity="secondary" text :disabled="currentPage === 1" @click="changePage(-1)" />
+          <span>Página {{ currentPage }} de {{ totalPages }}</span>
+          <Button icon="pi pi-chevron-right" severity="secondary" text :disabled="currentPage >= totalPages" @click="changePage(1)" />
         </div>
       </template>
     </Card>
@@ -346,7 +352,12 @@ const toast = useToast()
 const route = useRoute()
 
 const postas = ref([])
+const turnos = ref([])
 const isLoading = ref(true)
+const currentPage = ref(1)
+const totalPages = ref(1)
+const total = ref(0)
+const pageSize = 10
 const isFormOpen = ref(false)
 const isFilterDialogOpen = ref(false)
 const editingTurno = ref(null)
@@ -489,10 +500,6 @@ function formatTimeForInput(value) {
   return String(value).slice(0, 5)
 }
 
-function getPostaNombre(postaId) {
-  return postas.value.find((posta) => posta.id === postaId)?.nombre || '—'
-}
-
 function openFilterDialog() {
   filterDraftPosta.value = filterPosta.value
   filterSearch.value = ''
@@ -517,6 +524,8 @@ function selectFilterPosta(posta) {
 function applyFilters() {
   filterPosta.value = filterDraftPosta.value
   closeFilterDialog()
+  currentPage.value = 1
+  fetchTurnos()
 }
 
 function clearFilters() {
@@ -525,12 +534,15 @@ function clearFilters() {
   filterDraftPosta.value = null
   filterSearch.value = ''
   filterPostas.value = []
+  currentPage.value = 1
+  fetchTurnos()
 }
 
 function selectWizardPosta(posta) {
   form.posta = posta
   if (fieldErrors.value.posta_id) {
-    const { posta_id, ...rest } = fieldErrors.value
+    const rest = { ...fieldErrors.value }
+    delete rest.posta_id
     fieldErrors.value = rest
   }
 }
@@ -569,24 +581,29 @@ function validateAllSteps() {
   return Object.keys(errors).length === 0
 }
 
-function getPostaTurnos() {
-  const items = []
-  postas.value.forEach((posta) => {
-    ;(posta.turnos || []).forEach((turno) => {
-      items.push({ ...turno, posta_nombre: posta.nombre })
-    })
-  })
-  return items
+async function fetchTurnos() {
+  isLoading.value = true
+  try {
+    const params = { page: currentPage.value, size: pageSize }
+    if (filterPosta.value?.value) params.posta_id = filterPosta.value.value
+    if (filterActivo.value) params.activo = filterActivo.value === 'true'
+    const response = await postaApi.listarTurnos(params)
+    turnos.value = response.data.items || []
+    total.value = response.data.total || 0
+    totalPages.value = Math.max(1, Math.ceil(total.value / response.data.size))
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los turnos'), life: 3000 })
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const turnosFiltrados = computed(() => {
-  const selectedPostaId = filterPosta.value?.value || ''
-  return getPostaTurnos().filter((turno) => {
-    const matchPosta = !selectedPostaId || turno.posta_id === selectedPostaId
-    const matchActivo = !filterActivo.value || String(turno.activo) === filterActivo.value
-    return matchPosta && matchActivo
-  })
-})
+function changePage(delta) {
+  const next = currentPage.value + delta
+  if (next < 1 || next > totalPages.value) return
+  currentPage.value = next
+  fetchTurnos()
+}
 
 async function fetchPostas() {
   try {
@@ -630,7 +647,7 @@ async function saveTurno() {
       toast.add({ severity: 'success', summary: 'Turno creado', detail: 'El turno se creo correctamente', life: 3000 })
     }
     closeFormDialog()
-    await fetchPostas()
+    await Promise.all([fetchPostas(), fetchTurnos()])
   } catch (error) {
     const apiErrors = error?.response?.data?.errors
     if (apiErrors && typeof apiErrors === 'object') {
@@ -651,7 +668,7 @@ async function toggleEstado(turno) {
   try {
     await postaApi.cambiarEstadoTurno(turno.id, !turno.activo)
     toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del turno se actualizo', life: 3000 })
-    await fetchPostas()
+    await Promise.all([fetchPostas(), fetchTurnos()])
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cambiar estado'), life: 3000 })
   }
@@ -660,13 +677,21 @@ async function toggleEstado(turno) {
 onMounted(async () => {
   await Promise.all([fetchPostas(), loadPostasInto('filter')])
   syncPostaFromRoute()
+  await fetchTurnos()
   isLoading.value = false
+})
+
+watch(filterActivo, () => {
+  currentPage.value = 1
+  fetchTurnos()
 })
 
 watch(
   () => route.query.posta,
   () => {
     syncPostaFromRoute()
+    currentPage.value = 1
+    fetchTurnos()
   }
 )
 </script>
@@ -739,6 +764,7 @@ watch(
 .cell-muted { color: var(--text-muted); }
 .mono { font-variant-numeric: tabular-nums; }
 .table-shell { overflow-x: auto; }
+.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 .turnos-table { width: 100%; border-collapse: collapse; }
 .turnos-table thead th { padding: 0.9rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
 .turnos-table tbody td { padding: 0.95rem 1rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }

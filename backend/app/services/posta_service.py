@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional
 from app.models.posta import Posta, TurnoPosta
@@ -92,6 +92,63 @@ async def cambiar_estado_posta(
     await db.commit()
     await db.refresh(posta)
     return posta
+
+
+async def listar_turnos(
+    db: AsyncSession,
+    page: int = 1,
+    size: int = 10,
+    posta_id: Optional[int] = None,
+    activo: Optional[bool] = None,
+    buscar: Optional[str] = None,
+) -> dict:
+    def aplicar_filtros(query):
+        if posta_id:
+            query = query.where(TurnoPosta.posta_id == posta_id)
+        if activo is not None:
+            query = query.where(TurnoPosta.activo == activo)
+        if buscar:
+            query = query.where(
+                TurnoPosta.nombre.ilike(f"%{buscar}%")
+                | Posta.nombre.ilike(f"%{buscar}%")
+            )
+        return query
+
+    conteo_query = aplicar_filtros(
+        select(TurnoPosta.id).join(Posta, TurnoPosta.posta_id == Posta.id)
+    )
+    total_result = await db.execute(
+        select(func.count()).select_from(conteo_query.subquery())
+    )
+    total = total_result.scalar()
+
+    datos_query = aplicar_filtros(
+        select(TurnoPosta, Posta.nombre.label("posta_nombre")).join(
+            Posta, TurnoPosta.posta_id == Posta.id
+        )
+    )
+    datos_query = datos_query.order_by(Posta.nombre, TurnoPosta.hora_inicio)
+    datos_query = datos_query.offset((page - 1) * size).limit(size)
+
+    result = await db.execute(datos_query)
+    filas = result.all()
+
+    items = [
+        {
+            "id": turno.id,
+            "posta_id": turno.posta_id,
+            "posta_nombre": posta_nombre,
+            "nombre": turno.nombre,
+            "hora_inicio": turno.hora_inicio,
+            "hora_fin": turno.hora_fin,
+            "asp_requeridos": turno.asp_requeridos,
+            "cruza_medianoche": turno.cruza_medianoche,
+            "activo": turno.activo,
+        }
+        for turno, posta_nombre in filas
+    ]
+
+    return {"total": total, "page": page, "size": size, "items": items}
 
 
 async def agregar_turno(

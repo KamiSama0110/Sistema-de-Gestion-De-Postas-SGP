@@ -12,6 +12,7 @@ from app.schemas.posta import (
     TurnoPostaCreate,
     TurnoPostaUpdate,
     TurnoPostaResponse,
+    PaginatedTurno,
 )
 from app.services import posta_service
 
@@ -36,6 +37,19 @@ async def crear_posta(
     _: Usuario = Depends(get_current_user),
 ):
     return await posta_service.crear_posta(db, datos)
+
+
+@router.get("/turnos", response_model=PaginatedTurno)
+async def listar_turnos(
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    posta_id: Optional[int] = None,
+    activo: Optional[bool] = None,
+    buscar: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+):
+    return await posta_service.listar_turnos(db, page, size, posta_id, activo, buscar)
 
 
 @router.get("/{posta_id}", response_model=PostaResponse)

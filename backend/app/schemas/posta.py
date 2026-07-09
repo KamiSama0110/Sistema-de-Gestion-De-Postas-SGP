@@ -95,3 +95,21 @@ class PostaListResponse(BaseModel):
     total_turnos: int = 0
 
     model_config = {"from_attributes": True}
+
+
+# --- NUEVO: listado paginado de turnos, independiente de Posta ---
+class TurnoPostaListResponse(TurnoPostaBase):
+    id: int
+    posta_id: int
+    posta_nombre: str
+    cruza_medianoche: bool
+    activo: bool
+
+    model_config = {"from_attributes": True}
+
+
+class PaginatedTurno(BaseModel):
+    total: int
+    page: int
+    size: int
+    items: list[TurnoPostaListResponse]

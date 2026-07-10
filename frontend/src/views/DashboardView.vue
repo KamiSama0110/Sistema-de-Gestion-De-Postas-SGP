@@ -11,7 +11,6 @@
         </div>
       </div>
     </div>
-
     <div class="stats-grid">
       <Card v-for="stat in statCards" :key="stat.title" class="stat-card">
         <template #content>
@@ -220,10 +219,6 @@ const statusCards = computed(() => [
   },
 ])
 
-function formatHora(valor) {
-  if (!valor) return ''
-  return new Date(valor).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-}
 
 function formatHoraCorta(valor) {
   if (!valor) return ''
@@ -328,7 +323,7 @@ onMounted(async () => {
       postaApi.listar({ activa: true }),
     ])
 
-    guardias.value = guardiasRespuesta.data || []
+    guardias.value = guardiasRespuesta.data?.items || []
     aspsActivos.value = aspsRespuesta.data?.total || 0
     postasActivas.value = Array.isArray(postasRespuesta.data) ? postasRespuesta.data.length : 0
 

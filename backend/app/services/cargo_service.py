@@ -47,6 +47,20 @@ async def actualizar_cargo(
 ) -> Cargo:
     cargo = await get_cargo_by_id(db, cargo_id)
     update_data = datos.model_dump(exclude_unset=True)
+
+    if "nombre" in update_data:
+        existente = await db.execute(
+            select(Cargo).where(
+                Cargo.nombre == update_data["nombre"],
+                Cargo.id != cargo_id,
+            )
+        )
+        if existente.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe un cargo con el nombre '{update_data['nombre']}'",
+            )
+
     for campo, valor in update_data.items():
         setattr(cargo, campo, valor)
     await db.commit()

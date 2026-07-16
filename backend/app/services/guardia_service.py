@@ -274,6 +274,13 @@ async def finalizar_guardia(
         )
 
     guardia.hora_fin_real = strip_timezone(datos.hora_fin_real)
+
+    if guardia.hora_inicio_real and guardia.hora_fin_real <= guardia.hora_inicio_real:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La hora de fin debe ser posterior a la hora de inicio",
+        )
+
     guardia.estado = EstadoGuardiaEnum.finalizada
     if datos.observaciones:
         guardia.observaciones = datos.observaciones

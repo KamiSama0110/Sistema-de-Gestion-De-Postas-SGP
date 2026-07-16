@@ -21,3 +21,7 @@ class CambiarPasswordRequest(BaseModel):
         if len(v) < 8:
             raise ValueError("La contraseña nueva debe tener al menos 8 caracteres")
         return v
+
+
+class MensajeResponse(BaseModel):
+    mensaje: str

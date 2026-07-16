@@ -3,7 +3,7 @@ from app.core.security import get_token
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import create_access_token, decode_access_token
-from app.schemas.auth import LoginRequest, TokenResponse, CambiarPasswordRequest
+from app.schemas.auth import LoginRequest, TokenResponse, CambiarPasswordRequest, MensajeResponse
 from app.services.auth_service import (
     autenticar_usuario,
     actualizar_ultimo_acceso,
@@ -53,12 +53,12 @@ async def login(datos: LoginRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(access_token=token)
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=MensajeResponse)
 async def logout(usuario: Usuario = Depends(get_current_user)):
-    return {"mensaje": "Sesión cerrada correctamente"}
+    return MensajeResponse(mensaje="Sesión cerrada correctamente")
 
 
-@router.patch("/cambiar-contrasena")
+@router.patch("/cambiar-contrasena", response_model=MensajeResponse)
 async def cambiar_contrasena(
     datos: CambiarPasswordRequest,
     usuario: Usuario = Depends(get_current_user),
@@ -70,4 +70,4 @@ async def cambiar_contrasena(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña actual es incorrecta",
         )
-    return {"mensaje": "Contraseña actualizada correctamente"}
+    return MensajeResponse(mensaje="Contraseña actualizada correctamente")

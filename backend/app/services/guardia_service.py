@@ -121,7 +121,10 @@ async def validar_conflictos_guardia(
 async def get_guardia_by_id(db: AsyncSession, guardia_id: int) -> Guardia:
     result = await db.execute(
         select(Guardia)
-        .options(selectinload(Guardia.novedades))
+        .options(
+            selectinload(Guardia.novedades),
+            selectinload(Guardia.turno_posta),
+        )
         .where(Guardia.id == guardia_id)
     )
     guardia = result.scalar_one_or_none()
@@ -344,13 +347,8 @@ async def actualizar_guardia(
 async def get_guardia_con_tardanza(db: AsyncSession, guardia_id: int) -> dict:
     guardia = await get_guardia_by_id(db, guardia_id)
     tardanza = None
-    if guardia.hora_inicio_real:
-        turno_result = await db.execute(
-            select(TurnoPosta).where(TurnoPosta.id == guardia.turno_posta_id)
-        )
-        turno = turno_result.scalar_one_or_none()
-        if turno:
-            tardanza = calcular_tardanza(turno, guardia.hora_inicio_real, guardia.fecha)
+    if guardia.hora_inicio_real and guardia.turno_posta:
+        tardanza = calcular_tardanza(guardia.turno_posta, guardia.hora_inicio_real, guardia.fecha)
 
     data = {
         "id": guardia.id,

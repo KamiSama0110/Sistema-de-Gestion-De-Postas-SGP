@@ -114,7 +114,11 @@ async def cambiar_estado_asp(
     asp = await get_asp_by_id(db, asp_id)
     asp.estado = datos.estado
     if datos.observacion:
-        asp.observaciones = datos.observacion
+        asp.observaciones = (
+            f"{asp.observaciones}\n{datos.observacion}"
+            if asp.observaciones
+            else datos.observacion
+        )
     await db.commit()
     await db.refresh(asp)
     return asp

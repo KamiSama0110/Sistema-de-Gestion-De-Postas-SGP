@@ -36,3 +36,5 @@ node_modules/
 dist/
 .nuxt/
 context.md
+
+AGENTS.md

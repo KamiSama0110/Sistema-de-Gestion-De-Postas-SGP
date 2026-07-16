@@ -1,6 +1,10 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from urllib.parse import quote_plus
+
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
     # Base
     APP_NAME: str = "Sistema de Gestión de Postas"
     APP_VERSION: str = "1.0.0"
@@ -12,11 +16,12 @@ class Settings(BaseSettings):
     DB_NAME: str = "sgp_db"
     DB_USER: str = "sgp_user"
     DB_PASSWORD: str = "sgp_password"
-    #DATABASE_URL: str 
 
     @property
     def DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        user = quote_plus(self.DB_USER)
+        password = quote_plus(self.DB_PASSWORD)
+        return f"postgresql+asyncpg://{user}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # Seguridad
     SECRET_KEY: str
@@ -28,10 +33,6 @@ class Settings(BaseSettings):
 
     # CORS (lista separada por comas)
     CORS_ORIGINS: str = "http://localhost:5173"
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()

@@ -23,7 +23,7 @@ async def autenticar_usuario(db: AsyncSession, username: str, password: str) -> 
 
 
 async def actualizar_ultimo_acceso(db: AsyncSession, usuario: Usuario) -> None:
-    usuario.ultimo_acceso = datetime.now(timezone.utc)
+    usuario.ultimo_acceso = datetime.now(timezone.utc).replace(tzinfo=None)
     await db.commit()
 
 

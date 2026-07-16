@@ -143,7 +143,6 @@ async def listar_guardias(
     posta_id: Optional[int] = None,
 ) -> dict:
     query = select(Guardia).options(
-        selectinload(Guardia.novedades),
         selectinload(Guardia.turno_posta),
     )
     if fecha:

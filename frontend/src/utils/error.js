@@ -7,7 +7,10 @@ export function normalizeApiError(error, fallback = 'Ocurrio un error') {
 
   if (Array.isArray(detail)) {
     const messages = detail
-      .map(item => (typeof item?.msg === 'string' ? item.msg : ''))
+      .map(item => {
+        if (typeof item?.msg !== 'string') return ''
+        return item.msg.replace(/^Value error,\s*/i, '')
+      })
       .filter(Boolean)
     if (messages.length) {
       return messages.join(', ')

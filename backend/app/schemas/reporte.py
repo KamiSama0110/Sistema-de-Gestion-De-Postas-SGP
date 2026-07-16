@@ -1,6 +1,7 @@
 from datetime import date
 from pydantic import BaseModel
 
+
 class PeriodoRequest(BaseModel):
     fecha_desde: date
     fecha_hasta: date

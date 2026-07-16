@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.usuario import Usuario
@@ -23,7 +23,7 @@ async def autenticar_usuario(db: AsyncSession, username: str, password: str) -> 
 
 
 async def actualizar_ultimo_acceso(db: AsyncSession, usuario: Usuario) -> None:
-    usuario.ultimo_acceso = datetime.now() 
+    usuario.ultimo_acceso = datetime.now(timezone.utc)
     await db.commit()
 
 

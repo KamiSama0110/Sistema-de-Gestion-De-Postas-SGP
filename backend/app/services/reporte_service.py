@@ -21,7 +21,13 @@ async def reporte_cobertura(
 ) -> ReporteCoberturaResponse:
     guardias_result = await db.execute(
         select(Guardia)
-        .where(and_(Guardia.fecha >= fecha_desde, Guardia.fecha <= fecha_hasta))
+        .where(
+            and_(
+                Guardia.fecha >= fecha_desde,
+                Guardia.fecha <= fecha_hasta,
+                Guardia.estado != EstadoGuardiaEnum.cancelada,
+            )
+        )
         .options(selectinload(Guardia.turno_posta))
     )
     guardias = guardias_result.scalars().all()
@@ -75,8 +81,13 @@ async def reporte_ausentismo(
     db: AsyncSession, fecha_desde: date, fecha_hasta: date
 ) -> ReporteAusentismoResponse:
     guardias_result = await db.execute(
-        select(Guardia)
-        .where(and_(Guardia.fecha >= fecha_desde, Guardia.fecha <= fecha_hasta))
+        select(Guardia).where(
+            and_(
+                Guardia.fecha >= fecha_desde,
+                Guardia.fecha <= fecha_hasta,
+                Guardia.estado != EstadoGuardiaEnum.cancelada,
+            )
+        )
     )
     guardias = guardias_result.scalars().all()
 
@@ -181,7 +192,6 @@ async def reporte_incidencias(
         .join(Guardia)
         .join(TurnoPosta)
         .join(Posta)
-        .join(ASP, ASP.id == Guardia.asp_id)
         .where(
             and_(
                 Guardia.fecha >= fecha_desde,
@@ -193,6 +203,11 @@ async def reporte_incidencias(
         )
         .options(
             selectinload(Novedad.guardia)
+            .selectinload(Guardia.asp)
+        )
+        .options(
+            selectinload(Novedad.guardia)
+            .selectinload(Guardia.turno_posta)
         )
     )
     if severidad:
@@ -203,22 +218,16 @@ async def reporte_incidencias(
     result = await db.execute(query)
     novedades = result.scalars().all()
 
-    asps_result = await db.execute(select(ASP))
-    asps = {a.id: f"{a.nombre} {a.apellidos}" for a in asps_result.scalars().all()}
-
     postas_result = await db.execute(select(Posta))
     postas = {p.id: p.nombre for p in postas_result.scalars().all()}
 
-    turnos_result = await db.execute(select(TurnoPosta))
-    turnos = {t.id: t.posta_id for t in turnos_result.scalars().all()}
-
     items = []
     for n in novedades:
-        posta_id_turno = turnos.get(n.guardia.turno_posta_id)
+        posta_id_turno = n.guardia.turno_posta.posta_id
         items.append(IncidenciaItem(
             guardia_id=n.guardia_id,
             posta_nombre=postas.get(posta_id_turno, "Desconocida"),
-            asp_nombre=asps.get(n.guardia.asp_id, "Desconocido"),
+            asp_nombre=f"{n.guardia.asp.nombre} {n.guardia.asp.apellidos}",
             fecha=n.guardia.fecha,
             fecha_hora=str(n.fecha_hora),
             tipo=n.tipo.value,

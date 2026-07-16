@@ -318,11 +318,12 @@ async def actualizar_guardia(
         )
 
     motivo_enviado = "motivo_ausencia" in update_data
-    if asp_nuevo != guardia.asp_id or motivo_enviado:
-        guardia.estado = EstadoGuardiaEnum.ausente
 
     for campo, valor in update_data.items():
         setattr(guardia, campo, valor)
+
+    if asp_nuevo != guardia.asp_id or motivo_enviado:
+        guardia.estado = EstadoGuardiaEnum.ausente
 
     try:
         await db.commit()

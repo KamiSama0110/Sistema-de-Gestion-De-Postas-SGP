@@ -9,6 +9,10 @@ from app.schemas.asp import ASPCreate, ASPUpdate, ASPCambiarEstado
 from fastapi import HTTPException, status
 
 
+def _escape_like(value: str) -> str:
+    return value.replace("%", "\\%").replace("_", "\\_")
+
+
 def validar_relacion_fechas_asp(fecha_nacimiento, fecha_ingreso) -> None:
     if fecha_nacimiento and fecha_ingreso:
         try:
@@ -58,10 +62,11 @@ async def listar_asp(
     if estado:
         query = query.where(ASP.estado == estado)
     if buscar:
+        escaped = _escape_like(buscar)
         query = query.where(
-            ASP.nombre.ilike(f"%{buscar}%")
-            | ASP.apellidos.ilike(f"%{buscar}%")
-            | ASP.ci.ilike(f"%{buscar}%")
+            ASP.nombre.ilike(f"%{escaped}%")
+            | ASP.apellidos.ilike(f"%{escaped}%")
+            | ASP.ci.ilike(f"%{escaped}%")
         )
 
     total_result = await db.execute(select(func.count()).select_from(query.subquery()))

@@ -7,6 +7,10 @@ from app.schemas.posta import PostaCreate, PostaUpdate, TurnoPostaCreate, TurnoP
 from fastapi import HTTPException, status
 
 
+def _escape_like(value: str) -> str:
+    return value.replace("%", "\\%").replace("_", "\\_")
+
+
 def calcular_cruza_medianoche(hora_inicio, hora_fin) -> bool:
     return hora_fin < hora_inicio
 
@@ -38,7 +42,8 @@ async def listar_postas(
     if tipo:
         query = query.where(Posta.tipo == tipo)
     if buscar:
-        query = query.where(Posta.nombre.ilike(f"%{buscar}%"))
+        escaped = _escape_like(buscar)
+        query = query.where(Posta.nombre.ilike(f"%{escaped}%"))
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -108,9 +113,10 @@ async def listar_turnos(
         if activo is not None:
             query = query.where(TurnoPosta.activo == activo)
         if buscar:
+            escaped = _escape_like(buscar)
             query = query.where(
-                TurnoPosta.nombre.ilike(f"%{buscar}%")
-                | Posta.nombre.ilike(f"%{buscar}%")
+                TurnoPosta.nombre.ilike(f"%{escaped}%")
+                | Posta.nombre.ilike(f"%{escaped}%")
             )
         return query
 

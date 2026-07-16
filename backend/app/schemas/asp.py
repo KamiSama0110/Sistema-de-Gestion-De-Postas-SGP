@@ -67,11 +67,6 @@ class ASPBase(BaseModel):
     cargo_id: int
     observaciones: Optional[str] = None
 
-    @field_validator("ci")
-    @classmethod
-    def validar_ci(cls, v: str) -> str:
-        return v
-
     @field_validator("nombre", "apellidos", "direccion", "observaciones")
     @classmethod
     def validar_textos_no_vacios(cls, v: Optional[str], info) -> Optional[str]:

@@ -1,14 +1,11 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.services.auth_service import crear_admin_inicial
 from app.routers import auth, asp, cargo, posta, guardia, reporte
 
-
-security = HTTPBearer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

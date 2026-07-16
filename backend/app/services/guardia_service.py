@@ -89,7 +89,21 @@ async def validar_conflictos_guardia(
         query = query.where(Guardia.id != excluir_id)
 
     result = await db.execute(query)
-    guardias_existentes = result.scalars().all()
+    guardias_existentes = list(result.scalars().all())
+
+    dia_anterior = fecha - timedelta(days=1)
+    query_anterior = select(Guardia).options(selectinload(Guardia.turno_posta)).where(
+        and_(
+            Guardia.asp_id == asp_id,
+            Guardia.fecha == dia_anterior,
+            Guardia.estado != EstadoGuardiaEnum.cancelada,
+            TurnoPosta.cruza_medianoche == True,
+        )
+    )
+    if excluir_id is not None:
+        query_anterior = query_anterior.where(Guardia.id != excluir_id)
+    result_anterior = await db.execute(query_anterior)
+    guardias_existentes.extend(result_anterior.scalars().all())
 
     for guardia_existente in guardias_existentes:
         turno_existente = guardia_existente.turno_posta

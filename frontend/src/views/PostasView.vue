@@ -320,7 +320,7 @@ async function guardar() {
     cerrarModal()
     await cargarPostas()
   } catch (e) {
-    const apiError = e?.errors
+    const apiError = e?.response?.data?.errors
     if (apiError) {
       fieldErrors.value = Object.fromEntries(
         Object.entries(apiError).map(([key, messages]) => [key, Array.isArray(messages) ? messages[0] : String(messages)]),
@@ -407,6 +407,10 @@ onMounted(cargarPostas)
 .span-2 { grid-column: span 2; }
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
 .field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+.field :deep(.p-inputtext),
+.field :deep(.p-select) {
+  min-height: 2.5rem;
+}
 .field-error { color: #dc2626; font-size: 0.75rem; }
 .invalid :deep(.p-inputtext), .invalid :deep(.p-select), .invalid :deep(.p-textarea) { border-color: #dc2626; }
 .dialog-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 0.25rem; }

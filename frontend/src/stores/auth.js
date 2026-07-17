@@ -10,8 +10,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(username, password) {
     const response = await authApi.login({ username, password })
-    token.value = response.data.access_token
-    sessionStorage.setItem('token', token.value)
+    const tokenValue = response.data?.access_token
+    if (!tokenValue) throw new Error('Token no recibido')
+    token.value = tokenValue
+    sessionStorage.setItem('token', tokenValue)
   }
 
   async function logout() {

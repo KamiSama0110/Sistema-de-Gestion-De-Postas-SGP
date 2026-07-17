@@ -1223,8 +1223,13 @@ async function registrarNovedad() {
 }
 
 onMounted(async () => {
-  await cargarCatalogos()
-  await cargarGuardias()
+  try {
+    await cargarCatalogos()
+    await cargarGuardias()
+  } catch (e) {
+    console.error(e)
+    cargando.value = false
+  }
 })
 </script>
 

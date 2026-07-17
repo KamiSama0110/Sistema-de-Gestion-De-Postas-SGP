@@ -586,6 +586,8 @@ function exportarPdf() {
     currentY += Math.ceil(summaryLines.length / 2) * 14 + 4
   }
 
+  const headerHeight = 28
+
   autoTable(doc, {
     head: table.head,
     body: table.body,
@@ -605,7 +607,7 @@ function exportarPdf() {
     alternateRowStyles: {
       fillColor: colors.soft,
     },
-    margin: { left: marginLeft, right: marginLeft },
+    margin: { left: marginLeft, right: marginLeft, top: headerHeight },
     didDrawPage: () => {
       drawHeader()
     },

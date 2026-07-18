@@ -22,7 +22,7 @@ async def listar_asp(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     estado: Optional[EstadoASPEnum] = None,
-    buscar: Optional[str] = None,
+    buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):

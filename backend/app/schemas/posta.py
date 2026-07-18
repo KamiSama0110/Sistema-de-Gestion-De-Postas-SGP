@@ -34,6 +34,13 @@ class TurnoPostaUpdate(BaseModel):
     hora_fin: Optional[time] = None
     asp_requeridos: Optional[int] = None
 
+    @field_validator("asp_requeridos")
+    @classmethod
+    def validar_asp_requeridos(cls, v):
+        if v is not None and v < 1:
+            raise ValueError("El turno debe requerir al menos un ASP")
+        return v
+
     @model_validator(mode="after")
     def validar_horas(self):
         if self.hora_inicio is None or self.hora_fin is None:
@@ -77,6 +84,12 @@ class PostaUpdate(BaseModel):
     ubicacion: Optional[str] = None
     tipo: Optional[TipoPostaEnum] = None
     observaciones: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validar_nombre_no_vacio(self):
+        if self.nombre is not None and not self.nombre.strip():
+            raise ValueError("El nombre de la posta no puede estar vacio")
+        return self
 
 
 class PostaResponse(PostaBase):

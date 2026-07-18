@@ -23,7 +23,7 @@ router = APIRouter(prefix="/postas", tags=["Postas"])
 async def listar_postas(
     activa: Optional[bool] = None,
     tipo: Optional[TipoPostaEnum] = None,
-    buscar: Optional[str] = None,
+    buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
@@ -45,7 +45,7 @@ async def listar_turnos(
     size: int = Query(10, ge=1, le=100),
     posta_id: Optional[int] = None,
     activo: Optional[bool] = None,
-    buscar: Optional[str] = None,
+    buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):

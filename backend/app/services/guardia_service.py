@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from typing import Optional
 from app.models.guardia import Guardia, Novedad
-from app.models.posta import TurnoPosta
+from app.models.posta import TurnoPosta, Posta
 from app.models.asp import ASP
 from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum
 from app.schemas.guardia import (
@@ -192,6 +192,15 @@ async def crear_guardia(db: AsyncSession, datos: GuardiaCreate) -> Guardia:
             detail="El turno seleccionado esta inactivo",
         )
 
+    posta_result = await db.execute(
+        select(Posta).where(Posta.id == turno.posta_id, Posta.activa == True)
+    )
+    if not posta_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La posta asociada no está activa",
+        )
+
     await validar_conflictos_guardia(db, datos.asp_id, turno, datos.fecha)
 
     guardia = Guardia(**datos.model_dump())
@@ -216,6 +225,13 @@ async def confirmar_llegada(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"No se puede confirmar llegada de una guardia en estado {guardia.estado.value}",
+        )
+
+    diferencia = abs((datos.hora_llegada - guardia.fecha_inicio).total_seconds() / 3600)
+    if diferencia > 24:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La hora de llegada no puede diferir más de 24 horas del inicio de la guardia",
         )
 
     guardia.hora_inicio_real = strip_timezone(datos.hora_llegada)
@@ -271,6 +287,12 @@ async def finalizar_guardia(
             detail="La hora de fin debe ser posterior a la hora de inicio",
         )
 
+    if guardia.hora_inicio_real and guardia.hora_fin_real > guardia.hora_inicio_real + timedelta(hours=24):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La hora de fin no puede ser más de 24 horas después del inicio",
+        )
+
     guardia.estado = EstadoGuardiaEnum.finalizada
     if datos.observaciones:
         guardia.observaciones = datos.observaciones
@@ -284,10 +306,10 @@ async def actualizar_guardia(
 ) -> Guardia:
     guardia = await get_guardia_by_id(db, guardia_id)
 
-    if guardia.estado == EstadoGuardiaEnum.finalizada:
+    if guardia.estado in (EstadoGuardiaEnum.activa, EstadoGuardiaEnum.finalizada):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se puede modificar una guardia finalizada",
+            detail="No se puede modificar una guardia en estado activa o finalizada",
         )
 
     update_data = datos.model_dump(exclude_unset=True)

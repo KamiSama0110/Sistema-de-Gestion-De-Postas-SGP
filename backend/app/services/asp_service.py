@@ -84,6 +84,16 @@ async def crear_asp(db: AsyncSession, datos: ASPCreate) -> ASP:
             detail=f"Ya existe un ASP con el CI {datos.ci}",
         )
 
+    from app.models.cargo import Cargo
+    cargo_result = await db.execute(
+        select(Cargo).where(Cargo.id == datos.cargo_id, Cargo.activo == True)
+    )
+    if not cargo_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El cargo especificado no existe o está inactivo",
+        )
+
     asp = ASP(**datos.model_dump())
     db.add(asp)
     await db.commit()

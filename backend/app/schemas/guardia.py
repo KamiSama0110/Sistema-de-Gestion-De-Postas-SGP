@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum, SeveridadEnum
 
@@ -28,7 +28,7 @@ class FinalizarGuardiaRequest(BaseModel):
 
 class NovedadCreate(BaseModel):
     tipo: TipoNovedadEnum
-    descripcion: str
+    descripcion: str = Field(..., min_length=1, max_length=500)
     severidad: SeveridadEnum = SeveridadEnum.baja
 
 

@@ -9,6 +9,7 @@ from app.schemas.posta import (
     PostaCreate,
     PostaUpdate,
     PostaResponse,
+    PaginatedPosta,
     TurnoPostaCreate,
     TurnoPostaUpdate,
     TurnoPostaResponse,
@@ -19,15 +20,17 @@ from app.services import posta_service
 router = APIRouter(prefix="/postas", tags=["Postas"])
 
 
-@router.get("", response_model=list[PostaResponse])
+@router.get("", response_model=PaginatedPosta)
 async def listar_postas(
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
     activa: Optional[bool] = None,
     tipo: Optional[TipoPostaEnum] = None,
     buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    return await posta_service.listar_postas(db, activa, tipo, buscar)
+    return await posta_service.listar_postas(db, activa, tipo, buscar, page, size)
 
 
 @router.post("", response_model=PostaResponse, status_code=201)

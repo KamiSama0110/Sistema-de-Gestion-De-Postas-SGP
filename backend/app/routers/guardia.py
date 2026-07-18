@@ -12,6 +12,7 @@ from app.schemas.guardia import (
     GuardiaResponse,
     GuardiaListResponse,
     PaginatedGuardia,
+    PaginatedNovedad,
     ConfirmarLlegadaRequest,
     FinalizarGuardiaRequest,
     NovedadCreate,
@@ -98,11 +99,12 @@ async def registrar_novedad(
     return await guardia_service.registrar_novedad(db, guardia_id, datos)
 
 
-@router.get("/{guardia_id}/novedades", response_model=list[NovedadResponse])
+@router.get("/{guardia_id}/novedades", response_model=PaginatedNovedad)
 async def listar_novedades(
     guardia_id: int,
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    guardia = await guardia_service.get_guardia_by_id(db, guardia_id)
-    return guardia.novedades
+    return await guardia_service.listar_novedades(db, guardia_id, page, size)

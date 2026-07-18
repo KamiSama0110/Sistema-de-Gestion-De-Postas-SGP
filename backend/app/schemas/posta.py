@@ -110,6 +110,13 @@ class PostaListResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PaginatedPosta(BaseModel):
+    total: int
+    page: int
+    size: int
+    items: list[PostaListResponse]
+
+
 # --- NUEVO: listado paginado de turnos, independiente de Posta ---
 class TurnoPostaListResponse(TurnoPostaBase):
     id: int

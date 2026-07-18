@@ -440,7 +440,7 @@ async function loadPostasInto(target) {
     const query = target === 'filter' ? filterSearch.value.trim() : wizardSearch.value.trim()
     if (query) params.buscar = query
     const response = await postaApi.listar(params)
-    const items = (response.data || []).map(toPostaOption)
+    const items = (response.data.items || []).map(toPostaOption)
     if (target === 'filter') {
       filterPostas.value = items
     } else {
@@ -608,7 +608,7 @@ function changePage(delta) {
 async function fetchPostas() {
   try {
     const response = await postaApi.listar({})
-    postas.value = response.data || []
+    postas.value = response.data.items || []
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los turnos'), life: 3000 })
   }

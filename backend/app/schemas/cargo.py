@@ -53,3 +53,10 @@ class CargoResponse(CargoBase):
     activo: bool
 
     model_config = {"from_attributes": True}
+
+
+class PaginatedCargo(BaseModel):
+    total: int
+    page: int
+    size: int
+    items: list[CargoResponse]

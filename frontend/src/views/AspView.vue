@@ -798,7 +798,7 @@ async function saveState() {
 async function fetchCargos() {
   try {
     const response = await cargoApi.listar(true)
-    cargos.value = response.data || []
+    cargos.value = response.data.items || []
   } catch (error) {
     console.error(error)
   }

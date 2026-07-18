@@ -69,7 +69,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="posta in postasFiltradas" :key="posta.id">
+              <tr v-for="posta in postas" :key="posta.id">
                 <td class="name-cell">
                   <span class="name-main">{{ posta.nombre }}</span>
                 </td>
@@ -118,6 +118,11 @@
               </tr>
             </tbody>
           </table>
+          <div v-if="totalPages > 1" class="pagination-bar">
+            <Button icon="pi pi-chevron-left" severity="secondary" text :disabled="currentPage === 1" @click="cambiarPagina(-1)" />
+            <span>Página {{ currentPage }} de {{ totalPages }}</span>
+            <Button icon="pi pi-chevron-right" severity="secondary" text :disabled="currentPage >= totalPages" @click="cambiarPagina(1)" />
+          </div>
         </div>
       </template>
     </Card>
@@ -173,7 +178,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
@@ -199,6 +204,10 @@ const formError = ref('')
 const fieldErrors = ref({})
 const search = ref('')
 const filterEstado = ref('')
+const currentPage = ref(1)
+const totalPages = ref(1)
+const totalItems = ref(0)
+const pageSize = 10
 
 const estadoOptions = [
   { label: 'Activas', value: 'true' },
@@ -221,23 +230,6 @@ const formVacio = () => ({
 
 const form = ref(formVacio())
 
-const postasFiltradas = computed(() => {
-  const query = search.value.trim().toLowerCase()
-
-  return postas.value.filter((posta) => {
-    const matchesSearch =
-      !query ||
-      [posta.nombre, posta.ubicacion, posta.descripcion, labelTipo(posta.tipo)]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query))
-
-    const matchesEstado =
-      !filterEstado.value || String(posta.activa) === filterEstado.value
-
-    return matchesSearch && matchesEstado
-  })
-})
-
 const hasActiveFilters = computed(() => Boolean(search.value.trim() || filterEstado.value))
 
 function clearFilters() {
@@ -256,14 +248,27 @@ function irATurnos(posta) {
 async function cargarPostas() {
   cargando.value = true
   try {
-    const res = await postaApi.listar()
-    postas.value = res.data
+    const params = { page: currentPage.value, size: pageSize }
+    const q = search.value.trim()
+    if (q) params.buscar = q
+    if (filterEstado.value) params.activa = filterEstado.value === 'true'
+    const res = await postaApi.listar(params)
+    postas.value = res.data.items || []
+    totalItems.value = res.data.total || 0
+    totalPages.value = Math.max(1, Math.ceil(totalItems.value / pageSize))
   } catch (e) {
     console.error(e)
     toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las postas', life: 3000 })
   } finally {
     cargando.value = false
   }
+}
+
+function cambiarPagina(delta) {
+  const siguiente = currentPage.value + delta
+  if (siguiente < 1 || siguiente > totalPages.value) return
+  currentPage.value = siguiente
+  cargarPostas()
 }
 
 function abrirModal(posta = null) {
@@ -345,6 +350,11 @@ async function toggleEstado(posta) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado', life: 3000 })
   }
 }
+
+watch([search, filterEstado], () => {
+  currentPage.value = 1
+  cargarPostas()
+})
 
 onMounted(cargarPostas)
 </script>
@@ -464,4 +474,6 @@ onMounted(cargarPostas)
   .dialog-footer > * { flex: 1 1 140px; }
   .actions { justify-content: flex-start; }
 }
+
+.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 </style>

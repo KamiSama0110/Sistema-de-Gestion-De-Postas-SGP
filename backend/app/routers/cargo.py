@@ -3,19 +3,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.routers.auth import get_current_user
 from app.models.usuario import Usuario
-from app.schemas.cargo import CargoCreate, CargoUpdate, CargoCambiarEstado, CargoResponse
+from app.schemas.cargo import CargoCreate, CargoUpdate, CargoCambiarEstado, CargoResponse, PaginatedCargo
 from app.services import cargo_service
 
 router = APIRouter(prefix="/cargos", tags=["Cargos"])
 
 
-@router.get("", response_model=list[CargoResponse])
+@router.get("", response_model=PaginatedCargo)
 async def listar_cargos(
     solo_activos: bool = Query(True),
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    return await cargo_service.listar_cargos(db, solo_activos)
+    return await cargo_service.listar_cargos(db, solo_activos, page, size)
 
 
 @router.post("", response_model=CargoResponse, status_code=201)

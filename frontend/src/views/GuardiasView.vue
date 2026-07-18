@@ -864,7 +864,7 @@ async function cargarCatalogos() {
     postaApi.listar({}),
   ])
   asps.value = aspRes.data.items || []
-  postas.value = postasRes.data || []
+  postas.value = postasRes.data.items || []
   await cargarTurnos()
 }
 
@@ -1198,8 +1198,8 @@ function cerrarModalNovedad() {
 }
 
 async function cargarNovedades() {
-  const res = await guardiaApi.listarNovedades(guardiaSeleccionada.value.id)
-  novedades.value = res.data || []
+  const res = await guardiaApi.listarNovedades(guardiaSeleccionada.value.id, { page: 1, size: 100 })
+  novedades.value = res.data.items || []
 }
 
 async function registrarNovedad() {

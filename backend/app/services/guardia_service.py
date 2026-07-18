@@ -258,6 +258,23 @@ async def registrar_novedad(
     return novedad
 
 
+async def listar_novedades(
+    db: AsyncSession, guardia_id: int, page: int = 1, size: int = 10
+) -> dict:
+    query = select(Novedad).where(Novedad.guardia_id == guardia_id)
+
+    total_q = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(total_q)).scalar() or 0
+
+    result = await db.execute(
+        query.order_by(Novedad.fecha_hora.desc())
+        .offset((page - 1) * size)
+        .limit(size)
+    )
+    novedades = result.scalars().all()
+    return {"total": total, "page": page, "size": size, "items": novedades}
+
+
 async def finalizar_guardia(
     db: AsyncSession, guardia_id: int, datos: FinalizarGuardiaRequest
 ) -> Guardia:

@@ -76,3 +76,10 @@ class PaginatedGuardia(BaseModel):
     page: int
     size: int
     items: list[GuardiaListResponse]
+
+
+class PaginatedNovedad(BaseModel):
+    total: int
+    page: int
+    size: int
+    items: list[NovedadResponse]

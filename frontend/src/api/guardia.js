@@ -22,7 +22,7 @@ export const guardiaApi = {
   registrarNovedad(id, datos) {
     return api.post(`/guardias/${id}/novedades`, datos)
   },
-  listarNovedades(id) {
-    return api.get(`/guardias/${id}/novedades`)
+  listarNovedades(id, params = {}) {
+    return api.get(`/guardias/${id}/novedades`, { params })
   },
 }

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.models.cargo import Cargo
 from app.schemas.cargo import CargoCreate, CargoUpdate
 from fastapi import HTTPException, status
@@ -17,13 +17,22 @@ async def get_cargo_by_id(db: AsyncSession, cargo_id: int) -> Cargo:
 
 
 async def listar_cargos(
-    db: AsyncSession, solo_activos: bool = True
-) -> list[Cargo]:
+    db: AsyncSession, solo_activos: bool = True, page: int = 1, size: int = 10
+) -> dict:
     query = select(Cargo)
     if solo_activos:
         query = query.where(Cargo.activo)
-    result = await db.execute(query)
-    return result.scalars().all()
+
+    total_q = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(total_q)).scalar() or 0
+
+    result = await db.execute(
+        query.order_by(Cargo.nombre)
+        .offset((page - 1) * size)
+        .limit(size)
+    )
+    cargos = result.scalars().all()
+    return {"total": total, "page": page, "size": size, "items": cargos}
 
 
 async def crear_cargo(db: AsyncSession, datos: CargoCreate) -> Cargo:

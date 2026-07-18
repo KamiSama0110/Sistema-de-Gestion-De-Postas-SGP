@@ -32,8 +32,10 @@ async def listar_postas(
     activa: Optional[bool] = None,
     tipo: Optional[str] = None,
     buscar: Optional[str] = None,
-) -> list[Posta]:
-    query = select(Posta).options(selectinload(Posta.turnos))
+    page: int = 1,
+    size: int = 10,
+) -> dict:
+    query = select(Posta)
     if activa is not None:
         query = query.where(Posta.activa == activa)
     if tipo:
@@ -41,8 +43,38 @@ async def listar_postas(
     if buscar:
         escaped = _escape_like(buscar)
         query = query.where(Posta.nombre.ilike(f"%{escaped}%"))
-    result = await db.execute(query)
-    return result.scalars().all()
+
+    total_q = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(total_q)).scalar() or 0
+
+    result = await db.execute(
+        query.order_by(Posta.nombre)
+        .offset((page - 1) * size)
+        .limit(size)
+    )
+    postas = result.scalars().all()
+
+    turno_counts = {}
+    if postas:
+        posta_ids = [p.id for p in postas]
+        counts_result = await db.execute(
+            select(TurnoPosta.posta_id, func.count(TurnoPosta.id))
+            .where(TurnoPosta.posta_id.in_(posta_ids))
+            .group_by(TurnoPosta.posta_id)
+        )
+        turno_counts = dict(counts_result.all())
+
+    items = []
+    for p in postas:
+        items.append({
+            "id": p.id,
+            "nombre": p.nombre,
+            "tipo": p.tipo,
+            "activa": p.activa,
+            "total_turnos": turno_counts.get(p.id, 0),
+        })
+
+    return {"total": total, "page": page, "size": size, "items": items}
 
 
 async def crear_posta(db: AsyncSession, datos: PostaCreate) -> Posta:

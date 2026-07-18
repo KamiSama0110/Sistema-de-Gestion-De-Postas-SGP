@@ -625,7 +625,7 @@ async function cargarCatalogos() {
     postaApi.listar({}),
     aspApi.listar({ page: 1, size: 100 }),
   ])
-  postas.value = postasRes.data || []
+  postas.value = postasRes.data.items || []
   asps.value = aspRes.data.items || []
 }
 

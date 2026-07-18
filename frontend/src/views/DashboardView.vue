@@ -300,15 +300,21 @@ async function cargarMapas(guardiasHoy) {
 
   aspById.value = aspIndex
 
-  const postasRespuesta = await postaApi.listar({ activa: true })
-  const postas = postasRespuesta.data || []
+  const [postasRespuesta, turnosRespuesta] = await Promise.all([
+    postaApi.listar({ activa: true }),
+    postaApi.listarTurnos({ page: 1, size: 200 }),
+  ])
+  const postasActivas = postasRespuesta.data.items || []
   const turnoIndex = {}
 
-  postas.forEach((posta) => {
-    const turnos = posta.turnos || []
-    turnos.forEach((turno) => {
-      turnoIndex[turno.id] = { ...turno, posta_nombre: posta.nombre }
-    })
+  postasActivas.forEach((posta) => {
+    const postaNombre = posta.nombre
+    const turnosList = turnosRespuesta.data.items || []
+    turnosList
+      .filter((t) => t.posta_id === posta.id)
+      .forEach((turno) => {
+        turnoIndex[turno.id] = { ...turno, posta_nombre: postaNombre }
+      })
   })
 
   turnoById.value = turnoIndex
@@ -325,7 +331,7 @@ onMounted(async () => {
 
     guardias.value = guardiasRespuesta.data?.items || []
     aspsActivos.value = aspsRespuesta.data?.total || 0
-    postasActivas.value = Array.isArray(postasRespuesta.data) ? postasRespuesta.data.length : 0
+    postasActivas.value = postasRespuesta.data?.total || 0
 
     try {
       await cargarMapas(guardias.value)

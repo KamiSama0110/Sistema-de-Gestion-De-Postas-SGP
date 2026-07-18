@@ -78,6 +78,11 @@
               </tr>
             </tbody>
           </table>
+          <div v-if="totalPages > 1" class="pagination-bar">
+            <Button icon="pi pi-chevron-left" severity="secondary" text :disabled="currentPage === 1" @click="cambiarPagina(-1)" />
+            <span>Página {{ currentPage }} de {{ totalPages }}</span>
+            <Button icon="pi pi-chevron-right" severity="secondary" text :disabled="currentPage >= totalPages" @click="cambiarPagina(1)" />
+          </div>
         </div>
       </template>
     </Card>
@@ -130,6 +135,10 @@ const editingCargo = ref(null)
 const isSaving = ref(false)
 const formError = ref('')
 const fieldErrors = ref({})
+const currentPage = ref(1)
+const totalPages = ref(1)
+const totalItems = ref(0)
+const pageSize = 10
 
 const form = reactive({
   nombre: '',
@@ -178,13 +187,22 @@ function validateForm() {
 async function fetchCargos() {
   isLoading.value = true
   try {
-    const response = await cargoApi.listar(false)
-    cargos.value = response.data || []
+    const response = await cargoApi.listar(false, currentPage.value, pageSize)
+    cargos.value = response.data.items || []
+    totalItems.value = response.data.total || 0
+    totalPages.value = Math.max(1, Math.ceil(totalItems.value / pageSize))
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los cargos'), life: 3000 })
   } finally {
     isLoading.value = false
   }
+}
+
+function cambiarPagina(delta) {
+  const siguiente = currentPage.value + delta
+  if (siguiente < 1 || siguiente > totalPages.value) return
+  currentPage.value = siguiente
+  fetchCargos()
 }
 
 async function handleSubmit() {
@@ -439,4 +457,6 @@ onMounted(fetchCargos)
     justify-content: flex-start;
   }
 }
+
+.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 </style>

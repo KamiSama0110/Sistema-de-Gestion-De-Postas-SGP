@@ -5,6 +5,9 @@ from fastapi import HTTPException, status
 from app.models.usuario import Usuario
 from app.core.security import verify_password, get_password_hash
 from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def get_usuario_by_username(db: AsyncSession, username: str) -> Usuario | None:
@@ -24,8 +27,12 @@ async def autenticar_usuario(db: AsyncSession, username: str, password: str) -> 
 
 
 async def actualizar_ultimo_acceso(db: AsyncSession, usuario: Usuario) -> None:
-    usuario.ultimo_acceso = datetime.now(timezone.utc).replace(tzinfo=None)
-    await db.commit()
+    try:
+        usuario.ultimo_acceso = datetime.now(timezone.utc).replace(tzinfo=None)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        logger.warning("No se pudo actualizar ultimo_acceso del usuario %s", usuario.username)
 
 
 async def cambiar_password(
@@ -41,13 +48,15 @@ async def cambiar_password(
 
 
 async def crear_admin_inicial(db: AsyncSession) -> None:
-    # Crea el usuario administrador, para las veces que reseteo las base de datos
-    usuario = await get_usuario_by_username(db, settings.ADMIN_USERNAME)
-    if not usuario:
-        admin = Usuario(
-            username=settings.ADMIN_USERNAME,
-            hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
-            activo=True,
-        )
-        db.add(admin)
-        await db.commit()
+    try:
+        usuario = await get_usuario_by_username(db, settings.ADMIN_USERNAME)
+        if not usuario:
+            admin = Usuario(
+                username=settings.ADMIN_USERNAME,
+                hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
+                activo=True,
+            )
+            db.add(admin)
+            await db.commit()
+    except Exception as e:
+        logger.error("Error creando admin inicial: %s", e)

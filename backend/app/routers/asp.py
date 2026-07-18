@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, UploadFile, File
+from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
@@ -84,8 +84,19 @@ async def subir_foto(
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    # TODO de momento camino listo para guardarlo en local y en servidor externo, pero este endpoint ni esta completado ni se usa
     asp = await asp_service.get_asp_by_id(db, asp_id)
-    asp.foto_url = foto.filename
+
+    allowed_types = {"image/jpeg", "image/png", "image/webp"}
+    if foto.content_type not in allowed_types:
+        raise HTTPException(400, detail="Formato no permitido. Use JPG, PNG o WebP")
+
+    contents = await foto.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(400, detail="La imagen no debe superar 5MB")
+
+    import re
+    safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", foto.filename or "foto")
+
+    asp.foto_url = safe_name
     await db.commit()
-    return {"mensaje": "Foto actualizada", "foto_url": foto.filename}
+    return {"mensaje": "Foto actualizada", "foto_url": safe_name}

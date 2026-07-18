@@ -9,6 +9,12 @@ from app.schemas.asp import ASPCreate, ASPUpdate, ASPCambiarEstado
 from app.utils.sql import _escape_like
 from fastapi import HTTPException, status
 
+TRANSICIONES_ASP = {
+    "activo": {"baja_temporal", "baja_definitiva"},
+    "baja_temporal": {"activo"},
+    "baja_definitiva": set(),
+}
+
 
 def validar_relacion_fechas_asp(fecha_nacimiento, fecha_ingreso) -> None:
     if fecha_nacimiento and fecha_ingreso:
@@ -119,6 +125,14 @@ async def cambiar_estado_asp(
     db: AsyncSession, asp_id: int, datos: ASPCambiarEstado
 ) -> ASP:
     asp = await get_asp_by_id(db, asp_id)
+
+    transiciones_permitidas = TRANSICIONES_ASP.get(asp.estado.value, set())
+    if datos.estado.value not in transiciones_permitidas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede transicionar de '{asp.estado.value}' a '{datos.estado.value}'",
+        )
+
     asp.estado = datos.estado
     if datos.observacion:
         asp.observaciones = (

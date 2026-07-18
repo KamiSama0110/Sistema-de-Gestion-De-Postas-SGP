@@ -1,12 +1,24 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import uuid
 import bcrypt
-from jose import JWTError, jwt
+import jwt
 from app.core.config import settings
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 
 bearer_scheme = HTTPBearer()
+
+token_blacklist: set[str] = set()
+
+
+def revoke_token(jti: str) -> None:
+    token_blacklist.add(jti)
+
+
+def is_token_revoked(jti: str) -> bool:
+    return jti in token_blacklist
+
 
 def get_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> str:
     return credentials.credentials
@@ -32,7 +44,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.now(timezone.utc) + timedelta(
             hours=settings.ACCESS_TOKEN_EXPIRE_HOURS
         )
-    to_encode.update({"exp": expire})
+    jti = str(uuid.uuid4())
+    to_encode.update({"exp": expire, "jti": jti})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -42,5 +55,7 @@ def decode_access_token(token: str) -> Optional[dict]:
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
-    except JWTError:
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
         return None

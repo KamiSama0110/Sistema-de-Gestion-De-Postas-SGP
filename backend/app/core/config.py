@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 from urllib.parse import quote_plus
 
 
@@ -24,12 +25,12 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{user}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # Seguridad
-    SECRET_KEY: str
+    SECRET_KEY: str = Field(..., min_length=32)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_HOURS: int = 8
 
     ADMIN_USERNAME: str
-    ADMIN_PASSWORD: str
+    ADMIN_PASSWORD: str = Field(..., min_length=8)
 
     # CORS (lista separada por comas)
     CORS_ORIGINS: str = "http://localhost:5173"

@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import datetime, time
 from sqlalchemy import String, Boolean, Text, Time, SmallInteger, ForeignKey, CheckConstraint, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -16,7 +16,7 @@ class Posta(Base):
     tipo: Mapped[TipoPostaEnum] = mapped_column(nullable=False)
     activa: Mapped[bool] = mapped_column(Boolean, default=True)
     observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
-    creado_en: Mapped[str] = mapped_column(DateTime, server_default=func.now())
+    creado_en: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Relaciones
     turnos: Mapped[list["TurnoPosta"]] = relationship(

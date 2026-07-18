@@ -316,7 +316,8 @@ async def actualizar_guardia(
             )
 
     asp_nuevo = update_data.get("asp_id", guardia.asp_id)
-    if asp_nuevo != guardia.asp_id:
+    asp_original = guardia.asp_id
+    if asp_nuevo != asp_original:
         turno = await get_turno_by_id(db, guardia.turno_posta_id)
         await validar_conflictos_guardia(
             db,
@@ -331,7 +332,7 @@ async def actualizar_guardia(
     for campo, valor in update_data.items():
         setattr(guardia, campo, valor)
 
-    if asp_nuevo != guardia.asp_id or motivo_enviado:
+    if asp_nuevo != asp_original or motivo_enviado:
         guardia.estado = EstadoGuardiaEnum.ausente
 
     try:

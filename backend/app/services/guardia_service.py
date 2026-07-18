@@ -320,7 +320,7 @@ async def actualizar_guardia(
     for campo, valor in update_data.items():
         setattr(guardia, campo, valor)
 
-    if asp_nuevo != asp_original or motivo_enviado:
+    if motivo_enviado:
         guardia.estado = EstadoGuardiaEnum.ausente
 
     try:

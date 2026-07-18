@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from sqlalchemy import String, Text, Date, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import String, Text, Date, DateTime, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -11,11 +11,12 @@ class Guardia(Base):
 
     __table_args__ = (
         UniqueConstraint("asp_id", "turno_posta_id", "fecha", name="uq_guardia_asp_turno_fecha"),
+        Index("ix_guardia_fecha_estado", "fecha", "estado"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     asp_id: Mapped[int] = mapped_column(ForeignKey("asp.id"), nullable=False, index=True)
-    turno_posta_id: Mapped[int] = mapped_column(ForeignKey("turno_posta.id"), nullable=False)
+    turno_posta_id: Mapped[int] = mapped_column(ForeignKey("turno_posta.id"), nullable=False, index=True)
     fecha: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     hora_inicio_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     hora_fin_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -42,7 +43,7 @@ class Novedad(Base):
     __tablename__ = "novedad"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    guardia_id: Mapped[int] = mapped_column(ForeignKey("guardia.id"), nullable=False)
+    guardia_id: Mapped[int] = mapped_column(ForeignKey("guardia.id"), nullable=False, index=True)
     fecha_hora: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     tipo: Mapped[TipoNovedadEnum] = mapped_column(nullable=False)
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)

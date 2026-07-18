@@ -33,7 +33,7 @@ class TurnoPosta(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    posta_id: Mapped[int] = mapped_column(ForeignKey("posta.id"), nullable=False)
+    posta_id: Mapped[int] = mapped_column(ForeignKey("posta.id"), nullable=False, index=True)
     nombre: Mapped[str] = mapped_column(String(50), nullable=False)
     hora_inicio: Mapped[time] = mapped_column(Time, nullable=False)
     hora_fin: Mapped[time] = mapped_column(Time, nullable=False)

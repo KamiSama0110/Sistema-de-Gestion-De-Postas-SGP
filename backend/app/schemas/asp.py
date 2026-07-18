@@ -115,6 +115,7 @@ class ASPCreate(ASPBase):
 
 
 class ASPUpdate(BaseModel):
+    ci: Optional[str] = None
     nombre: Optional[str] = None
     apellidos: Optional[str] = None
     fecha_nacimiento: Optional[date] = None
@@ -125,6 +126,15 @@ class ASPUpdate(BaseModel):
     fecha_ingreso: Optional[date] = None
     cargo_id: Optional[int] = None
     observaciones: Optional[str] = None
+
+    @field_validator("ci")
+    @classmethod
+    def validar_ci(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not v.isdigit() or len(v) != 11:
+            raise ValueError("El CI debe tener exactamente 11 dígitos numéricos")
+        return v
 
     @field_validator("nombre", "apellidos", "direccion", "observaciones")
     @classmethod
@@ -166,6 +176,12 @@ class ASPUpdate(BaseModel):
                     "La fecha de ingreso debe ser al menos 18 anos despues del nacimiento"
                 )
         return v
+
+    @model_validator(mode="after")
+    def validar_ci_consistente_update(self):
+        if self.ci is not None and self.sexo is not None and self.fecha_nacimiento is not None:
+            _validar_ci_cubano(self.ci, self.fecha_nacimiento, self.sexo)
+        return self
 
 
 class ASPCambiarEstado(BaseModel):

@@ -4,11 +4,8 @@ from sqlalchemy.orm import selectinload
 from typing import Optional
 from app.models.posta import Posta, TurnoPosta
 from app.schemas.posta import PostaCreate, PostaUpdate, TurnoPostaCreate, TurnoPostaUpdate
+from app.utils.sql import _escape_like
 from fastapi import HTTPException, status
-
-
-def _escape_like(value: str) -> str:
-    return value.replace("%", "\\%").replace("_", "\\_")
 
 
 def calcular_cruza_medianoche(hora_inicio, hora_fin) -> bool:

@@ -12,6 +12,7 @@ from app.schemas.guardia import (
     GuardiaCreate, GuardiaUpdate, NovedadCreate,
     ConfirmarLlegadaRequest, FinalizarGuardiaRequest
 )
+from app.services.posta_service import get_turno_by_id
 from fastapi import HTTPException, status
 
 
@@ -39,19 +40,6 @@ def construir_intervalo_turno(fecha_turno: date, turno: TurnoPosta) -> tuple[dat
     else:
         fin = datetime.combine(fecha_turno, turno.hora_fin)
     return inicio, fin
-
-
-async def get_turno_by_id(db: AsyncSession, turno_posta_id: int) -> TurnoPosta:
-    result = await db.execute(
-        select(TurnoPosta).where(TurnoPosta.id == turno_posta_id)
-    )
-    turno = result.scalar_one_or_none()
-    if not turno:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Turno con id {turno_posta_id} no encontrado",
-        )
-    return turno
 
 
 async def validar_conflictos_guardia(

@@ -6,11 +6,8 @@ from typing import Optional
 from app.models.asp import ASP
 from app.models.enums import EstadoASPEnum
 from app.schemas.asp import ASPCreate, ASPUpdate, ASPCambiarEstado
+from app.utils.sql import _escape_like
 from fastapi import HTTPException, status
-
-
-def _escape_like(value: str) -> str:
-    return value.replace("%", "\\%").replace("_", "\\_")
 
 
 def validar_relacion_fechas_asp(fecha_nacimiento, fecha_ingreso) -> None:

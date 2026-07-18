@@ -121,6 +121,11 @@ async function handleLogin() {
       return
     }
 
+    if (err?.response?.status === 429) {
+      error.value = 'Demasiados intentos. Espere un momento e intente de nuevo.'
+      return
+    }
+
     error.value = normalizeApiError(err, 'Error al iniciar sesión. Intente nuevamente.')
   } finally {
     loading.value = false

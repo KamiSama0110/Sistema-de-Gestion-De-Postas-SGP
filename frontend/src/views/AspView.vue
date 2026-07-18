@@ -316,11 +316,11 @@
           </div>
           <div class="detail-card">
             <span class="detail-label">Fecha de nacimiento</span>
-            <span class="detail-value">{{ formatDate(aspDetail.fecha_nacimiento) || '—' }}</span>
+            <span class="detail-value">{{ formatFecha(aspDetail.fecha_nacimiento) || '—' }}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Fecha de ingreso</span>
-            <span class="detail-value">{{ formatDate(aspDetail.fecha_ingreso) || '—' }}</span>
+            <span class="detail-value">{{ formatFecha(aspDetail.fecha_ingreso) || '—' }}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Sexo</span>
@@ -399,6 +399,8 @@ import { useToast } from 'primevue/usetoast'
 import { aspApi } from '../api/asp'
 import { cargoApi } from '../api/cargo'
 import { normalizeApiError } from '../utils/error'
+import { formatFecha, parseDateOnly } from '../utils/formatters'
+import { TOAST_LIFE } from '../utils/constants'
 
 const toast = useToast()
 
@@ -503,24 +505,6 @@ function getEstadoSeverity(estado) {
   return severities[estado] || 'secondary'
 }
 
-function formatDate(value) {
-  if (!value) return null
-  if (typeof value === 'string') return value.split('T')[0]
-  const year = value.getFullYear()
-  const month = String(value.getMonth() + 1).padStart(2, '0')
-  const day = String(value.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function parseDateOnly(value) {
-  if (!value) return null
-  if (value instanceof Date) return value
-  if (typeof value !== 'string') return null
-  const [year, month, day] = value.split('T')[0].split('-').map(Number)
-  if (!year || !month || !day) return null
-  return new Date(year, month - 1, day, 12, 0, 0)
-}
-
 function formatFechaNacimientoCi(value) {
   if (!value) return ''
   const dateValue = value instanceof Date ? value : parseDateOnly(value)
@@ -594,7 +578,7 @@ async function openEditDialog(asp) {
     formData.cargo_id = item.cargo_id || null
     formData.observaciones = item.observaciones || ''
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar ASP'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar ASP'), life: TOAST_LIFE })
     editingASP.value = null
     return
   }
@@ -726,12 +710,12 @@ function buildPayload() {
     ci: formData.ci.trim(),
     nombre: formData.nombre.trim(),
     apellidos: formData.apellidos.trim(),
-    fecha_nacimiento: formatDate(formData.fecha_nacimiento),
+    fecha_nacimiento: formatFecha(formData.fecha_nacimiento),
     sexo: formData.sexo,
     nivel_escolaridad: formData.nivel_escolaridad,
     telefono: telefono || null,
     direccion: formData.direccion.trim() || null,
-    fecha_ingreso: formatDate(formData.fecha_ingreso),
+    fecha_ingreso: formatFecha(formData.fecha_ingreso),
     cargo_id: formData.cargo_id,
     observaciones: formData.observaciones.trim() || null,
   }
@@ -746,10 +730,10 @@ async function handleSubmit() {
 
     if (editingASP.value) {
       await aspApi.actualizar(editingASP.value.id, payload)
-      toast.add({ severity: 'success', summary: 'ASP actualizado', detail: 'El ASP se actualizo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'ASP actualizado', detail: 'El ASP se actualizo correctamente', life: TOAST_LIFE })
     } else {
       await aspApi.crear(payload)
-      toast.add({ severity: 'success', summary: 'ASP creado', detail: 'El ASP se creo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'ASP creado', detail: 'El ASP se creo correctamente', life: TOAST_LIFE })
     }
 
     closeFormDialog()
@@ -766,7 +750,7 @@ async function handleSubmit() {
       formErrors.value = mappedErrors
     } else {
       formMessage.value = message
-      toast.add({ severity: 'error', summary: 'Error', detail: message, life: 3000 })
+      toast.add({ severity: 'error', summary: 'Error', detail: message, life: TOAST_LIFE })
     }
   } finally {
     isSaving.value = false
@@ -785,7 +769,7 @@ async function saveState() {
       observacion: stateForm.observacion?.trim() || null,
     })
 
-    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del ASP se actualizo', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del ASP se actualizo', life: TOAST_LIFE })
     closeStateDialog()
     await fetchASPs()
   } catch (error) {
@@ -826,7 +810,7 @@ async function fetchASPs() {
     totalPages.value = Math.max(1, Math.ceil(total.value / response.data.size))
   } catch (error) {
     console.error(error)
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar el personal'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar el personal'), life: TOAST_LIFE })
   } finally {
     isLoading.value = false
   }
@@ -902,11 +886,6 @@ onMounted(async () => {
 
 .button-icon {
   margin-right: 0.5rem;
-}
-
-.panel-card {
-  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  box-shadow: 0 16px 50px rgba(15, 23, 42, 0.05);
 }
 
 .filters-row {
@@ -1014,16 +993,6 @@ onMounted(async () => {
   justify-content: center;
 }
 
-.pagination-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding-top: 1rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
 .empty-state {
   min-height: 16rem;
   display: flex;
@@ -1053,15 +1022,6 @@ onMounted(async () => {
   font-size: 0.875rem;
 }
 
-.spinner {
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 9999px;
-  border: 3px solid var(--brand-500);
-  border-top-color: transparent;
-  animation: spin 0.85s linear infinite;
-}
-
 .form-layout {
   display: flex;
   flex-direction: column;
@@ -1070,10 +1030,6 @@ onMounted(async () => {
 
 .compact-layout {
   gap: 1rem;
-}
-
-.form-message {
-  margin-bottom: 0.25rem;
 }
 
 .form-section {
@@ -1112,17 +1068,6 @@ onMounted(async () => {
 .field :deep(.p-select),
 .field :deep(.p-datepicker) {
   width: 100%;
-}
-
-.field-error {
-  color: #dc2626;
-  font-size: 0.75rem;
-}
-
-.invalid :deep(.p-inputtext),
-.invalid :deep(.p-select),
-.invalid :deep(.p-datepicker-input) {
-  border-color: #dc2626;
 }
 
 .span-2 {
@@ -1170,12 +1115,6 @@ onMounted(async () => {
   color: var(--text);
   font-weight: 600;
   word-break: break-word;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 960px) {

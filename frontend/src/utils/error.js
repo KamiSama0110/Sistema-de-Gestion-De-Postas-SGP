@@ -30,3 +30,13 @@ export function normalizeApiError(error, fallback = 'Ocurrio un error') {
 
   return fallback
 }
+
+export function extractFieldErrors(error) {
+  const errors = error?.response?.data?.errors
+  if (!errors) return {}
+  const fieldErrors = {}
+  for (const [key, value] of Object.entries(errors)) {
+    fieldErrors[key] = Array.isArray(value) ? value.join(', ') : value
+  }
+  return fieldErrors
+}

@@ -81,20 +81,34 @@ body {
   color: var(--text-muted);
   font-size: 13px;
 }
-.filtros,
-.filtros-bar,
+
+.spinner {
+  width: 1.8rem; height: 1.8rem; border-radius: 9999px;
+  border: 3px solid var(--brand-500); border-top-color: transparent;
+  animation: spin 0.85s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.pagination-bar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.75rem; padding-top: 1rem; color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.panel-card {
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow: 0 16px 50px rgba(15, 23, 42, 0.05);
+}
+
+.form-message { margin-bottom: 0.25rem; }
+.field-error { color: #dc2626; font-size: 0.75rem; }
+.invalid { border-color: #dc2626 !important; }
+
 .wizard-actions,
-.turno-actions,
-.novedad-actions,
-.card-header {
+.novedad-actions {
   display: flex;
   gap: 10px;
   align-items: center;
-}
-
-.filtros,
-.filtros-bar {
-  flex-wrap: wrap;
 }
 .form-grid {
   display: grid;
@@ -102,25 +116,10 @@ body {
   gap: 0 16px;
 }
 .summary-grid,
-.metrics-grid,
 .resume-grid,
 .info-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.paginacion {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.text-success { color: var(--success); }
-.text-warning { color: var(--warning); }
-.text-danger { color: var(--danger); }
-.text-info { color: var(--info); }
 
 .p-datatable .p-datatable-wrapper {
   overflow-x: auto;
@@ -157,7 +156,6 @@ body {
 
   .form-grid,
   .summary-grid,
-  .metrics-grid,
   .resume-grid,
   .info-grid {
     grid-template-columns: 1fr;

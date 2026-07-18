@@ -617,13 +617,15 @@ import { guardiaApi } from '../api/guardia'
 import { aspApi } from '../api/asp'
 import { postaApi } from '../api/posta'
 import { normalizeApiError } from '../utils/error'
+import { formatFecha, formatHora, formatFechaHora } from '../utils/formatters'
+import { PAGE_SIZE, TOAST_LIFE } from '../utils/constants'
 
 const guardias = ref([])
 const cargando = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
-const pageSize = 10
+const pageSize = PAGE_SIZE
 const modalVisible = ref(false)
 const modalFiltrosVisible = ref(false)
 const modalLlegadaVisible = ref(false)
@@ -802,30 +804,6 @@ function parseFecha(value) {
     }
   }
   return new Date(value)
-}
-
-function formatFecha(value) {
-  if (!value) return ''
-  if (typeof value === 'string') return value.split('T')[0]
-  const d = value instanceof Date ? value : new Date(value)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function formatHora(value) {
-  if (!value) return ''
-  const parts = String(value).split(':')
-  if (parts.length < 2) return value
-  return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`
-}
-
-function formatFechaHora(value) {
-  if (!value) return ''
-  if (typeof value === 'string') return value.replace('T', ' ').slice(0, 16)
-  const d = new Date(value)
-  return d.toISOString().replace('T', ' ').slice(0, 16)
 }
 
 function nombreAsp(id) {
@@ -1036,7 +1014,7 @@ async function guardar() {
         fecha: formatFecha(form.value.fecha),
       }
       await guardiaApi.actualizar(editando.value.id, payload)
-      toast.add({ severity: 'success', summary: 'Guardia actualizada', detail: 'La guardia se actualizo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Guardia actualizada', detail: 'La guardia se actualizo correctamente', life: TOAST_LIFE })
     } else {
       if (!form.value.asp_id || !form.value.turno_posta_id || !form.value.fecha) {
         error.value = 'Completa ASP, turno y fecha'
@@ -1047,7 +1025,7 @@ async function guardar() {
         fecha: formatFecha(form.value.fecha),
       }
       await guardiaApi.crear(payload)
-      toast.add({ severity: 'success', summary: 'Guardia creada', detail: 'La guardia se creo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Guardia creada', detail: 'La guardia se creo correctamente', life: TOAST_LIFE })
     }
     cerrarModal()
     await cargarGuardias()
@@ -1112,7 +1090,7 @@ async function guardarAusencia() {
     if (formAusencia.value.observaciones) payload.observaciones = formAusencia.value.observaciones
 
     await guardiaApi.actualizar(guardiaSeleccionada.value.id, payload)
-    toast.add({ severity: 'success', summary: 'Ausencia registrada', detail: 'La ausencia se guardo correctamente', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Ausencia registrada', detail: 'La ausencia se guardo correctamente', life: TOAST_LIFE })
     cerrarModalAusencia()
     await cargarGuardias()
   } catch (e) {
@@ -1143,7 +1121,7 @@ async function confirmarLlegada() {
   guardandoLlegada.value = true
   try {
     await guardiaApi.confirmarLlegada(guardiaSeleccionada.value.id, formLlegada.value.hora_llegada)
-    toast.add({ severity: 'success', summary: 'Llegada confirmada', detail: 'La llegada fue registrada', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Llegada confirmada', detail: 'La llegada fue registrada', life: TOAST_LIFE })
     cerrarModalLlegada()
     await cargarGuardias()
   } catch (e) {
@@ -1174,7 +1152,7 @@ async function finalizar() {
   guardandoFinalizar.value = true
   try {
     await guardiaApi.finalizar(guardiaSeleccionada.value.id, formFinalizar.value)
-    toast.add({ severity: 'success', summary: 'Guardia finalizada', detail: 'La guardia fue finalizada', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Guardia finalizada', detail: 'La guardia fue finalizada', life: TOAST_LIFE })
     cerrarModalFinalizar()
     await cargarGuardias()
   } catch (e) {
@@ -1211,7 +1189,7 @@ async function registrarNovedad() {
   guardandoNovedad.value = true
   try {
     await guardiaApi.registrarNovedad(guardiaSeleccionada.value.id, formNovedad.value)
-    toast.add({ severity: 'success', summary: 'Novedad registrada', detail: 'La novedad fue guardada', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Novedad registrada', detail: 'La novedad fue guardada', life: TOAST_LIFE })
     await cargarNovedades()
     await cargarGuardias()
     formNovedad.value = { tipo: 'incidente', severidad: 'baja', descripcion: '' }
@@ -1243,8 +1221,6 @@ onMounted(async () => {
 .header-actions { display: flex; gap: 0.75rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
 .button-icon { margin-right: 0.5rem; }
 
-.panel-card { border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); box-shadow: 0 16px 50px rgba(15, 23, 42, 0.05); }
-
 .filters-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .filters-summary { display: flex; flex-direction: column; gap: 0.4rem; }
 .filters-summary-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
@@ -1255,7 +1231,6 @@ onMounted(async () => {
 .filter-state-controls :deep(.p-select) { min-width: 190px; }
 
 .table-shell { overflow-x: auto; }
-.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 .guardias-table { width: 100%; border-collapse: collapse; }
 .guardias-table thead th { padding: 0.9rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
 .guardias-table tbody td { padding: 0.95rem 1rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }
@@ -1271,8 +1246,6 @@ onMounted(async () => {
 .empty-icon { font-size: 2rem; }
 .empty-title { margin: 0; font-weight: 600; color: var(--text); }
 .empty-subtitle { margin: 0.25rem 0 0; font-size: 0.875rem; }
-.spinner { width: 1.8rem; height: 1.8rem; border-radius: 9999px; border: 3px solid var(--brand-500); border-top-color: transparent; animation: spin 0.85s linear infinite; }
-
 .wizard-layout { display: flex; flex-direction: column; gap: 1.5rem; }
 .wizard { display: flex; flex-direction: column; gap: 1.25rem; }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
@@ -1335,8 +1308,6 @@ onMounted(async () => {
 .info-value { display: block; font-weight: 600; color: var(--text); }
 .info-section { margin-top: 14px; }
 .info-section h4 { margin: 0 0 8px; }
-
-@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 960px) {
   .guardias-header { align-items: flex-start; }

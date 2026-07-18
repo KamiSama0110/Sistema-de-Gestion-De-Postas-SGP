@@ -125,6 +125,7 @@ import Textarea from 'primevue/textarea'
 import { useToast } from 'primevue/usetoast'
 import { cargoApi } from '../api/cargo'
 import { normalizeApiError } from '../utils/error'
+import { TOAST_LIFE, PAGE_SIZE } from '../utils/constants'
 
 const toast = useToast()
 
@@ -138,7 +139,7 @@ const fieldErrors = ref({})
 const currentPage = ref(1)
 const totalPages = ref(1)
 const totalItems = ref(0)
-const pageSize = 10
+const pageSize = PAGE_SIZE
 
 const form = reactive({
   nombre: '',
@@ -192,7 +193,7 @@ async function fetchCargos() {
     totalItems.value = response.data.total || 0
     totalPages.value = Math.max(1, Math.ceil(totalItems.value / pageSize))
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los cargos'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los cargos'), life: TOAST_LIFE })
   } finally {
     isLoading.value = false
   }
@@ -219,10 +220,10 @@ async function handleSubmit() {
 
     if (editingCargo.value) {
       await cargoApi.actualizar(editingCargo.value.id, payload)
-      toast.add({ severity: 'success', summary: 'Cargo actualizado', detail: 'El cargo se actualizo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Cargo actualizado', detail: 'El cargo se actualizo correctamente', life: TOAST_LIFE })
     } else {
       await cargoApi.crear(payload)
-      toast.add({ severity: 'success', summary: 'Cargo creado', detail: 'El cargo se creo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Cargo creado', detail: 'El cargo se creo correctamente', life: TOAST_LIFE })
     }
 
     closeFormDialog()
@@ -246,10 +247,10 @@ async function handleSubmit() {
 async function toggleState(cargo) {
   try {
     await cargoApi.cambiarEstado(cargo.id, !cargo.activo)
-    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del cargo se actualizo', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del cargo se actualizo', life: TOAST_LIFE })
     await fetchCargos()
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cambiar estado'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cambiar estado'), life: TOAST_LIFE })
   }
 }
 
@@ -301,11 +302,6 @@ onMounted(fetchCargos)
 
 .button-icon {
   margin-right: 0.5rem;
-}
-
-.panel-card {
-  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  box-shadow: 0 16px 50px rgba(15, 23, 42, 0.05);
 }
 
 .table-shell {
@@ -384,23 +380,10 @@ onMounted(fetchCargos)
   font-size: 0.875rem;
 }
 
-.spinner {
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 9999px;
-  border: 3px solid var(--brand-500);
-  border-top-color: transparent;
-  animation: spin 0.85s linear infinite;
-}
-
 .form-layout {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.form-message {
-  margin-bottom: 0.25rem;
 }
 
 .field {
@@ -415,22 +398,11 @@ onMounted(fetchCargos)
   color: var(--text-muted);
 }
 
-.field-error {
-  color: #dc2626;
-  font-size: 0.75rem;
-}
-
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
   padding-top: 0.25rem;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 960px) {
@@ -458,5 +430,4 @@ onMounted(fetchCargos)
   }
 }
 
-.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 </style>

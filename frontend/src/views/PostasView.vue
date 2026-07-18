@@ -191,6 +191,7 @@ import Textarea from 'primevue/textarea'
 import { useToast } from 'primevue/usetoast'
 import { postaApi } from '../api/posta'
 import { normalizeApiError } from '../utils/error'
+import { TOAST_LIFE, PAGE_SIZE } from '../utils/constants'
 
 const router = useRouter()
 const toast = useToast()
@@ -207,7 +208,7 @@ const filterEstado = ref('')
 const currentPage = ref(1)
 const totalPages = ref(1)
 const totalItems = ref(0)
-const pageSize = 10
+const pageSize = PAGE_SIZE
 
 const estadoOptions = [
   { label: 'Activas', value: 'true' },
@@ -258,7 +259,7 @@ async function cargarPostas() {
     totalPages.value = Math.max(1, Math.ceil(totalItems.value / pageSize))
   } catch (e) {
     console.error(e)
-    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las postas', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las postas', life: TOAST_LIFE })
   } finally {
     cargando.value = false
   }
@@ -316,10 +317,10 @@ async function guardar() {
 
     if (editando.value) {
       await postaApi.actualizar(editando.value.id, payload)
-      toast.add({ severity: 'success', summary: 'Posta actualizada', detail: 'La posta se actualizo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Posta actualizada', detail: 'La posta se actualizo correctamente', life: TOAST_LIFE })
     } else {
       await postaApi.crear(payload)
-      toast.add({ severity: 'success', summary: 'Posta creada', detail: 'La posta se creo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Posta creada', detail: 'La posta se creo correctamente', life: TOAST_LIFE })
     }
 
     cerrarModal()
@@ -343,11 +344,11 @@ async function guardar() {
 async function toggleEstado(posta) {
   try {
     await postaApi.cambiarEstado(posta.id, !posta.activa)
-    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado de la posta se actualizo', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado de la posta se actualizo', life: TOAST_LIFE })
     await cargarPostas()
   } catch (e) {
     console.error(e)
-    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado', life: TOAST_LIFE })
   }
 }
 
@@ -380,7 +381,6 @@ onMounted(cargarPostas)
 .page-title { margin: 0; font-size: 1.6rem; line-height: 1.2; font-weight: 700; color: var(--text); }
 .page-subtitle { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--text-muted); }
 .button-icon { margin-right: 0.5rem; }
-.panel-card { border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); box-shadow: 0 16px 50px rgba(15, 23, 42, 0.05); }
 .filters-row { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
 .filter-group { display: flex; flex-direction: column; gap: 0.35rem; }
 .filter-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
@@ -407,9 +407,7 @@ onMounted(cargarPostas)
 .empty-copy { text-align: center; }
 .empty-title { margin: 0; font-weight: 600; color: var(--text); }
 .empty-subtitle { margin: 0.25rem 0 0; font-size: 0.875rem; }
-.spinner { width: 1.8rem; height: 1.8rem; border-radius: 9999px; border: 3px solid var(--brand-500); border-top-color: transparent; animation: spin 0.85s linear infinite; }
 .form-layout { display: flex; flex-direction: column; gap: 1rem; }
-.form-message { margin-bottom: 0.25rem; }
 .form-section { display: flex; flex-direction: column; gap: 0.85rem; }
 .section-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); }
 .section-head p { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
@@ -421,8 +419,6 @@ onMounted(cargarPostas)
 .field :deep(.p-select) {
   min-height: 2.5rem;
 }
-.field-error { color: #dc2626; font-size: 0.75rem; }
-.invalid :deep(.p-inputtext), .invalid :deep(.p-select), .invalid :deep(.p-textarea) { border-color: #dc2626; }
 .dialog-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 0.25rem; }
 
 .postas-page :deep(.p-inputtext),
@@ -458,10 +454,6 @@ onMounted(cargarPostas)
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 @media (max-width: 960px) {
   .postas-header { align-items: flex-start; }
   .form-grid { grid-template-columns: 1fr; }
@@ -475,5 +467,4 @@ onMounted(cargarPostas)
   .actions { justify-content: flex-start; }
 }
 
-.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 </style>

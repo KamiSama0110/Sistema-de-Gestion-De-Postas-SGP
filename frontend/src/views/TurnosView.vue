@@ -347,6 +347,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { postaApi } from '../api/posta'
 import { normalizeApiError } from '../utils/error'
+import { TOAST_LIFE, PAGE_SIZE } from '../utils/constants'
 
 const toast = useToast()
 const route = useRoute()
@@ -357,7 +358,7 @@ const isLoading = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
-const pageSize = 10
+const pageSize = PAGE_SIZE
 const isFormOpen = ref(false)
 const isFilterDialogOpen = ref(false)
 const editingTurno = ref(null)
@@ -447,7 +448,7 @@ async function loadPostasInto(target) {
       wizardPostas.value = items
     }
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar las postas'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar las postas'), life: TOAST_LIFE })
   }
 }
 
@@ -592,7 +593,7 @@ async function fetchTurnos() {
     total.value = response.data.total || 0
     totalPages.value = Math.max(1, Math.ceil(total.value / response.data.size))
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los turnos'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los turnos'), life: TOAST_LIFE })
   } finally {
     isLoading.value = false
   }
@@ -610,7 +611,7 @@ async function fetchPostas() {
     const response = await postaApi.listar({})
     postas.value = response.data.items || []
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los turnos'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los turnos'), life: TOAST_LIFE })
   }
 }
 
@@ -641,10 +642,10 @@ async function saveTurno() {
     const payload = buildPayload()
     if (editingTurno.value) {
       await postaApi.actualizarTurno(editingTurno.value.id, payload)
-      toast.add({ severity: 'success', summary: 'Turno actualizado', detail: 'El turno se actualizo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Turno actualizado', detail: 'El turno se actualizo correctamente', life: TOAST_LIFE })
     } else {
       await postaApi.agregarTurno(form.posta.value, payload)
-      toast.add({ severity: 'success', summary: 'Turno creado', detail: 'El turno se creo correctamente', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Turno creado', detail: 'El turno se creo correctamente', life: TOAST_LIFE })
     }
     closeFormDialog()
     await Promise.all([fetchPostas(), fetchTurnos()])
@@ -667,10 +668,10 @@ async function saveTurno() {
 async function toggleEstado(turno) {
   try {
     await postaApi.cambiarEstadoTurno(turno.id, !turno.activo)
-    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del turno se actualizo', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del turno se actualizo', life: TOAST_LIFE })
     await Promise.all([fetchPostas(), fetchTurnos()])
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cambiar estado'), life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cambiar estado'), life: TOAST_LIFE })
   }
 }
 
@@ -705,7 +706,6 @@ watch(
 .page-subtitle { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--text-muted); }
 .header-actions { display: flex; gap: 0.75rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
 .button-icon { margin-right: 0.5rem; }
-.panel-card { border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); box-shadow: 0 16px 50px rgba(15, 23, 42, 0.05); }
 .filters-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .filters-summary { display: flex; flex-direction: column; gap: 0.4rem; }
 .filters-summary-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
@@ -751,10 +751,7 @@ watch(
 .empty-icon { font-size: 2rem; }
 .empty-title { margin: 0; font-weight: 600; color: var(--text); }
 .empty-subtitle { margin: 0.25rem 0 0; font-size: 0.875rem; }
-.spinner { width: 1.8rem; height: 1.8rem; border-radius: 9999px; border: 3px solid var(--brand-500); border-top-color: transparent; animation: spin 0.85s linear infinite; }
 .form-section { display: flex; flex-direction: column; gap: 0.85rem; }
-.field-error { font-size: 0.75rem; color: #dc2626; }
-.invalid :deep(.p-inputtext), .invalid :deep(.p-select), .invalid :deep(.p-datepicker-input) { border-color: #dc2626; }
 .checkbox-row { display: flex; align-items: center; gap: 0.55rem; }
 .dialog-footer { display: flex; justify-content: space-between; gap: 0.75rem; padding-top: 0.25rem; align-items: center; }
 .dialog-actions { display: flex; gap: 0.75rem; align-items: center; }
@@ -764,12 +761,10 @@ watch(
 .cell-muted { color: var(--text-muted); }
 .mono { font-variant-numeric: tabular-nums; }
 .table-shell { overflow-x: auto; }
-.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 1rem; color: var(--text-muted); font-size: 0.875rem; }
 .turnos-table { width: 100%; border-collapse: collapse; }
 .turnos-table thead th { padding: 0.9rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
 .turnos-table tbody td { padding: 0.95rem 1rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }
 .turnos-table tbody tr:hover { background: color-mix(in srgb, var(--surface) 86%, transparent); }
-@keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 960px) {
   .turnos-header { align-items: flex-start; }
   .header-actions { margin-left: 0; width: 100%; }

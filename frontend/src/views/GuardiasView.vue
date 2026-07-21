@@ -858,17 +858,17 @@ async function cargarCatalogos() {
 async function cargarTurnos() {
   const items = []
   const index = {}
-  await Promise.all(
-    postas.value.map(async posta => {
-      const res = await postaApi.obtener(posta.id)
-      const turnosPosta = res.data.turnos || []
-      turnosPosta.forEach(turno => {
+  const res = await postaApi.listarTurnos({ page: 1, size: 100 })
+  const turnosList = res.data.items || []
+  postas.value.forEach(posta => {
+    turnosList
+      .filter(t => t.posta_id === posta.id)
+      .forEach(turno => {
         const item = { ...turno, posta_id: posta.id, posta_nombre: posta.nombre }
         items.push(item)
         index[turno.id] = item
       })
-    })
-  )
+  })
   turnos.value = items
   turnosById.value = index
 }

@@ -283,26 +283,16 @@ function getEstadoSeverity(estado) {
   return severities[estado] || 'secondary'
 }
 
-async function cargarMapas(guardiasHoy) {
-  const aspIds = [...new Set((guardiasHoy || []).map((guardia) => guardia.asp_id))]
+async function cargarMapas() {
+  const aspRes = await aspApi.listar({ page: 1, size: 100 })
   const aspIndex = {}
-
-  await Promise.all(
-    aspIds.map(async (id) => {
-      try {
-        const respuesta = await aspApi.obtener(id)
-        aspIndex[id] = respuesta.data
-      } catch (error) {
-        console.error(error)
-      }
-    })
-  )
+  ;(aspRes.data.items || []).forEach(a => { aspIndex[a.id] = a })
 
   aspById.value = aspIndex
 
   const [postasRespuesta, turnosRespuesta] = await Promise.all([
     postaApi.listar({ activa: true }),
-    postaApi.listarTurnos({ page: 1, size: 200 }),
+    postaApi.listarTurnos({ page: 1, size: 100 }),
   ])
   const postasActivas = postasRespuesta.data.items || []
   const turnoIndex = {}
@@ -334,7 +324,7 @@ onMounted(async () => {
     postasActivas.value = postasRespuesta.data?.total || 0
 
     try {
-      await cargarMapas(guardias.value)
+      await cargarMapas()
     } catch (error) {
       console.error(error)
     }

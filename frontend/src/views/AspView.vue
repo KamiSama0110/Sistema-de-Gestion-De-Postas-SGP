@@ -830,9 +830,14 @@ function clearFilters() {
   fetchASPs()
 }
 
+let searchTimeout = null
+
 watch([search, filterEstado], () => {
   currentPage.value = 1
-  fetchASPs()
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchASPs()
+  }, 300)
 })
 
 onMounted(async () => {

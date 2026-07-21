@@ -561,6 +561,7 @@ function validateStep(step) {
   if (step === 2) {
     if (!form.hora_inicio) errors.hora_inicio = 'Hora de inicio requerida'
     if (!form.hora_fin) errors.hora_fin = 'Hora de fin requerida'
+    if (form.hora_inicio && form.hora_fin && form.hora_fin <= form.hora_inicio) errors.hora_fin = 'La hora de fin debe ser posterior a la hora de inicio'
     if (!form.asp_requeridos || Number(form.asp_requeridos) < 1) errors.asp_requeridos = 'Debe requerir al menos 1 ASP'
   }
   if (step === 3 && (!form.nombre || form.nombre.trim().length < 2)) {
@@ -676,10 +677,15 @@ async function toggleEstado(turno) {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchPostas(), loadPostasInto('filter')])
-  syncPostaFromRoute()
-  await fetchTurnos()
-  isLoading.value = false
+  try {
+    await Promise.all([fetchPostas(), loadPostasInto('filter')])
+    syncPostaFromRoute()
+    await fetchTurnos()
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(e, 'Error al cargar datos'), life: TOAST_LIFE })
+  } finally {
+    isLoading.value = false
+  }
 })
 
 watch(filterActivo, () => {

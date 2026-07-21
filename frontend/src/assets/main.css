@@ -101,7 +101,7 @@ body {
 }
 
 .form-message { margin-bottom: 0.25rem; }
-.field-error { color: #dc2626; font-size: 0.75rem; }
+.field-error { color: #dc2626 !important; font-size: 0.75rem; }
 .invalid { border-color: #dc2626 !important; }
 
 .wizard-actions,

@@ -784,7 +784,7 @@ async function fetchCargos() {
     const response = await cargoApi.listar(true)
     cargos.value = response.data.items || []
   } catch (error) {
-    console.error(error)
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar cargos'), life: TOAST_LIFE })
   }
 }
 

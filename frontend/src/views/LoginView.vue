@@ -109,6 +109,11 @@ async function handleLogin() {
     return
   }
 
+  if (form.password.length < 8) {
+    error.value = 'La contraseña debe tener al menos 8 caracteres'
+    return
+  }
+
   error.value = ''
   loading.value = true
 

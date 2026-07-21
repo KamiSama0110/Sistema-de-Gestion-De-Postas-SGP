@@ -259,7 +259,7 @@ async function cargarPostas() {
     totalPages.value = Math.max(1, Math.ceil(totalItems.value / pageSize))
   } catch (e) {
     console.error(e)
-    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las postas', life: TOAST_LIFE })
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(e, 'No se pudieron cargar las postas'), life: TOAST_LIFE })
   } finally {
     cargando.value = false
   }

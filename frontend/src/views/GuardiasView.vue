@@ -837,13 +837,22 @@ function turnosActivosPorPosta(postaId) {
 }
 
 async function cargarCatalogos() {
-  const [aspRes, postasRes] = await Promise.all([
-    aspApi.listar({ page: 1, size: 100 }),
-    postaApi.listar({}),
-  ])
-  asps.value = aspRes.data.items || []
-  postas.value = postasRes.data.items || []
-  await cargarTurnos()
+  try {
+    const [aspRes, postasRes] = await Promise.all([
+      aspApi.listar({ page: 1, size: 100 }),
+      postaApi.listar({}),
+    ])
+    asps.value = aspRes.data.items || []
+    postas.value = postasRes.data.items || []
+    await cargarTurnos()
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: normalizeApiError(e, 'Error al cargar catálogos'),
+      life: TOAST_LIFE,
+    })
+  }
 }
 
 async function cargarTurnos() {
@@ -877,7 +886,7 @@ async function cargarGuardias() {
     total.value = res.data.total || 0
     totalPages.value = Math.max(1, Math.ceil(total.value / res.data.size))
   } catch (e) {
-    console.error(e)
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(e, 'Error al cargar guardias'), life: TOAST_LIFE })
   } finally {
     cargando.value = false
   }
@@ -1176,12 +1185,24 @@ function cerrarModalNovedad() {
 }
 
 async function cargarNovedades() {
-  const res = await guardiaApi.listarNovedades(guardiaSeleccionada.value.id, { page: 1, size: 100 })
-  novedades.value = res.data.items || []
+  try {
+    const res = await guardiaApi.listarNovedades(guardiaSeleccionada.value.id, { page: 1, size: 100 })
+    novedades.value = res.data.items || []
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(e, 'Error al cargar novedades'), life: TOAST_LIFE })
+  }
 }
 
 async function registrarNovedad() {
   errorNovedad.value = ''
+  if (!formNovedad.value.tipo) {
+    errorNovedad.value = 'Selecciona el tipo de novedad'
+    return
+  }
+  if (!formNovedad.value.severidad) {
+    errorNovedad.value = 'Selecciona la severidad'
+    return
+  }
   if (!formNovedad.value.descripcion) {
     errorNovedad.value = 'Completa la descripcion'
     return
@@ -1205,7 +1226,7 @@ onMounted(async () => {
     await cargarCatalogos()
     await cargarGuardias()
   } catch (e) {
-    console.error(e)
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(e, 'Error al cargar datos'), life: TOAST_LIFE })
     cargando.value = false
   }
 })

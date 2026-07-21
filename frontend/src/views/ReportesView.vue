@@ -276,6 +276,10 @@ import { reporteApi } from '../api/reporte'
 import { postaApi } from '../api/posta'
 import { aspApi } from '../api/asp'
 import { normalizeApiError } from '../utils/error'
+import { TOAST_LIFE } from '../utils/constants'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 const tipoReporte = ref('cobertura')
 const reporte = ref(null)
@@ -621,12 +625,16 @@ function exportarPdf() {
 }
 
 async function cargarCatalogos() {
-  const [postasRes, aspRes] = await Promise.all([
-    postaApi.listar({}),
-    aspApi.listar({ page: 1, size: 100 }),
-  ])
-  postas.value = postasRes.data.items || []
-  asps.value = aspRes.data.items || []
+  try {
+    const [postasRes, aspRes] = await Promise.all([
+      postaApi.listar({}),
+      aspApi.listar({ page: 1, size: 100 }),
+    ])
+    postas.value = postasRes.data.items || []
+    asps.value = aspRes.data.items || []
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(e, 'Error al cargar catálogos'), life: TOAST_LIFE })
+  }
 }
 
 async function generarReporte() {
@@ -634,6 +642,10 @@ async function generarReporte() {
   reporte.value = null
   if (!filtros.value.fecha_desde || !filtros.value.fecha_hasta) {
     error.value = 'Selecciona un rango de fechas'
+    return
+  }
+  if (filtros.value.fecha_desde > filtros.value.fecha_hasta) {
+    toast.add({ severity: 'warn', summary: 'Fechas inválidas', detail: 'La fecha de inicio debe ser anterior a la fecha de fin', life: TOAST_LIFE })
     return
   }
   cargando.value = true

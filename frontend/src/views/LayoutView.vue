@@ -108,9 +108,14 @@ function closeMenu() {
 }
 
 async function handleLogout() {
-  await auth.logout()
-  closeMenu()
-  router.push({ name: 'login' })
+  try {
+    await auth.logout()
+  } catch {
+    // logout del backend falló, pero limpiamos el estado local de todas formas
+  } finally {
+    closeMenu()
+    router.push({ name: 'login' })
+  }
 }
 </script>
 

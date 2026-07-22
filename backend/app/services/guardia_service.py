@@ -227,7 +227,9 @@ async def confirmar_llegada(
             detail=f"No se puede confirmar llegada de una guardia en estado {guardia.estado.value}",
         )
 
-    diferencia = abs((datos.hora_llegada - guardia.fecha_inicio).total_seconds() / 3600)
+    hora_inicio_turno = guardia.turno_posta.hora_inicio
+    fecha_inicio_dt = datetime.combine(guardia.fecha, hora_inicio_turno)
+    diferencia = abs((datos.hora_llegada - fecha_inicio_dt).total_seconds() / 3600)
     if diferencia > 24:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -261,6 +263,13 @@ async def registrar_novedad(
 async def listar_novedades(
     db: AsyncSession, guardia_id: int, page: int = 1, size: int = 10
 ) -> dict:
+    guardia = await get_guardia_by_id(db, guardia_id)
+    if not guardia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guardia no encontrada",
+        )
+
     query = select(Novedad).where(Novedad.guardia_id == guardia_id)
 
     total_q = select(func.count()).select_from(query.subquery())

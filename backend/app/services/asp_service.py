@@ -1,4 +1,3 @@
-from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -10,7 +9,8 @@ from app.utils.sql import _escape_like
 from fastapi import HTTPException, status
 
 TRANSICIONES_ASP = {
-    "activo": {"baja_temporal", "baja_definitiva"},
+    "activo": {"baja_temporal", "baja_definitiva", "suspendido"},
+    "suspendido": {"activo"},
     "baja_temporal": {"activo"},
     "baja_definitiva": set(),
 }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
@@ -65,38 +65,3 @@ async def cambiar_estado(
     _: Usuario = Depends(get_current_user),
 ):
     return await asp_service.cambiar_estado_asp(db, asp_id, datos)
-
-
-# @router.get("/{asp_id}/capacitaciones")
-# async def listar_capacitaciones(
-#     asp_id: int,
-#     db: AsyncSession = Depends(get_db),
-#     _: Usuario = Depends(get_current_user),
-# ):
-#     asp = await asp_service.get_asp_by_id(db, asp_id)
-#     return asp.capacitaciones
-
-
-@router.post("/{asp_id}/foto")
-async def subir_foto(
-    asp_id: int,
-    foto: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
-):
-    asp = await asp_service.get_asp_by_id(db, asp_id)
-
-    allowed_types = {"image/jpeg", "image/png", "image/webp"}
-    if foto.content_type not in allowed_types:
-        raise HTTPException(400, detail="Formato no permitido. Use JPG, PNG o WebP")
-
-    contents = await foto.read()
-    if len(contents) > 5 * 1024 * 1024:
-        raise HTTPException(400, detail="La imagen no debe superar 5MB")
-
-    import re
-    safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", foto.filename or "foto")
-
-    asp.foto_url = safe_name
-    await db.commit()
-    return {"mensaje": "Foto actualizada", "foto_url": safe_name}

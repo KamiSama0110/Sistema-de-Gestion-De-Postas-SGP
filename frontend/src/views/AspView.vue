@@ -62,7 +62,7 @@
 
     <Card class="panel-card table-card">
       <template #content>
-        <div v-if="isLoading" class="empty-state">
+        <div v-if="cargando" class="empty-state">
           <div class="spinner"></div>
           <p>Cargando...</p>
         </div>
@@ -143,7 +143,7 @@
     </Card>
 
     <Dialog v-model:visible="isFormOpen" :header="editingASP ? 'Editar ASP' : 'Nuevo ASP'" modal :style="{ width: '860px' }">
-      <form class="form-layout" @submit.prevent="handleSubmit">
+      <form class="form-layout" @submit.prevent="guardar">
         <Message v-if="Object.keys(formErrors).length" severity="error" :closable="false" class="form-message">
           Corrige los campos marcados antes de guardar.
         </Message>
@@ -275,7 +275,7 @@
 
         <div class="dialog-footer">
           <Button type="button" label="Cancelar" severity="secondary" text @click="closeFormDialog" />
-          <Button type="submit" :loading="isSaving" label="Guardar" icon="pi pi-check" />
+          <Button type="submit" :loading="guardando" label="Guardar" icon="pi pi-check" />
         </div>
       </form>
     </Dialog>
@@ -292,7 +292,7 @@
           {{ infoError }}
         </Message>
 
-        <div v-if="isLoadingInfo" class="empty-state compact-state">
+        <div v-if="cargandoInfo" class="empty-state compact-state">
           <div class="spinner"></div>
           <p>Cargando...</p>
         </div>
@@ -364,7 +364,7 @@
           <Select
             id="estado"
             v-model="stateForm.estado"
-            :options="stateOptions.filter((option) => option.value)"
+            :options="estadoOptions.filter((option) => option.value)"
             optionLabel="label"
             optionValue="value"
           />
@@ -406,7 +406,7 @@ const toast = useToast()
 
 const asps = ref([])
 const cargos = ref([])
-const isLoading = ref(true)
+const cargando = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
@@ -419,23 +419,14 @@ const isInfoOpen = ref(false)
 const editingASP = ref(null)
 const changingASP = ref(null)
 const aspDetail = ref(null)
-const isLoadingInfo = ref(false)
+const cargandoInfo = ref(false)
 const infoError = ref('')
 const formErrors = ref({})
-const formMessage = ref('')
-const isSaving = ref(false)
+const guardando = ref(false)
 const stateError = ref('')
 const isChangingState = ref(false)
 
 const estadoOptions = [
-  { label: 'Todos', value: '' },
-  { label: 'Activo', value: 'activo' },
-  { label: 'Suspendido', value: 'suspendido' },
-  { label: 'Baja temporal', value: 'baja_temporal' },
-  { label: 'Baja definitiva', value: 'baja_definitiva' },
-]
-
-const stateOptions = [
   { label: 'Todos', value: '' },
   { label: 'Activo', value: 'activo' },
   { label: 'Suspendido', value: 'suspendido' },
@@ -535,7 +526,6 @@ const fechaNacimientoMaxima = addYears(hoy, -18)
 
 function clearFormErrors() {
   formErrors.value = {}
-  formMessage.value = ''
 }
 
 function resetForm() {
@@ -603,7 +593,7 @@ function openStateDialog(asp) {
 async function openInfoDialog(asp) {
   infoError.value = ''
   aspDetail.value = null
-  isLoadingInfo.value = true
+  cargandoInfo.value = true
   isInfoOpen.value = true
 
   try {
@@ -612,7 +602,7 @@ async function openInfoDialog(asp) {
   } catch (error) {
     infoError.value = normalizeApiError(error, 'Error al cargar informacion')
   } finally {
-    isLoadingInfo.value = false
+    cargandoInfo.value = false
   }
 }
 
@@ -626,7 +616,7 @@ function closeInfoDialog() {
   isInfoOpen.value = false
   aspDetail.value = null
   infoError.value = ''
-  isLoadingInfo.value = false
+  cargandoInfo.value = false
 }
 
 function validateForm() {
@@ -721,10 +711,10 @@ function buildPayload() {
   }
 }
 
-async function handleSubmit() {
+async function guardar() {
   if (!validateForm()) return
 
-  isSaving.value = true
+  guardando.value = true
   try {
     const payload = buildPayload()
 
@@ -737,7 +727,7 @@ async function handleSubmit() {
     }
 
     closeFormDialog()
-    await fetchASPs()
+    await cargarASPs()
   } catch (error) {
     const message = normalizeApiError(error, 'Error al guardar')
     const details = error?.response?.data?.errors
@@ -749,11 +739,10 @@ async function handleSubmit() {
       })
       formErrors.value = mappedErrors
     } else {
-      formMessage.value = message
       toast.add({ severity: 'error', summary: 'Error', detail: message, life: TOAST_LIFE })
     }
   } finally {
-    isSaving.value = false
+    guardando.value = false
   }
 }
 
@@ -771,7 +760,7 @@ async function saveState() {
 
     toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del ASP se actualizo', life: TOAST_LIFE })
     closeStateDialog()
-    await fetchASPs()
+    await cargarASPs()
   } catch (error) {
     stateError.value = normalizeApiError(error, 'Error al cambiar estado')
   } finally {
@@ -779,7 +768,7 @@ async function saveState() {
   }
 }
 
-async function fetchCargos() {
+async function cargarCargos() {
   try {
     const response = await cargoApi.listar(true)
     cargos.value = response.data.items || []
@@ -788,8 +777,8 @@ async function fetchCargos() {
   }
 }
 
-async function fetchASPs() {
-  isLoading.value = true
+async function cargarASPs() {
+  cargando.value = true
   try {
     const params = {
       page: currentPage.value,
@@ -812,7 +801,7 @@ async function fetchASPs() {
     console.error(error)
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar el personal'), life: TOAST_LIFE })
   } finally {
-    isLoading.value = false
+    cargando.value = false
   }
 }
 
@@ -820,14 +809,14 @@ function changePage(delta) {
   const nextPage = currentPage.value + delta
   if (nextPage < 1 || nextPage > totalPages.value) return
   currentPage.value = nextPage
-  fetchASPs()
+  cargarASPs()
 }
 
 function clearFilters() {
   search.value = ''
   filterEstado.value = ''
   currentPage.value = 1
-  fetchASPs()
+  cargarASPs()
 }
 
 let searchTimeout = null
@@ -836,13 +825,13 @@ watch([search, filterEstado], () => {
   currentPage.value = 1
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
-    fetchASPs()
+    cargarASPs()
   }, 300)
 })
 
 onMounted(async () => {
-  await fetchCargos()
-  await fetchASPs()
+  await cargarCargos()
+  await cargarASPs()
 })
 </script>
 

@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <Card class="panel-card filters-card" style="margin-bottom: 16px">
+    <Card class="panel-card filters-card mb-12">
       <template #content>
         <div class="filters-top">
           <div class="filters-summary">
@@ -207,7 +207,7 @@
     <Dialog v-model:visible="modalVisible" :header="editando ? 'Editar guardia' : 'Nueva guardia'"
       :style="{ width: '980px' }" modal :closable="true">
       <div class="p-fluid wizard-layout">
-        <Message v-if="error" severity="error" :closable="false" style="margin-bottom: 12px">
+        <Message v-if="error" severity="error" :closable="false" class="mb-12">
           {{ error }}
         </Message>
 
@@ -416,7 +416,7 @@
     <Dialog v-model:visible="modalLlegadaVisible" header="Confirmar llegada" :style="{ width: '420px' }" modal
       :closable="true">
       <div class="p-fluid">
-        <Message v-if="errorLlegada" severity="error" :closable="false" style="margin-bottom: 12px">
+        <Message v-if="errorLlegada" severity="error" :closable="false" class="mb-12">
           {{ errorLlegada }}
         </Message>
         <div class="field">
@@ -433,14 +433,14 @@
     <Dialog v-model:visible="modalFinalizarVisible" header="Finalizar guardia" :style="{ width: '460px' }" modal
       :closable="true">
       <div class="p-fluid">
-        <Message v-if="errorFinalizar" severity="error" :closable="false" style="margin-bottom: 12px">
+        <Message v-if="errorFinalizar" severity="error" :closable="false" class="mb-12">
           {{ errorFinalizar }}
         </Message>
         <div class="field">
           <label>Hora de fin *</label>
           <InputText v-model="formFinalizar.hora_fin_real" type="datetime-local" />
         </div>
-        <div class="field" style="margin-top: 12px">
+        <div class="field mt-12">
           <label>Observaciones</label>
           <Textarea v-model="formFinalizar.observaciones" rows="2" autoResize />
         </div>
@@ -454,7 +454,7 @@
     <Dialog v-model:visible="modalNovedadVisible" :header="'Novedades — ' + (guardiaSeleccionada?.id || '')"
       :style="{ width: '700px' }" modal :closable="true">
       <div class="p-fluid">
-        <Message v-if="errorNovedad" severity="error" :closable="false" style="margin-bottom: 12px">
+        <Message v-if="errorNovedad" severity="error" :closable="false" class="mb-12">
           {{ errorNovedad }}
         </Message>
         <div class="novedad-form">
@@ -467,7 +467,7 @@
             <Select v-model="formNovedad.severidad" :options="opcionesSeveridad" optionLabel="label"
               optionValue="value" />
           </div>
-          <div class="field" style="grid-column: span 2">
+          <div class="field span-2">
             <label>Descripcion *</label>
             <Textarea v-model="formNovedad.descripcion" rows="2" autoResize />
           </div>
@@ -499,7 +499,7 @@
     <Dialog v-model:visible="modalAusenciaVisible" header="Marcar ausencia" :style="{ width: '520px' }" modal
       :closable="true">
       <div class="p-fluid">
-        <Message v-if="errorAusencia" severity="error" :closable="false" style="margin-bottom: 12px">
+        <Message v-if="errorAusencia" severity="error" :closable="false" class="mb-12">
           {{ errorAusencia }}
         </Message>
         <div class="form-grid">
@@ -512,7 +512,7 @@
             <label>Motivo de ausencia</label>
             <InputText v-model="formAusencia.motivo_ausencia" />
           </div>
-          <div class="field" style="grid-column: span 2">
+          <div class="field span-2">
             <label>Observaciones</label>
             <Textarea v-model="formAusencia.observaciones" rows="2" autoResize />
           </div>
@@ -527,7 +527,7 @@
     <Dialog v-model:visible="modalInfoVisible" header="Ficha tecnica de guardia" :style="{ width: '720px' }" modal
       :closable="true">
       <div class="p-fluid">
-        <Message v-if="errorInfo" severity="error" :closable="false" style="margin-bottom: 12px">
+        <Message v-if="errorInfo" severity="error" :closable="false" class="mb-12">
           {{ errorInfo }}
         </Message>
         <div v-if="cargandoInfo" class="empty-state">Cargando...</div>
@@ -1233,6 +1233,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.mb-12 { margin-bottom: 12px; }
+.mt-12 { margin-top: 12px; }
+.span-2 { grid-column: span 2; }
 .guardias-page { display: flex; flex-direction: column; gap: 1rem; }
 .guardias-header { align-items: center; gap: 1rem; flex-wrap: wrap; }
 .page-title-block { display: flex; align-items: center; gap: 0.875rem; }
@@ -1381,14 +1384,5 @@ onMounted(async () => {
   .actions-col { width: auto; }
   .dialog-actions, .header-actions { width: 100%; flex-direction: column; }
   .dialog-actions > *, .header-actions > * { width: 100%; }
-}
-</style>
-
-<style>
-.p-dialog .p-inputtext,
-.p-dialog .p-textarea,
-.p-dialog .p-select,
-.p-dialog .p-datepicker {
-  width: 100%;
 }
 </style>

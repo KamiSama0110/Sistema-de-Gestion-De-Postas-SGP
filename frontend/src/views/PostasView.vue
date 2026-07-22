@@ -129,8 +129,8 @@
 
     <Dialog v-model:visible="modalVisible" :header="editando ? 'Editar Posta' : 'Nueva Posta'" modal :style="{ width: '620px' }">
       <form class="form-layout" @submit.prevent="guardar">
-        <Message v-if="formError" severity="error" :closable="false" class="form-message">
-          {{ formError }}
+        <Message v-if="error" severity="error" :closable="false" class="form-message">
+          {{ error }}
         </Message>
 
         <section class="form-section">
@@ -168,11 +168,11 @@
       </form>
 
       <template #footer>
-          <div class="dialog-footer">
-            <Button type="button" label="Cancelar" severity="secondary" text @click="cerrarModal" />
-            <Button type="submit" :loading="guardando" label="Guardar" icon="pi pi-check" @click="guardar" />
-          </div>
-        </template>
+        <div class="dialog-footer">
+          <Button type="button" label="Cancelar" severity="secondary" text @click="cerrarModal" />
+          <Button type="button" :loading="guardando" label="Guardar" icon="pi pi-check" @click="guardar" />
+        </div>
+      </template>
     </Dialog>
   </div>
 </template>
@@ -201,7 +201,7 @@ const cargando = ref(true)
 const modalVisible = ref(false)
 const editando = ref(null)
 const guardando = ref(false)
-const formError = ref('')
+const error = ref('')
 const fieldErrors = ref({})
 const search = ref('')
 const filterEstado = ref('')
@@ -282,7 +282,7 @@ function abrirModal(posta = null) {
         descripcion: posta.descripcion ?? '',
       }
     : formVacio()
-  formError.value = ''
+  error.value = ''
   fieldErrors.value = {}
   modalVisible.value = true
 }
@@ -293,7 +293,7 @@ function cerrarModal() {
 }
 
 async function guardar() {
-  formError.value = ''
+  error.value = ''
   fieldErrors.value = {}
   guardando.value = true
 
@@ -331,11 +331,11 @@ async function guardar() {
       fieldErrors.value = Object.fromEntries(
         Object.entries(apiError).map(([key, messages]) => [key, Array.isArray(messages) ? messages[0] : String(messages)]),
       )
-      formError.value = 'Revisa los campos marcados'
+      error.value = 'Revisa los campos marcados'
       return
     }
 
-    formError.value = normalizeApiError(e, 'Error al guardar')
+    error.value = normalizeApiError(e, 'Error al guardar')
   } finally {
     guardando.value = false
   }
@@ -365,12 +365,6 @@ onMounted(cargarPostas)
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  --bg: #f3f6fb;
-  --surface: #ffffff;
-  --surface-2: #eef2f7;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --text-muted: #64748b;
   background: linear-gradient(180deg, #f8fbff 0%, #f3f6fb 100%);
 }
 

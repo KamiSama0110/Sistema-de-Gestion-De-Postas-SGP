@@ -51,7 +51,7 @@
 
     <Card class="panel-card table-card">
       <template #content>
-        <div v-if="isLoading" class="empty-state">
+        <div v-if="cargando" class="empty-state">
           <div class="spinner"></div>
           <p>Cargando...</p>
         </div>
@@ -191,7 +191,7 @@
 
     <Dialog v-model:visible="isFormOpen" :header="editingTurno ? 'Editar Turno' : 'Nuevo Turno'" modal :style="{ width: '980px' }">
       <form class="wizard-layout" @submit.prevent="handlePrimaryAction">
-        <Message v-if="formError" severity="error" :closable="false" class="form-message">{{ formError }}</Message>
+        <Message v-if="error" severity="error" :closable="false" class="form-message">{{ error }}</Message>
 
         <div class="wizard-steps">
           <div v-for="step in steps" :key="step.id" class="wizard-step" :class="{ active: wizardStep === step.id, done: wizardStep > step.id }">
@@ -325,7 +325,7 @@
           <Button type="button" label="Cancelar" severity="secondary" text @click="closeFormDialog" />
           <div class="dialog-actions">
             <Button type="button" label="Volver" severity="secondary" outlined :disabled="wizardStep === 1" @click="previousStep" />
-            <Button type="submit" :loading="isSaving" :label="wizardStep === steps.length ? (editingTurno ? 'Actualizar' : 'Crear') : 'Siguiente'" icon="pi pi-check" />
+            <Button type="submit" :loading="guardando" :label="wizardStep === steps.length ? (editingTurno ? 'Actualizar' : 'Crear') : 'Siguiente'" icon="pi pi-check" />
           </div>
         </div>
       </form>
@@ -354,7 +354,7 @@ const route = useRoute()
 
 const postas = ref([])
 const turnos = ref([])
-const isLoading = ref(true)
+const cargando = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
@@ -362,7 +362,7 @@ const pageSize = PAGE_SIZE
 const isFormOpen = ref(false)
 const isFilterDialogOpen = ref(false)
 const editingTurno = ref(null)
-const isSaving = ref(false)
+const guardando = ref(false)
 const filterPosta = ref(null)
 const filterActivo = ref('')
 const filterDraftPosta = ref(null)
@@ -371,7 +371,7 @@ const filterPostas = ref([])
 const wizardSearch = ref('')
 const wizardPostas = ref([])
 const wizardStep = ref(1)
-const formError = ref('')
+const error = ref('')
 const fieldErrors = ref({})
 
 const form = reactive({
@@ -430,7 +430,7 @@ function resetForm() {
   form.asp_requeridos = 1
   form.descripcion = ''
   form.activo = true
-  formError.value = ''
+  error.value = ''
   fieldErrors.value = {}
   wizardStep.value = 1
 }
@@ -477,7 +477,7 @@ function openEditDialog(turno) {
   form.asp_requeridos = turno.asp_requeridos ?? 1
   form.descripcion = turno.descripcion || ''
   form.activo = turno.activo
-  formError.value = ''
+  error.value = ''
   fieldErrors.value = {}
   wizardStep.value = 1
   isFormOpen.value = true
@@ -526,7 +526,7 @@ function applyFilters() {
   filterPosta.value = filterDraftPosta.value
   closeFilterDialog()
   currentPage.value = 1
-  fetchTurnos()
+  cargarTurnos()
 }
 
 function clearFilters() {
@@ -536,7 +536,7 @@ function clearFilters() {
   filterSearch.value = ''
   filterPostas.value = []
   currentPage.value = 1
-  fetchTurnos()
+  cargarTurnos()
 }
 
 function selectWizardPosta(posta) {
@@ -583,8 +583,8 @@ function validateAllSteps() {
   return Object.keys(errors).length === 0
 }
 
-async function fetchTurnos() {
-  isLoading.value = true
+async function cargarTurnos() {
+  cargando.value = true
   try {
     const params = { page: currentPage.value, size: pageSize }
     if (filterPosta.value?.value) params.posta_id = filterPosta.value.value
@@ -596,7 +596,7 @@ async function fetchTurnos() {
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los turnos'), life: TOAST_LIFE })
   } finally {
-    isLoading.value = false
+    cargando.value = false
   }
 }
 
@@ -604,10 +604,10 @@ function changePage(delta) {
   const next = currentPage.value + delta
   if (next < 1 || next > totalPages.value) return
   currentPage.value = next
-  fetchTurnos()
+  cargarTurnos()
 }
 
-async function fetchPostas() {
+async function cargarPostas() {
   try {
     const response = await postaApi.listar({})
     postas.value = response.data.items || []
@@ -636,8 +636,8 @@ function buildPayload() {
 async function saveTurno() {
   if (!validateAllSteps()) return
 
-  isSaving.value = true
-  formError.value = ''
+  guardando.value = true
+  error.value = ''
 
   try {
     const payload = buildPayload()
@@ -649,7 +649,7 @@ async function saveTurno() {
       toast.add({ severity: 'success', summary: 'Turno creado', detail: 'El turno se creo correctamente', life: TOAST_LIFE })
     }
     closeFormDialog()
-    await Promise.all([fetchPostas(), fetchTurnos()])
+    await Promise.all([cargarPostas(), cargarTurnos()])
   } catch (error) {
     const apiErrors = error?.response?.data?.errors
     if (apiErrors && typeof apiErrors === 'object') {
@@ -659,10 +659,10 @@ async function saveTurno() {
       })
       fieldErrors.value = mapped
     } else {
-      formError.value = normalizeApiError(error, 'Error al guardar')
+      error.value = normalizeApiError(error, 'Error al guardar')
     }
   } finally {
-    isSaving.value = false
+    guardando.value = false
   }
 }
 
@@ -670,7 +670,7 @@ async function toggleEstado(turno) {
   try {
     await postaApi.cambiarEstadoTurno(turno.id, !turno.activo)
     toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del turno se actualizo', life: TOAST_LIFE })
-    await Promise.all([fetchPostas(), fetchTurnos()])
+    await Promise.all([cargarPostas(), cargarTurnos()])
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cambiar estado'), life: TOAST_LIFE })
   }
@@ -678,19 +678,19 @@ async function toggleEstado(turno) {
 
 onMounted(async () => {
   try {
-    await Promise.all([fetchPostas(), loadPostasInto('filter')])
+    await Promise.all([cargarPostas(), loadPostasInto('filter')])
     syncPostaFromRoute()
-    await fetchTurnos()
+    await cargarTurnos()
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(e, 'Error al cargar datos'), life: TOAST_LIFE })
   } finally {
-    isLoading.value = false
+    cargando.value = false
   }
 })
 
 watch(filterActivo, () => {
   currentPage.value = 1
-  fetchTurnos()
+  cargarTurnos()
 })
 
 watch(
@@ -698,7 +698,7 @@ watch(
   () => {
     syncPostaFromRoute()
     currentPage.value = 1
-    fetchTurnos()
+    cargarTurnos()
   }
 )
 </script>

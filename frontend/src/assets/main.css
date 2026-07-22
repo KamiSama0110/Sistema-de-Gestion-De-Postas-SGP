@@ -104,6 +104,13 @@ body {
 .field-error { color: #dc2626 !important; font-size: 0.75rem; }
 .invalid { border-color: #dc2626 !important; }
 
+.p-dialog .p-inputtext,
+.p-dialog .p-textarea,
+.p-dialog .p-select,
+.p-dialog .p-datepicker {
+  width: 100%;
+}
+
 .wizard-actions,
 .novedad-actions {
   display: flex;

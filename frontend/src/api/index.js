@@ -26,6 +26,8 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !requestUrl.includes('/auth/login')) {
       sessionStorage.removeItem('token')
+      // Usamos window.location.href en vez de router.push para forzar
+      // un page reload completo que limpie el estado de Vue y mitigue XSS.
       window.location.href = '/login'
     }
     return Promise.reject(error)

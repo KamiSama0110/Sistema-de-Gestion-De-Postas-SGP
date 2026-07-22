@@ -19,7 +19,7 @@
 
     <Card class="panel-card table-card">
       <template #content>
-        <div v-if="isLoading" class="empty-state">
+        <div v-if="cargando" class="empty-state">
           <div class="spinner"></div>
           <p>Cargando...</p>
         </div>
@@ -88,9 +88,9 @@
     </Card>
 
     <Dialog v-model:visible="isFormOpen" :header="editingCargo ? 'Editar Cargo' : 'Nuevo Cargo'" modal :style="{ width: '460px' }">
-      <form class="form-layout" @submit.prevent="handleSubmit">
-        <Message v-if="formError" severity="error" :closable="false" class="form-message">
-          {{ formError }}
+      <form class="form-layout" @submit.prevent="guardar">
+        <Message v-if="error" severity="error" :closable="false" class="form-message">
+          {{ error }}
         </Message>
 
         <div class="field">
@@ -106,7 +106,7 @@
 
         <div class="dialog-footer">
           <Button type="button" label="Cancelar" severity="secondary" text @click="closeFormDialog" />
-          <Button type="submit" :loading="isSaving" :label="editingCargo ? 'Actualizar' : 'Crear'" icon="pi pi-check" />
+          <Button type="submit" :loading="guardando" :label="editingCargo ? 'Actualizar' : 'Crear'" icon="pi pi-check" />
         </div>
       </form>
     </Dialog>
@@ -130,11 +130,11 @@ import { TOAST_LIFE, PAGE_SIZE } from '../utils/constants'
 const toast = useToast()
 
 const cargos = ref([])
-const isLoading = ref(true)
+const cargando = ref(true)
 const isFormOpen = ref(false)
 const editingCargo = ref(null)
-const isSaving = ref(false)
-const formError = ref('')
+const guardando = ref(false)
+const error = ref('')
 const fieldErrors = ref({})
 const currentPage = ref(1)
 const totalPages = ref(1)
@@ -149,7 +149,7 @@ const form = reactive({
 function resetForm() {
   form.nombre = ''
   form.descripcion = ''
-  formError.value = ''
+  error.value = ''
   fieldErrors.value = {}
 }
 
@@ -163,7 +163,7 @@ function openEditDialog(cargo) {
   editingCargo.value = cargo
   form.nombre = cargo.nombre || ''
   form.descripcion = cargo.descripcion || ''
-  formError.value = ''
+  error.value = ''
   fieldErrors.value = {}
   isFormOpen.value = true
 }
@@ -185,8 +185,8 @@ function validateForm() {
   return Object.keys(errors).length === 0
 }
 
-async function fetchCargos() {
-  isLoading.value = true
+async function cargarCargos() {
+  cargando.value = true
   try {
     const response = await cargoApi.listar(false, currentPage.value, pageSize)
     cargos.value = response.data.items || []
@@ -195,7 +195,7 @@ async function fetchCargos() {
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cargar los cargos'), life: TOAST_LIFE })
   } finally {
-    isLoading.value = false
+    cargando.value = false
   }
 }
 
@@ -203,14 +203,14 @@ function cambiarPagina(delta) {
   const siguiente = currentPage.value + delta
   if (siguiente < 1 || siguiente > totalPages.value) return
   currentPage.value = siguiente
-  fetchCargos()
+  cargarCargos()
 }
 
-async function handleSubmit() {
+async function guardar() {
   if (!validateForm()) return
 
-  isSaving.value = true
-  formError.value = ''
+  guardando.value = true
+  error.value = ''
 
   try {
     const payload = {
@@ -227,7 +227,7 @@ async function handleSubmit() {
     }
 
     closeFormDialog()
-    await fetchCargos()
+    await cargarCargos()
   } catch (error) {
     const apiErrors = error?.response?.data?.errors
     if (apiErrors && typeof apiErrors === 'object') {
@@ -237,10 +237,10 @@ async function handleSubmit() {
       })
       fieldErrors.value = mapped
     } else {
-      formError.value = normalizeApiError(error, 'Error al guardar')
+      error.value = normalizeApiError(error, 'Error al guardar')
     }
   } finally {
-    isSaving.value = false
+    guardando.value = false
   }
 }
 
@@ -248,13 +248,13 @@ async function toggleState(cargo) {
   try {
     await cargoApi.cambiarEstado(cargo.id, !cargo.activo)
     toast.add({ severity: 'success', summary: 'Estado actualizado', detail: 'El estado del cargo se actualizo', life: TOAST_LIFE })
-    await fetchCargos()
+    await cargarCargos()
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: normalizeApiError(error, 'Error al cambiar estado'), life: TOAST_LIFE })
   }
 }
 
-onMounted(fetchCargos)
+onMounted(cargarCargos)
 </script>
 
 <style scoped>

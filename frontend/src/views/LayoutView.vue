@@ -1,4 +1,6 @@
 <template>
+  <a href="#main-content" class="sgp-skip-link">Saltar al contenido</a>
+
   <v-navigation-drawer
     v-model="drawer"
     :rail="rail"
@@ -22,7 +24,7 @@
 
     <v-divider v-if="!rail" class="mx-3 mb-2" />
 
-    <v-list nav density="comfortable" class="px-2" active-class="sgp-nav-active">
+    <v-list nav density="comfortable" class="px-2" active-class="sgp-nav-active" aria-label="Navegación principal">
       <v-list-item
         v-for="item in navItems"
         :key="item.to"
@@ -70,7 +72,7 @@
       </v-chip>
     </v-app-bar>
 
-    <v-container fluid class="pa-4 pa-sm-6">
+    <v-container fluid id="main-content" tabindex="-1" class="pa-4 pa-sm-6">
       <RouterView />
     </v-container>
   </v-main>
@@ -148,5 +150,9 @@ async function handleLogout() {
   border-bottom: 1px solid rgb(var(--v-border-color));
   background: rgba(255, 255, 255, 0.85) !important;
   backdrop-filter: blur(8px);
+}
+
+#main-content:focus {
+  outline: none;
 }
 </style>

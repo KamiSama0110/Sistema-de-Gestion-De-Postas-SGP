@@ -111,6 +111,15 @@ async def actualizar_posta(
 ) -> Posta:
     posta = await get_posta_by_id(db, posta_id)
     update_data = datos.model_dump(exclude_unset=True)
+    if "nombre" in update_data and update_data["nombre"] != posta.nombre:
+        existente = await db.execute(
+            select(Posta).where(Posta.nombre == update_data["nombre"])
+        )
+        if existente.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe una posta con el nombre '{update_data['nombre']}'",
+            )
     for campo, valor in update_data.items():
         setattr(posta, campo, valor)
     await db.commit()

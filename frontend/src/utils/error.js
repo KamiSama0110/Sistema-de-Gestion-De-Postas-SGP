@@ -32,11 +32,23 @@ export function normalizeApiError(error, fallback = 'Ocurrio un error') {
 }
 
 export function extractFieldErrors(error) {
-  const errors = error?.response?.data?.errors
-  if (!errors) return {}
-  const fieldErrors = {}
-  for (const [key, value] of Object.entries(errors)) {
-    fieldErrors[key] = Array.isArray(value) ? value.join(', ') : value
+  const detail = error?.response?.data?.detail
+  if (typeof detail === 'string') {
+    const lower = detail.toLowerCase()
+    if (lower.includes('ci') && (lower.includes('existe') || lower.includes('dígito'))) {
+      return { ci: detail }
+    }
+    return { _global: detail }
   }
-  return fieldErrors
+  if (Array.isArray(detail)) {
+    const fields = {}
+    for (const item of detail) {
+      if (!item?.loc) continue
+      const field = item.loc[item.loc.length - 1]
+      const msg = (item.msg || '').replace(/^Value error,\s*/i, '')
+      if (msg) fields[field] = msg
+    }
+    return Object.keys(fields).length ? fields : { _global: detail.map(d => d.msg).join(', ') }
+  }
+  return {}
 }

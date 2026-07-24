@@ -119,7 +119,11 @@
     </v-app-bar>
 
     <v-container fluid id="main-content" tabindex="-1" class="pa-4 pa-sm-6">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <Transition name="page-slide" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </v-container>
   </v-main>
 </template>

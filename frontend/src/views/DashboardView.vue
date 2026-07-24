@@ -16,7 +16,8 @@
       <v-progress-circular indeterminate color="primary" />
     </div>
 
-    <template v-else>
+    <Transition name="fade-up" mode="out-in">
+      <div v-if="!cargando" key="content">
       <v-row class="mb-6" dense>
         <v-col v-for="stat in stats" :key="stat.label" cols="6" md="3">
           <v-card rounded="lg" class="stat-card pa-4 d-flex flex-column" style="min-height: 120px">
@@ -118,7 +119,8 @@
         </v-table>
         </template>
       </v-card>
-    </template>
+      </div>
+    </Transition>
   </div>
 </template>
 

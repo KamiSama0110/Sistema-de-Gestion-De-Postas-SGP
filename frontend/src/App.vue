@@ -1,6 +1,10 @@
 <template>
   <v-app>
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <Transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </Transition>
+    </RouterView>
 
     <v-snackbar
       v-for="toast in toasts"

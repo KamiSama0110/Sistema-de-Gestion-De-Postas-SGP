@@ -64,13 +64,44 @@ body {
   top: 0;
 }
 
-/* Transition defaults */
+/* Page transitions — slide-fade for route changes */
+.page-slide-enter-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.page-slide-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.page-slide-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Fade transition — content appear/disappear */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Fade-up — cards/dialogs */
+.fade-up-enter-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.fade-up-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.fade-up-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }

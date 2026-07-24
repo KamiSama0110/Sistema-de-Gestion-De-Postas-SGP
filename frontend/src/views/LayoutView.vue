@@ -57,8 +57,6 @@
     </v-list>
 
     <template #append>
-      <v-divider class="mx-3 mt-2 mb-2" />
-
       <!-- Rail: toggle + logout as icon buttons -->
       <div v-if="isRail" class="d-flex flex-column align-center ga-1 py-2">
         <v-tooltip text="Expandir menú" location="end">
@@ -78,15 +76,18 @@
       </div>
 
       <!-- Expanded: list items -->
-      <template v-else>
-        <v-list nav density="comfortable" class="px-2">
-          <v-list-item
-            prepend-icon="mdi-chevron-left"
-            title="Contraer menú"
-            rounded="lg"
-            @click="toggleRail"
-          />
-        </v-list>
+      <template v-if="!isRail">
+        <template v-if="!mobile">
+          <v-divider class="mx-3 my-2" />
+          <v-list nav density="comfortable" class="px-2">
+            <v-list-item
+              prepend-icon="mdi-chevron-left"
+              title="Contraer menú"
+              rounded="lg"
+              @click="toggleRail"
+            />
+          </v-list>
+        </template>
         <v-divider class="mx-3 my-2" />
         <v-list nav density="comfortable" class="px-2">
           <v-list-item

@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -14,10 +15,11 @@ async def listar_cargos(
     solo_activos: bool = Query(True),
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
+    buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    return await cargo_service.listar_cargos(db, solo_activos, page, size)
+    return await cargo_service.listar_cargos(db, solo_activos, page, size, buscar)
 
 
 @router.post("", response_model=CargoResponse, status_code=201)

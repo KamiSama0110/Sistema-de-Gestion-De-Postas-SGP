@@ -360,7 +360,7 @@ const turnos = ref([])
 const cargando = ref(true)
 const total = ref(0)
 const pagina = ref(1)
-const tamanoPagina = 10
+const tamanoPagina = computed(() => mobile.value ? 10 : 20)
 const buscar = ref('')
 const filtroPostaId = ref(null)
 const filtroActivo = ref('activos')
@@ -379,7 +379,7 @@ const menuHoraFin = ref(false)
 const horasItems = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
 const minutosItems = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
 
-const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina)))
+const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina.value)))
 const formValido = computed(() => {
   const f = form.value
   if (editando.value) {
@@ -438,7 +438,7 @@ async function cargarPostasList() {
 async function cargarTurnos() {
   cargando.value = true
   try {
-    const params = { page: pagina.value, size: tamanoPagina }
+    const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroPostaId.value) params.posta_id = filtroPostaId.value
     if (filtroActivo.value === 'activos') params.activo = true
     if (buscar.value?.trim()) params.buscar = buscar.value.trim()
@@ -554,6 +554,7 @@ async function toggleActivo(turno) {
 }
 
 watch(filtroActivo, () => { pagina.value = 1; cargarTurnos() })
+watch(mobile, () => { pagina.value = 1; cargarTurnos() })
 
 onMounted(() => {
   Promise.all([cargarPostasList(), cargarTurnos()])
@@ -566,7 +567,7 @@ onMounted(() => {
 }
 
 .turnos-search {
-  max-width: 320px;
+  flex-grow: 1;
 }
 
 .turnos-posta-select {

@@ -17,13 +17,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    try {
-      await authApi.logout()
-    } finally {
-      token.value = null
-      usuario.value = null
-      sessionStorage.removeItem('token')
-    }
+    token.value = null
+    usuario.value = null
+    sessionStorage.removeItem('token')
+    await authApi.logout().catch(() => {})
   }
 
   return { token, usuario, isAuthenticated, login, logout }

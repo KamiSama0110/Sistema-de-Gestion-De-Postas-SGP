@@ -8,28 +8,42 @@
 
     <v-card rounded="lg" class="pa-sm-5 pa-3">
       <div class="d-flex flex-column flex-sm-row align-sm-center justify-sm-space-between mb-4 ga-3">
-        <div class="d-flex flex-wrap ga-2 justify-center">
-          <v-btn
-            :variant="filtroActivos === 'activos' ? 'flat' : 'outlined'"
-            :color="filtroActivos === 'activos' ? 'primary' : 'default'"
-            size="small"
-            class="text-none"
-            @click="filtroActivos = 'activos'"
-          >
-            Activos
-          </v-btn>
-          <v-btn
-            :variant="filtroActivos === 'todos' ? 'flat' : 'outlined'"
-            :color="filtroActivos === 'todos' ? 'primary' : 'default'"
-            size="small"
-            class="text-none"
-            @click="filtroActivos = 'todos'"
-          >
-            Todos
-          </v-btn>
-        </div>
-        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-          {{ total }} cargo{{ total !== 1 ? 's' : '' }}
+        <v-text-field
+          v-model="buscar"
+          prepend-inner-icon="mdi-magnify"
+          placeholder="Buscar por nombre o descripción..."
+          variant="solo-filled"
+          density="compact"
+          hide-details
+          clearable
+          bg-color="grey-lighten-4"
+          class="cargos-search"
+          @update:model-value="onBuscar"
+        />
+        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
+          <div class="d-flex flex-wrap ga-2 justify-center">
+            <v-btn
+              :variant="filtroActivos === 'activos' ? 'flat' : 'outlined'"
+              :color="filtroActivos === 'activos' ? 'primary' : 'default'"
+              size="small"
+              class="text-none"
+              @click="filtroActivos = 'activos'"
+            >
+              Activos
+            </v-btn>
+            <v-btn
+              :variant="filtroActivos === 'todos' ? 'flat' : 'outlined'"
+              :color="filtroActivos === 'todos' ? 'primary' : 'default'"
+              size="small"
+              class="text-none"
+              @click="filtroActivos = 'todos'"
+            >
+              Todos
+            </v-btn>
+          </div>
+          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
+          </div>
         </div>
       </div>
 
@@ -244,8 +258,9 @@ const cargos = ref([])
 const cargando = ref(true)
 const total = ref(0)
 const pagina = ref(1)
-const tamanoPagina = 10
+const tamanoPagina = computed(() => mobile.value ? 10 : 20)
 const filtroActivos = ref('todos')
+const buscar = ref('')
 
 const dialogAbierto = ref(false)
 const editando = ref(null)
@@ -254,7 +269,7 @@ const form = ref({ nombre: '', descripcion: '' })
 const errores = ref({})
 const tituloDialog = ref('Nuevo Cargo')
 
-const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina)))
+const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina.value)))
 const formValido = computed(() => {
   const n = form.value.nombre.trim()
   return n.length > 0 && n.length <= 100
@@ -264,7 +279,7 @@ async function cargarCargos() {
   cargando.value = true
   try {
     const soloActivos = filtroActivos.value === 'activos'
-    const res = await cargoApi.listar(soloActivos, pagina.value, tamanoPagina)
+    const res = await cargoApi.listar(soloActivos, pagina.value, tamanoPagina.value, buscar.value || null)
     cargos.value = res.data.items || []
     total.value = res.data.total || 0
   } catch (e) {
@@ -369,6 +384,20 @@ watch(filtroActivos, () => {
   pagina.value = 1
   cargarCargos()
 })
+watch(mobile, () => { pagina.value = 1; cargarCargos() })
+
+function debounce(fn, ms) {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), ms)
+  }
+}
+
+const onBuscar = debounce(() => {
+  pagina.value = 1
+  cargarCargos()
+}, 300)
 
 onMounted(cargarCargos)
 </script>
@@ -376,6 +405,10 @@ onMounted(cargarCargos)
 <style scoped>
 .cargos-page {
   width: 100%;
+}
+
+.cargos-search {
+  flex-grow: 1;
 }
 
 .cargos-mobile-list {

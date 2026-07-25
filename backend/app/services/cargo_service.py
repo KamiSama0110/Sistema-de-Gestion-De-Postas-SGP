@@ -1,7 +1,9 @@
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.models.cargo import Cargo
 from app.schemas.cargo import CargoCreate, CargoUpdate
+from app.utils.sql import _escape_like
 from fastapi import HTTPException, status
 
 
@@ -17,11 +19,18 @@ async def get_cargo_by_id(db: AsyncSession, cargo_id: int) -> Cargo:
 
 
 async def listar_cargos(
-    db: AsyncSession, solo_activos: bool = True, page: int = 1, size: int = 10
+    db: AsyncSession, solo_activos: bool = True, page: int = 1, size: int = 10,
+    buscar: Optional[str] = None,
 ) -> dict:
     query = select(Cargo)
     if solo_activos:
         query = query.where(Cargo.activo)
+    if buscar:
+        escaped = _escape_like(buscar)
+        query = query.where(
+            Cargo.nombre.ilike(f"%{escaped}%")
+            | Cargo.descripcion.ilike(f"%{escaped}%")
+        )
 
     total_q = select(func.count()).select_from(query.subquery())
     total = (await db.execute(total_q)).scalar() or 0

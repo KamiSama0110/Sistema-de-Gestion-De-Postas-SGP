@@ -616,7 +616,7 @@ const guardias = ref([])
 const cargando = ref(true)
 const total = ref(0)
 const pagina = ref(1)
-const tamanoPagina = 10
+const tamanoPagina = computed(() => mobile.value ? 10 : 20)
 const buscarAsp = ref('')
 const filtroFecha = ref(null)
 const filtroEstado = ref(null)
@@ -682,7 +682,7 @@ const horasItems = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0
 const minutosItems = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
 
 const estadoMap = Object.fromEntries(estadosItems.map(e => [e.value, e]))
-const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina)))
+const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina.value)))
 const formValido = computed(() => {
   const f = form.value
   return f.asp_id && f.turno_posta_id && f.fecha
@@ -847,7 +847,7 @@ async function cargarListas() {
 async function cargarGuardias() {
   cargando.value = true
   try {
-    const params = { page: pagina.value, size: tamanoPagina }
+    const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroFecha.value) params.fecha = filtroFecha.value
     if (filtroEstado.value) params.estado = filtroEstado.value
     if (buscarAsp.value?.trim()) {
@@ -1062,6 +1062,7 @@ async function registrarNovedad() {
 }
 
 watch(filtroEstado, () => { pagina.value = 1; cargarGuardias() })
+watch(mobile, () => { pagina.value = 1; cargarGuardias() })
 
 onMounted(async () => {
   await Promise.all([cargarListas(), cargarGuardias()])
@@ -1082,7 +1083,7 @@ onMounted(async () => {
 }
 
 .guardias-search {
-  max-width: 320px;
+  flex-grow: 1;
 }
 
 .guardias-fecha {

@@ -1,8 +1,10 @@
 import api from './index'
 
 export const cargoApi = {
-  listar(soloActivos = true, page = 1, size = 10) {
-    return api.get('/cargos', { params: { solo_activos: soloActivos, page, size } })
+  listar(soloActivos = true, page = 1, size = 10, buscar = null) {
+    const params = { solo_activos: soloActivos, page, size }
+    if (buscar) params.buscar = buscar
+    return api.get('/cargos', { params })
   },
   obtener(id) {
     return api.get(`/cargos/${id}`)

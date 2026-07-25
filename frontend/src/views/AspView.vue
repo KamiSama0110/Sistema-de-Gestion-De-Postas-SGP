@@ -518,7 +518,7 @@ const asps = ref([])
 const cargando = ref(true)
 const total = ref(0)
 const pagina = ref(1)
-const tamanoPagina = 20
+const tamanoPagina = computed(() => mobile.value ? 10 : 20)
 const buscar = ref('')
 const filtroEstado = ref('todos')
 const cargoMap = ref({})
@@ -598,7 +598,7 @@ const TRANSICIONES = {
   baja_definitiva: [],
 }
 
-const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina)))
+const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina.value)))
 const tituloForm = computed(() => (editando.value ? 'Editar ASP' : 'Nuevo ASP'))
 
 const transicionesPermitidas = computed(() => {
@@ -756,7 +756,7 @@ async function cargarCargos() {
 async function cargarAsps() {
   cargando.value = true
   try {
-    const params = { page: pagina.value, size: tamanoPagina }
+    const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroEstado.value !== 'todos') params.estado = filtroEstado.value
     if (buscar.value && buscar.value.trim()) params.buscar = buscar.value.trim()
     const res = await aspApi.listar(params)
@@ -965,6 +965,7 @@ watch(filtroEstado, () => {
   pagina.value = 1
   cargarAsps()
 })
+watch(mobile, () => { pagina.value = 1; cargarAsps() })
 
 onMounted(() => {
   cargarCargos()
@@ -978,7 +979,7 @@ onMounted(() => {
 }
 
 .asp-search {
-  max-width: 320px;
+  flex-grow: 1;
 }
 
 .mono {

@@ -573,7 +573,7 @@ const postas = ref([])
 const cargando = ref(true)
 const total = ref(0)
 const pagina = ref(1)
-const tamanoPagina = 10
+const tamanoPagina = computed(() => mobile.value ? 10 : 20)
 const buscar = ref('')
 const filtroTipo = ref('todos')
 const filtroActiva = ref('activas')
@@ -605,7 +605,7 @@ const tipoItems = [
 
 const tipoMap = Object.fromEntries(tipoItems.map(t => [t.value, t]))
 
-const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina)))
+const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina.value)))
 const formValido = computed(() => {
   const f = form.value
   return f.nombre.trim().length > 0 && f.tipo
@@ -665,7 +665,7 @@ const onBuscar = debounce(() => { pagina.value = 1; cargarPostas() }, 300)
 async function cargarPostas() {
   cargando.value = true
   try {
-    const params = { page: pagina.value, size: tamanoPagina }
+    const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroTipo.value !== 'todos') params.tipo = filtroTipo.value
     if (filtroActiva.value === 'activas') params.activa = true
     if (buscar.value?.trim()) params.buscar = buscar.value.trim()
@@ -859,6 +859,7 @@ async function toggleTurnoActivo(turno) {
 }
 
 watch([filtroTipo, filtroActiva], () => { pagina.value = 1; cargarPostas() })
+watch(mobile, () => { pagina.value = 1; cargarPostas() })
 
 onMounted(cargarPostas)
 </script>
@@ -869,7 +870,7 @@ onMounted(cargarPostas)
 }
 
 .postas-search {
-  max-width: 320px;
+  flex-grow: 1;
 }
 
 .postas-mobile-list {

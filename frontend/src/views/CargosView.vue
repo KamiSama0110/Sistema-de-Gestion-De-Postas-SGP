@@ -47,18 +47,19 @@
         </div>
       </div>
 
-      <div v-if="cargando" class="d-flex align-center justify-center py-12">
-        <v-progress-circular indeterminate color="primary" />
-      </div>
-
-      <Transition name="fade-up" mode="out-in">
-        <div v-if="!cargando && cargos.length === 0" key="empty" class="text-center py-12">
-          <v-icon icon="mdi-card-account-details-outline" size="48" color="grey-lighten-1" class="mb-2" />
-          <p class="text-body-1 text-medium-emphasis">No hay cargos para mostrar</p>
+      <div aria-live="polite">
+        <div v-if="cargando" class="d-flex align-center justify-center py-12">
+          <v-progress-circular indeterminate color="primary" />
         </div>
 
-        <!-- Mobile: card list -->
-        <div v-else-if="!cargando && cargos.length > 0 && mobile" key="mobile-list" class="cargos-mobile-list">
+        <Transition name="fade-up" mode="out-in">
+          <div v-if="!cargando && cargos.length === 0" key="empty" class="text-center py-12">
+            <v-icon icon="mdi-card-account-details-outline" size="48" color="grey-lighten-1" class="mb-2" />
+            <p class="text-body-1 text-medium-emphasis">No hay cargos para mostrar</p>
+          </div>
+
+          <!-- Mobile: card list -->
+          <div v-else-if="!cargando && cargos.length > 0 && mobile" key="mobile-list" class="cargos-mobile-list">
           <div v-for="cargo in cargos" :key="cargo.id" class="cargos-mobile-card pa-4 mb-3">
             <div class="d-flex align-center justify-space-between mb-2">
               <div class="d-flex align-center ga-3">
@@ -75,7 +76,7 @@
               </v-chip>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" color="primary" @click="abrirEditar(cargo)">
+              <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar cargo" @click="abrirEditar(cargo)">
                 <v-icon icon="mdi-pencil-outline" size="16" />
               </v-btn>
               <v-btn
@@ -83,6 +84,7 @@
                 size="x-small"
                 variant="text"
                 :color="cargo.activo ? 'error' : 'success'"
+                aria-label="Cambiar estado"
                 @click="toggleEstado(cargo)"
               >
                 <v-icon :icon="cargo.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
@@ -124,6 +126,7 @@
                       size="small"
                       variant="text"
                       color="primary"
+                      aria-label="Editar cargo"
                       v-bind="props"
                       @click="abrirEditar(cargo)"
                     >
@@ -138,6 +141,7 @@
                       size="small"
                       variant="text"
                       :color="cargo.activo ? 'error' : 'success'"
+                      aria-label="Cambiar estado"
                       v-bind="props"
                       @click="toggleEstado(cargo)"
                     >
@@ -150,6 +154,7 @@
           </tbody>
         </v-table>
       </Transition>
+      </div>
 
       <div v-if="totalPaginas > 1" class="d-flex align-center justify-center ga-2 mt-4">
         <v-btn
@@ -183,6 +188,7 @@
         </v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="errores._global"
             type="error"
             variant="tonal"

@@ -58,18 +58,19 @@
         </div>
       </div>
 
-      <div v-if="cargando" class="d-flex align-center justify-center py-12">
-        <v-progress-circular indeterminate color="primary" />
-      </div>
-
-      <Transition name="fade-up" mode="out-in">
-        <div v-if="!cargando && asps.length === 0" key="empty" class="text-center py-12">
-          <v-icon icon="mdi-account-group-outline" size="48" color="grey-lighten-1" class="mb-2" />
-          <p class="text-body-1 text-medium-emphasis">No hay ASP para mostrar</p>
+      <div aria-live="polite">
+        <div v-if="cargando" class="d-flex align-center justify-center py-12">
+          <v-progress-circular indeterminate color="primary" />
         </div>
 
-        <!-- Mobile: card list -->
-        <div v-else-if="!cargando && asps.length > 0 && mobile" key="mobile-list" class="asp-mobile-list">
+        <Transition name="fade-up" mode="out-in">
+          <div v-if="!cargando && asps.length === 0" key="empty" class="text-center py-12">
+            <v-icon icon="mdi-account-group-outline" size="48" color="grey-lighten-1" class="mb-2" />
+            <p class="text-body-1 text-medium-emphasis">No hay ASP para mostrar</p>
+          </div>
+
+          <!-- Mobile: card list -->
+          <div v-else-if="!cargando && asps.length > 0 && mobile" key="mobile-list" class="asp-mobile-list">
           <div v-for="asp in asps" :key="asp.id" class="asp-mobile-card pa-4 mb-3">
             <div class="d-flex align-center justify-space-between mb-2">
               <div class="d-flex align-center ga-3">
@@ -88,13 +89,13 @@
             <div class="d-flex align-center justify-space-between">
               <span class="text-body-2 text-medium-emphasis">{{ cargoMap[asp.cargo_id] || '—' }}</span>
               <div class="d-flex ga-1">
-                <v-btn icon size="x-small" variant="text" @click="abrirFicha(asp)">
+                <v-btn icon size="x-small" variant="text" aria-label="Ver ficha" @click="abrirFicha(asp)">
                   <v-icon icon="mdi-eye-outline" size="16" />
                 </v-btn>
-                <v-btn icon size="x-small" variant="text" color="primary" @click="abrirEditar(asp)">
+                <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar ASP" @click="abrirEditar(asp)">
                   <v-icon icon="mdi-pencil-outline" size="16" />
                 </v-btn>
-                <v-btn icon size="x-small" variant="text" color="warning" @click="abrirEstado(asp)">
+                <v-btn icon size="x-small" variant="text" color="warning" aria-label="Cambiar estado" @click="abrirEstado(asp)">
                   <v-icon icon="mdi-swap-horizontal" size="16" />
                 </v-btn>
               </div>
@@ -134,21 +135,21 @@
               <td class="text-center">
                 <v-tooltip text="Ver ficha" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" v-bind="tipProps" @click="abrirFicha(asp)">
+                    <v-btn icon size="small" variant="text" aria-label="Ver ficha" v-bind="tipProps" @click="abrirFicha(asp)">
                       <v-icon icon="mdi-eye-outline" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
                 <v-tooltip text="Editar ASP" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" color="primary" v-bind="tipProps" @click="abrirEditar(asp)">
+                    <v-btn icon size="small" variant="text" color="primary" aria-label="Editar ASP" v-bind="tipProps" @click="abrirEditar(asp)">
                       <v-icon icon="mdi-pencil-outline" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
                 <v-tooltip text="Cambiar estado" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" color="warning" v-bind="tipProps" @click="abrirEstado(asp)">
+                    <v-btn icon size="small" variant="text" color="warning" aria-label="Cambiar estado" v-bind="tipProps" @click="abrirEstado(asp)">
                       <v-icon icon="mdi-swap-horizontal" size="18" />
                     </v-btn>
                   </template>
@@ -158,6 +159,7 @@
           </tbody>
         </v-table>
       </Transition>
+      </div>
 
       <div v-if="totalPaginas > 1" class="d-flex align-center justify-center ga-2 mt-4">
         <v-btn icon size="small" variant="text" :disabled="pagina === 1" aria-label="Página anterior" @click="cambiarPagina(-1)">
@@ -260,6 +262,7 @@
         </v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="errores._global"
             type="error"
             variant="tonal"

@@ -1,6 +1,7 @@
 <template>
   <div class="reportes-page mx-auto">
     <v-alert
+      role="alert"
       v-if="error"
       type="error"
       variant="tonal"
@@ -98,12 +99,13 @@
       </v-row>
     </v-card>
 
-    <div v-if="cargando" class="d-flex align-center justify-center" style="min-height: 200px">
-      <v-progress-circular indeterminate color="primary" />
-    </div>
+    <div aria-live="polite">
+      <div v-if="cargando" class="d-flex align-center justify-center" style="min-height: 200px">
+        <v-progress-circular indeterminate color="primary" />
+      </div>
 
-    <Transition name="fade-up" mode="out-in">
-      <div v-if="!cargando && reportData" key="report">
+      <Transition name="fade-up" mode="out-in">
+        <div v-if="!cargando && reportData" key="report">
         <v-card rounded="lg" class="pa-sm-5 pa-3">
           <div class="d-flex align-center justify-space-between flex-wrap ga-2 mb-4">
             <div class="d-flex align-center ga-3">
@@ -200,6 +202,7 @@
         </v-card>
       </div>
     </Transition>
+    </div>
   </div>
 </template>
 

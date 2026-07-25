@@ -69,18 +69,19 @@
         </div>
       </div>
 
-      <div v-if="cargando" class="d-flex align-center justify-center py-12">
-        <v-progress-circular indeterminate color="primary" />
-      </div>
-
-      <Transition name="fade-up" mode="out-in">
-        <div v-if="!cargando && postas.length === 0" key="empty" class="text-center py-12">
-          <v-icon icon="mdi-office-building-outline" size="48" color="grey-lighten-1" class="mb-2" />
-          <p class="text-body-1 text-medium-emphasis">No hay postas para mostrar</p>
+      <div aria-live="polite">
+        <div v-if="cargando" class="d-flex align-center justify-center py-12">
+          <v-progress-circular indeterminate color="primary" />
         </div>
 
-        <!-- Mobile: card list -->
-        <div v-else-if="!cargando && postas.length > 0 && mobile" key="mobile-list" class="postas-mobile-list">
+        <Transition name="fade-up" mode="out-in">
+          <div v-if="!cargando && postas.length === 0" key="empty" class="text-center py-12">
+            <v-icon icon="mdi-office-building-outline" size="48" color="grey-lighten-1" class="mb-2" />
+            <p class="text-body-1 text-medium-emphasis">No hay postas para mostrar</p>
+          </div>
+
+          <!-- Mobile: card list -->
+          <div v-else-if="!cargando && postas.length > 0 && mobile" key="mobile-list" class="postas-mobile-list">
           <div v-for="posta in postas" :key="posta.id" class="postas-mobile-card pa-4 mb-3">
             <div class="d-flex align-center justify-space-between mb-2">
               <div class="d-flex align-center ga-3">
@@ -99,10 +100,10 @@
             <div class="d-flex align-center justify-space-between">
               <span class="text-body-2 text-medium-emphasis">{{ posta.total_turnos }} turno{{ posta.total_turnos !== 1 ? 's' : '' }}</span>
               <div class="d-flex ga-1">
-                <v-btn icon size="x-small" variant="text" @click="abrirFicha(posta)">
+                <v-btn icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirFicha(posta)">
                   <v-icon icon="mdi-eye-outline" size="16" />
                 </v-btn>
-                <v-btn icon size="x-small" variant="text" color="primary" @click="abrirEditar(posta)">
+                <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar posta" @click="abrirEditar(posta)">
                   <v-icon icon="mdi-pencil-outline" size="16" />
                 </v-btn>
                 <v-btn
@@ -110,6 +111,7 @@
                   size="x-small"
                   variant="text"
                   :color="posta.activa ? 'error' : 'success'"
+                  aria-label="Cambiar estado"
                   @click="toggleActiva(posta)"
                 >
                   <v-icon :icon="posta.activa ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
@@ -153,14 +155,14 @@
               <td class="text-center">
                 <v-tooltip text="Ver detalle" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" v-bind="tipProps" @click="abrirFicha(posta)">
+                    <v-btn icon size="small" variant="text" aria-label="Ver detalle" v-bind="tipProps" @click="abrirFicha(posta)">
                       <v-icon icon="mdi-eye-outline" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
                 <v-tooltip text="Editar posta" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" color="primary" v-bind="tipProps" @click="abrirEditar(posta)">
+                    <v-btn icon size="small" variant="text" color="primary" aria-label="Editar posta" v-bind="tipProps" @click="abrirEditar(posta)">
                       <v-icon icon="mdi-pencil-outline" size="18" />
                     </v-btn>
                   </template>
@@ -172,6 +174,7 @@
                       size="small"
                       variant="text"
                       :color="posta.activa ? 'error' : 'success'"
+                      aria-label="Cambiar estado"
                       v-bind="tipProps"
                       @click="toggleActiva(posta)"
                     >
@@ -184,6 +187,7 @@
           </tbody>
         </v-table>
       </Transition>
+      </div>
 
       <div v-if="totalPaginas > 1" class="d-flex align-center justify-center ga-2 mt-4">
         <v-btn icon size="small" variant="text" :disabled="pagina === 1" aria-label="Página anterior" @click="cambiarPagina(-1)">
@@ -280,7 +284,7 @@
                     >
                       {{ turno.activo ? 'Activo' : 'Inactivo' }}
                     </v-chip>
-                    <v-btn icon size="x-small" variant="text" color="primary" @click="abrirTurno(turno)">
+                    <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar turno" @click="abrirTurno(turno)">
                       <v-icon icon="mdi-pencil-outline" size="16" />
                     </v-btn>
                     <v-btn
@@ -288,6 +292,7 @@
                       size="x-small"
                       variant="text"
                       :color="turno.activo ? 'error' : 'success'"
+                      aria-label="Cambiar estado"
                       @click="toggleTurnoActivo(turno)"
                     >
                       <v-icon :icon="turno.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
@@ -316,6 +321,7 @@
         </v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="errores._global"
             type="error"
             variant="tonal"
@@ -416,6 +422,7 @@
         </v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="erroresTurno._global"
             type="error"
             variant="tonal"

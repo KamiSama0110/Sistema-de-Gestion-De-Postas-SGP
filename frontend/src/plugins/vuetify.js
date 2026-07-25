@@ -4,6 +4,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+import { es } from 'vuetify/locale'
 
 const sgpCorporate = {
   dark: false,
@@ -38,6 +39,10 @@ const sgpCorporate = {
 const vuetify = createVuetify({
   components,
   directives,
+  locale: {
+    locale: 'es',
+    messages: { es },
+  },
   theme: {
     defaultTheme: 'sgpCorporate',
     themes: { sgpCorporate },

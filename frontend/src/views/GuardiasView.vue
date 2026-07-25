@@ -65,18 +65,19 @@
         </div>
       </div>
 
-      <div v-if="cargando" class="d-flex align-center justify-center py-12">
-        <v-progress-circular indeterminate color="primary" />
-      </div>
-
-      <Transition name="fade-up" mode="out-in">
-        <div v-if="!cargando && guardias.length === 0" key="empty" class="text-center py-12">
-          <v-icon icon="mdi-shield-check-outline" size="48" color="grey-lighten-1" class="mb-2" />
-          <p class="text-body-1 text-medium-emphasis">No hay guardias para mostrar</p>
+      <div aria-live="polite">
+        <div v-if="cargando" class="d-flex align-center justify-center py-12">
+          <v-progress-circular indeterminate color="primary" />
         </div>
 
-        <!-- Mobile: card list -->
-        <div v-else-if="!cargando && guardias.length > 0 && mobile" key="mobile-list" class="guardias-mobile-list">
+        <Transition name="fade-up" mode="out-in">
+          <div v-if="!cargando && guardias.length === 0" key="empty" class="text-center py-12">
+            <v-icon icon="mdi-shield-check-outline" size="48" color="grey-lighten-1" class="mb-2" />
+            <p class="text-body-1 text-medium-emphasis">No hay guardias para mostrar</p>
+          </div>
+
+          <!-- Mobile: card list -->
+          <div v-else-if="!cargando && guardias.length > 0 && mobile" key="mobile-list" class="guardias-mobile-list">
           <div v-for="g in guardias" :key="g.id" class="guardias-mobile-card pa-4 mb-3">
             <div class="d-flex align-center justify-space-between mb-2">
               <div class="d-flex align-center ga-3">
@@ -100,12 +101,13 @@
               <span v-if="g.tardanza_minutos > 0" class="text-error font-weight-medium">+{{ g.tardanza_minutos }} min</span>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" @click="abrirDetalle(g)">
+              <v-btn icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirDetalle(g)">
                 <v-icon icon="mdi-eye-outline" size="16" />
               </v-btn>
               <v-btn
                 v-if="g.estado === 'planificada'"
                 icon size="x-small" variant="text" color="success"
+                aria-label="Confirmar llegada"
                 @click="abrirConfirmar(g)"
               >
                 <v-icon icon="mdi-clock-check-outline" size="16" />
@@ -113,6 +115,7 @@
               <v-btn
                 v-if="g.estado === 'activa'"
                 icon size="x-small" variant="text" color="warning"
+                aria-label="Finalizar guardia"
                 @click="abrirFinalizar(g)"
               >
                 <v-icon icon="mdi-stop-circle-outline" size="16" />
@@ -120,6 +123,7 @@
               <v-btn
                 v-if="g.estado === 'activa'"
                 icon size="x-small" variant="text" color="info"
+                aria-label="Registrar novedad"
                 @click="abrirNovedad(g)"
               >
                 <v-icon icon="mdi-note-plus-outline" size="16" />
@@ -162,28 +166,28 @@
               <td class="text-center">
                 <v-tooltip text="Ver detalle" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" v-bind="tipProps" @click="abrirDetalle(g)">
+                    <v-btn icon size="small" variant="text" aria-label="Ver detalle" v-bind="tipProps" @click="abrirDetalle(g)">
                       <v-icon icon="mdi-eye-outline" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
                 <v-tooltip v-if="g.estado === 'planificada'" text="Confirmar llegada" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" color="success" v-bind="tipProps" @click="abrirConfirmar(g)">
+                    <v-btn icon size="small" variant="text" color="success" aria-label="Confirmar llegada" v-bind="tipProps" @click="abrirConfirmar(g)">
                       <v-icon icon="mdi-clock-check-outline" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
                 <v-tooltip v-if="g.estado === 'activa'" text="Finalizar" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" color="warning" v-bind="tipProps" @click="abrirFinalizar(g)">
+                    <v-btn icon size="small" variant="text" color="warning" aria-label="Finalizar guardia" v-bind="tipProps" @click="abrirFinalizar(g)">
                       <v-icon icon="mdi-stop-circle-outline" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
                 <v-tooltip v-if="g.estado === 'activa'" text="Registrar novedad" location="top">
                   <template #activator="{ props: tipProps }">
-                    <v-btn icon size="small" variant="text" color="info" v-bind="tipProps" @click="abrirNovedad(g)">
+                    <v-btn icon size="small" variant="text" color="info" aria-label="Registrar novedad" v-bind="tipProps" @click="abrirNovedad(g)">
                       <v-icon icon="mdi-note-plus-outline" size="18" />
                     </v-btn>
                   </template>
@@ -193,6 +197,7 @@
           </tbody>
         </v-table>
       </Transition>
+      </div>
 
       <div v-if="totalPaginas > 1" class="d-flex align-center justify-center ga-2 mt-4">
         <v-btn icon size="small" variant="text" :disabled="pagina === 1" aria-label="Página anterior" @click="cambiarPagina(-1)">
@@ -317,6 +322,7 @@
         </v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="errores._global"
             type="error"
             variant="tonal"
@@ -410,6 +416,7 @@
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Confirmar Llegada</v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="erroresConfirmar._global"
             type="error"
             variant="tonal"
@@ -469,6 +476,7 @@
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Finalizar Guardia</v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="erroresFinalizar._global"
             type="error"
             variant="tonal"
@@ -537,6 +545,7 @@
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Registrar Novedad</v-card-title>
         <v-card-text class="pa-5">
           <v-alert
+            role="alert"
             v-if="erroresNovedad._global"
             type="error"
             variant="tonal"

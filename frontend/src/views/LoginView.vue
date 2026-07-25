@@ -19,6 +19,7 @@
       </p>
 
       <v-alert
+        role="alert"
         v-if="error"
         type="error"
         variant="tonal"

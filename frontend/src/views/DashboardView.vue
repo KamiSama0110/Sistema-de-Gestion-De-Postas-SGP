@@ -1,6 +1,7 @@
 <template>
   <div class="dashboard mx-auto">
     <v-alert
+      role="alert"
       v-if="error"
       type="error"
       variant="tonal"
@@ -12,12 +13,13 @@
       {{ error }}
     </v-alert>
 
-    <div v-if="cargando" class="d-flex align-center justify-center" style="min-height: 300px">
-      <v-progress-circular indeterminate color="primary" />
-    </div>
+    <div aria-live="polite">
+      <div v-if="cargando" class="d-flex align-center justify-center" style="min-height: 300px">
+        <v-progress-circular indeterminate color="primary" />
+      </div>
 
-    <Transition name="fade-up" mode="out-in">
-      <div v-if="!cargando" key="content">
+      <Transition name="fade-up" mode="out-in">
+        <div v-if="!cargando" key="content">
       <v-row class="mb-6" dense>
         <v-col v-for="stat in stats" :key="stat.label" cols="6" md="3">
           <v-card rounded="lg" class="stat-card pa-4 d-flex flex-column" style="min-height: 120px">
@@ -157,6 +159,7 @@
       </v-card>
       </div>
     </Transition>
+    </div>
   </div>
 </template>
 

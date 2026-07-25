@@ -91,6 +91,7 @@
               <th class="text-caption font-weight-bold text-medium-emphasis">Horario</th>
               <th class="text-caption font-weight-bold text-medium-emphasis">Estado</th>
               <th class="text-caption font-weight-bold text-medium-emphasis text-right">Tardanza</th>
+              <th class="text-caption font-weight-bold text-medium-emphasis text-right"></th>
             </tr>
           </thead>
           <tbody>
@@ -114,6 +115,19 @@
                 </span>
                 <span v-else class="text-medium-emphasis">—</span>
               </td>
+              <td class="text-right">
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  @click="router.push({ name: 'guardias', query: { detalle: g.id } })"
+                  aria-label="Ver guardia"
+                >
+                  <v-icon icon="mdi-eye-outline" size="18" />
+                  <v-tooltip activator="parent" location="top">Ver</v-tooltip>
+                </v-btn>
+              </td>
             </tr>
           </tbody>
         </v-table>
@@ -126,12 +140,14 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { aspApi } from '../api/asp'
 import { guardiaApi } from '../api/guardia'
 import { postaApi } from '../api/posta'
 import { reporteApi } from '../api/reporte'
 import { normalizeApiError } from '../utils/error'
 
+const router = useRouter()
 const cargando = ref(true)
 const error = ref('')
 
@@ -173,9 +189,7 @@ const stats = computed(() => [
     value: coberturaData.value ? `${coberturaData.value.cobertura_general}%` : '—',
     icon: 'mdi-chart-donut',
     color: coberturaData.value && coberturaData.value.cobertura_general >= 80 ? 'success' : 'error',
-    sub: coberturaData.value && coberturaData.value.total_planificadas > 0
-      ? `${coberturaData.value.total_finalizadas}/${coberturaData.value.total_planificadas} guardias`
-      : null,
+    sub: null,
   },
 ])
 
@@ -209,7 +223,7 @@ const guardiasHoy = computed(() => {
     const turno = postaMap.value[g.turno_posta_id]
     return {
       id: g.id,
-      asp_nombre: asp?.nombre || `ASP #${g.asp_id}`,
+      asp_nombre: asp ? `${asp.nombre} ${asp.apellidos}` : `ASP #${g.asp_id}`,
       posta_nombre: turno?.posta_nombre || '—',
       horario: turno?.horario || '—',
       estado: g.estado,
@@ -257,26 +271,26 @@ async function cargarDatos() {
   try {
     const hoy = todayStr()
 
-    const [aspRes, guardiasRes, coberturaRes, turnosRes] = await Promise.allSettled([
+    const [aspRes, guardiasRes, coberturaRes, turnosRes, postasRes] = await Promise.allSettled([
       aspApi.listar({ page: 1, size: 1 }),
       guardiaApi.listar({ fecha: hoy, page: 1, size: 100 }),
       reporteApi.cobertura({ fecha_desde: hoy, fecha_hasta: hoy }),
-      postaApi.listarTurnos({ page: 1, size: 500 }),
+      postaApi.listarTurnos({ page: 1, size: 100 }),
+      postaApi.listar({ page: 1, size: 1, activa: true }),
     ])
 
     if (aspRes.status === 'fulfilled') {
       totalAsp.value = aspRes.value.data.total || 0
-      const items = aspRes.value.data.items || []
-      for (const a of items) {
-        aspMap.value[a.id] = a
-      }
     }
 
-    if (aspRes.status === 'fulfilled' && aspRes.value.data.total > 1) {
-      const allAsp = await aspApi.listar({ page: 1, size: 200 }).catch(() => null)
-      if (allAsp) {
-        for (const a of allAsp.data.items || []) {
-          aspMap.value[a.id] = a
+    if (totalAsp.value > 0) {
+      const pages = Math.ceil(totalAsp.value / 100)
+      for (let p = 1; p <= pages; p++) {
+        const pageRes = await aspApi.listar({ page: p, size: 100 }).catch(() => null)
+        if (pageRes) {
+          for (const a of pageRes.data.items || []) {
+            aspMap.value[a.id] = a
+          }
         }
       }
     }
@@ -291,6 +305,10 @@ async function cargarDatos() {
 
     if (turnosRes.status === 'fulfilled') {
       postaMap.value = buildPostaTurnoMap(turnosRes.value.data.items || [])
+    }
+
+    if (postasRes.status === 'fulfilled') {
+      totalPostas.value = postasRes.value.data.total || 0
     }
   } catch (e) {
     error.value = normalizeApiError(e, 'Error al cargar datos del dashboard')

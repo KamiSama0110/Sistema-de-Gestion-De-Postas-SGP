@@ -199,6 +199,19 @@ async def agregar_turno(
     db: AsyncSession, posta_id: int, datos: TurnoPostaCreate
 ) -> TurnoPosta:
     await get_posta_by_id(db, posta_id)
+    existente = await db.execute(
+        select(TurnoPosta).where(
+            TurnoPosta.posta_id == posta_id,
+            TurnoPosta.nombre == datos.nombre,
+            TurnoPosta.hora_inicio == datos.hora_inicio,
+            TurnoPosta.hora_fin == datos.hora_fin,
+        )
+    )
+    if existente.first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe un turno '{datos.nombre}' con el horario {datos.hora_inicio.strftime('%H:%M')}-{datos.hora_fin.strftime('%H:%M')} en esta posta",
+        )
     turno = TurnoPosta(
         posta_id=posta_id,
         cruza_medianoche=calcular_cruza_medianoche(
@@ -230,6 +243,24 @@ async def actualizar_turno(
 ) -> TurnoPosta:
     turno = await get_turno_by_id(db, turno_id)
     update_data = datos.model_dump(exclude_unset=True)
+    if "nombre" in update_data or "hora_inicio" in update_data or "hora_fin" in update_data:
+        nombre = update_data.get("nombre", turno.nombre)
+        hora_inicio = update_data.get("hora_inicio", turno.hora_inicio)
+        hora_fin = update_data.get("hora_fin", turno.hora_fin)
+        existente = await db.execute(
+            select(TurnoPosta).where(
+                TurnoPosta.posta_id == turno.posta_id,
+                TurnoPosta.nombre == nombre,
+                TurnoPosta.hora_inicio == hora_inicio,
+                TurnoPosta.hora_fin == hora_fin,
+                TurnoPosta.id != turno_id,
+            )
+        )
+        if existente.first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe un turno '{nombre}' con el horario {hora_inicio.strftime('%H:%M')}-{hora_fin.strftime('%H:%M')} en esta posta",
+            )
     for campo, valor in update_data.items():
         setattr(turno, campo, valor)
     if "hora_inicio" in update_data or "hora_fin" in update_data:

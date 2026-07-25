@@ -35,7 +35,7 @@
         </v-col>
       </v-row>
 
-      <v-card v-if="cobertura && cobertura.total > 0" rounded="lg" class="mb-6 pa-5">
+      <v-card v-if="cobertura && cobertura.total > 0" rounded="lg" class="mb-6 pa-sm-5 pa-3">
         <div class="d-flex align-center justify-space-between mb-3">
           <div class="text-subtitle-2 font-weight-bold">Cobertura del día</div>
           <div class="text-h5 font-weight-bold" :class="coberturaColor">
@@ -56,7 +56,7 @@
         </div>
       </v-card>
 
-      <v-card rounded="lg" class="pa-5">
+      <v-card rounded="lg" class="pa-sm-5 pa-3">
         <div class="d-flex align-center justify-space-between mb-4">
           <div class="text-subtitle-2 font-weight-bold">Guardias de hoy</div>
           <v-chip v-if="guardiasHoy.length" size="small" variant="tonal" color="primary">
@@ -83,54 +83,76 @@
             </v-chip>
           </div>
 
-          <v-table density="comfortable">
-          <thead>
-            <tr>
-              <th class="text-caption font-weight-bold text-medium-emphasis">ASP</th>
-              <th class="text-caption font-weight-bold text-medium-emphasis">Posta</th>
-              <th class="text-caption font-weight-bold text-medium-emphasis">Horario</th>
-              <th class="text-caption font-weight-bold text-medium-emphasis">Estado</th>
-              <th class="text-caption font-weight-bold text-medium-emphasis text-right">Tardanza</th>
-              <th class="text-caption font-weight-bold text-medium-emphasis text-right"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="g in guardiasHoy" :key="g.id">
-              <td class="font-weight-medium">{{ g.asp_nombre }}</td>
-              <td class="text-medium-emphasis">{{ g.posta_nombre }}</td>
-              <td class="text-medium-emphasis mono">{{ g.horario }}</td>
-              <td>
-                <v-chip
-                  :color="estadoColor(g.estado)"
-                  size="x-small"
-                  variant="tonal"
-                  label
-                >
+          <v-table v-if="!mobile" density="comfortable">
+            <thead>
+              <tr>
+                <th class="text-caption font-weight-bold text-medium-emphasis">ASP</th>
+                <th class="text-caption font-weight-bold text-medium-emphasis">Posta</th>
+                <th class="text-caption font-weight-bold text-medium-emphasis">Horario</th>
+                <th class="text-caption font-weight-bold text-medium-emphasis">Estado</th>
+                <th class="text-caption font-weight-bold text-medium-emphasis text-right">Tardanza</th>
+                <th class="text-caption font-weight-bold text-medium-emphasis text-right"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="g in guardiasHoy" :key="g.id">
+                <td class="font-weight-medium">{{ g.asp_nombre }}</td>
+                <td class="text-medium-emphasis">{{ g.posta_nombre }}</td>
+                <td class="text-medium-emphasis mono">{{ g.horario }}</td>
+                <td>
+                  <v-chip :color="estadoColor(g.estado)" size="x-small" variant="tonal" label>
+                    {{ g.estado }}
+                  </v-chip>
+                </td>
+                <td class="text-right">
+                  <span v-if="g.tardanza" class="text-error text-body-2">{{ g.tardanza }} min</span>
+                  <span v-else class="text-medium-emphasis">—</span>
+                </td>
+                <td class="text-right">
+                  <v-btn
+                    icon variant="text" size="small" color="primary"
+                    @click="router.push({ name: 'guardias', query: { detalle: g.id } })"
+                    aria-label="Ver guardia"
+                  >
+                    <v-icon icon="mdi-eye-outline" size="18" />
+                    <v-tooltip activator="parent" location="top">Ver</v-tooltip>
+                  </v-btn>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+
+          <div v-else class="dashboard-guardias-mobile">
+            <div v-for="g in guardiasHoy" :key="g.id" class="dashboard-guardia-card pa-3 mb-2">
+              <div class="d-flex align-center justify-space-between mb-1">
+                <div class="d-flex align-center ga-2">
+                  <v-avatar :color="estadoColor(g.estado)" size="32" rounded="lg">
+                    <v-icon icon="mdi-account-outline" size="16" color="white" />
+                  </v-avatar>
+                  <div>
+                    <div class="text-body-2 font-weight-medium">{{ g.asp_nombre }}</div>
+                    <div class="text-caption text-medium-emphasis">{{ g.posta_nombre }}</div>
+                  </div>
+                </div>
+                <v-chip :color="estadoColor(g.estado)" size="x-small" variant="tonal" label>
                   {{ g.estado }}
                 </v-chip>
-              </td>
-              <td class="text-right">
-                <span v-if="g.tardanza" class="text-error text-body-2">
-                  {{ g.tardanza }} min
-                </span>
-                <span v-else class="text-medium-emphasis">—</span>
-              </td>
-              <td class="text-right">
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  color="primary"
-                  @click="router.push({ name: 'guardias', query: { detalle: g.id } })"
-                  aria-label="Ver guardia"
-                >
-                  <v-icon icon="mdi-eye-outline" size="18" />
-                  <v-tooltip activator="parent" location="top">Ver</v-tooltip>
-                </v-btn>
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+              </div>
+              <div class="d-flex align-center justify-space-between mt-2">
+                <span class="text-caption text-medium-emphasis mono">{{ g.horario }}</span>
+                <div class="d-flex align-center ga-2">
+                  <span v-if="g.tardanza" class="text-caption text-error">+{{ g.tardanza }} min</span>
+                  <v-btn
+                    icon variant="text" size="x-small" color="primary"
+                    @click="router.push({ name: 'guardias', query: { detalle: g.id } })"
+                    aria-label="Ver guardia"
+                  >
+                    <v-icon icon="mdi-eye-outline" size="16" />
+                  </v-btn>
+                </div>
+              </div>
+            </div>
+          </div>
         </template>
       </v-card>
       </div>
@@ -141,6 +163,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 import { aspApi } from '../api/asp'
 import { guardiaApi } from '../api/guardia'
 import { postaApi } from '../api/posta'
@@ -148,6 +171,7 @@ import { reporteApi } from '../api/reporte'
 import { normalizeApiError } from '../utils/error'
 
 const router = useRouter()
+const { mobile } = useDisplay()
 const cargando = ref(true)
 const error = ref('')
 
@@ -336,5 +360,16 @@ onMounted(cargarDatos)
 
 .mono {
   font-variant-numeric: tabular-nums;
+}
+
+.dashboard-guardias-mobile {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-guardia-card {
+  border: 1px solid rgb(var(--v-border-color));
+  border-radius: 12px;
+  background: rgb(var(--v-theme-surface));
 }
 </style>

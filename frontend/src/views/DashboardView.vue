@@ -14,9 +14,7 @@
     </v-alert>
 
     <div aria-live="polite">
-      <div v-if="cargando" class="d-flex align-center justify-center" style="min-height: 300px">
-        <v-progress-circular indeterminate color="primary" />
-      </div>
+      <SkeletonDashboard v-if="cargando" />
 
       <Transition name="fade-up" mode="out-in">
         <div v-if="!cargando" key="content">
@@ -172,6 +170,7 @@ import { guardiaApi } from '../api/guardia'
 import { postaApi } from '../api/posta'
 import { reporteApi } from '../api/reporte'
 import { normalizeApiError } from '../utils/error'
+import SkeletonDashboard from '../components/SkeletonDashboard.vue'
 
 const router = useRouter()
 const { mobile } = useDisplay()

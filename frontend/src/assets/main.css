@@ -64,6 +64,21 @@ body {
   top: 0;
 }
 
+/* Skeleton mobile card — imita el layout de card list */
+.skeleton-mobile-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+/* Skeleton table — fondo del card para el estado loading */
+.skeleton-table {
+  background: var(--surface-card);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 /* Page transitions — slide-fade for route changes */
 .page-slide-enter-active {
   transition: opacity 0.25s ease, transform 0.25s ease;

@@ -100,9 +100,7 @@
     </v-card>
 
     <div aria-live="polite">
-      <div v-if="cargando" class="d-flex align-center justify-center" style="min-height: 200px">
-        <v-progress-circular indeterminate color="primary" />
-      </div>
+      <SkeletonList v-if="cargando" :filas="6" :avatar="false" />
 
       <Transition name="fade-up" mode="out-in">
         <div v-if="!cargando && reportData" key="report">
@@ -214,6 +212,7 @@ import { applyPlugin } from 'jspdf-autotable'
 import { reporteApi } from '../api/reporte'
 import { normalizeApiError } from '../utils/error'
 import { useToast } from '../composables/useToast'
+import SkeletonList from '../components/SkeletonList.vue'
 
 applyPlugin(jsPDF)
 

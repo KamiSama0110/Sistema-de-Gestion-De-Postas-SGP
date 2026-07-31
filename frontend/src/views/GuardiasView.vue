@@ -66,9 +66,7 @@
       </div>
 
       <div aria-live="polite">
-        <div v-if="cargando" class="d-flex align-center justify-center py-12">
-          <v-progress-circular indeterminate color="primary" />
-        </div>
+        <SkeletonList v-if="cargando" :filas="6" />
 
         <Transition name="fade-up" mode="out-in">
           <div v-if="!cargando && guardias.length === 0" key="empty" class="text-center py-12">
@@ -616,6 +614,7 @@ import { postaApi } from '../api/posta'
 import { aspApi } from '../api/asp'
 import { normalizeApiError } from '../utils/error'
 import { useToast } from '../composables/useToast'
+import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
 const { mobile } = useDisplay()

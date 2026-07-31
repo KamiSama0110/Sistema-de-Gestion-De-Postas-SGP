@@ -19,6 +19,12 @@ export const guardiaApi = {
   finalizar(id, datos) {
     return api.patch(`/guardias/${id}/finalizar`, datos)
   },
+  marcarAusente(id, datos) {
+    return api.patch(`/guardias/${id}/ausente`, datos)
+  },
+  cancelar(id, datos) {
+    return api.patch(`/guardias/${id}/cancelar`, datos)
+  },
   registrarNovedad(id, datos) {
     return api.post(`/guardias/${id}/novedades`, datos)
   },

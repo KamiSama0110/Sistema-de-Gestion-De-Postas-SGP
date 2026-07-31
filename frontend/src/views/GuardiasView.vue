@@ -111,6 +111,22 @@
                 <v-icon icon="mdi-clock-check-outline" size="16" />
               </v-btn>
               <v-btn
+                v-if="g.estado === 'planificada'"
+                icon size="x-small" variant="text" color="warning"
+                aria-label="Marcar ausente"
+                @click="abrirAusente(g)"
+              >
+                <v-icon icon="mdi-account-off-outline" size="16" />
+              </v-btn>
+              <v-btn
+                v-if="g.estado === 'planificada'"
+                icon size="x-small" variant="text" color="error"
+                aria-label="Cancelar guardia"
+                @click="abrirCancelar(g)"
+              >
+                <v-icon icon="mdi-cancel" size="16" />
+              </v-btn>
+              <v-btn
                 v-if="g.estado === 'activa'"
                 icon size="x-small" variant="text" color="warning"
                 aria-label="Finalizar guardia"
@@ -173,6 +189,20 @@
                   <template #activator="{ props: tipProps }">
                     <v-btn icon size="small" variant="text" color="success" aria-label="Confirmar llegada" v-bind="tipProps" @click="abrirConfirmar(g)">
                       <v-icon icon="mdi-clock-check-outline" size="18" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip v-if="g.estado === 'planificada'" text="Marcar ausente" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn icon size="small" variant="text" color="warning" aria-label="Marcar ausente" v-bind="tipProps" @click="abrirAusente(g)">
+                      <v-icon icon="mdi-account-off-outline" size="18" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip v-if="g.estado === 'planificada'" text="Cancelar guardia" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn icon size="small" variant="text" color="error" aria-label="Cancelar guardia" v-bind="tipProps" @click="abrirCancelar(g)">
+                      <v-icon icon="mdi-cancel" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
@@ -537,6 +567,140 @@
       </v-card>
     </v-dialog>
 
+    <!-- Dialog marcar ausente -->
+    <v-dialog v-model="dialogAusente" :max-width="mobile ? undefined : 480" persistent scrollable>
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Marcar como Ausente</v-card-title>
+        <v-card-text class="pa-5">
+          <v-alert
+            role="alert"
+            v-if="erroresAusente._global"
+            type="error"
+            variant="tonal"
+            density="compact"
+            closable
+            class="mb-4"
+            @click:close="erroresAusente._global = null"
+          >
+            {{ erroresAusente._global }}
+          </v-alert>
+          <v-form @submit.prevent="marcarAusente">
+            <v-radio-group
+              v-model="formAusente.justificada"
+              color="warning"
+              density="compact"
+              class="mb-3"
+            >
+              <v-radio label="Justificada" value="justificada" />
+              <v-radio label="No justificada" value="no_justificada" />
+            </v-radio-group>
+            <v-textarea
+              v-if="formAusente.justificada === 'justificada'"
+              v-model="formAusente.motivo_ausencia"
+              label="Motivo de ausencia *"
+              variant="outlined"
+              density="comfortable"
+              rows="3"
+              auto-grow
+              :error-messages="erroresAusente.motivo_ausencia"
+              class="mb-3"
+            />
+            <v-textarea
+              v-model="formAusente.observaciones"
+              label="Observaciones (opcional)"
+              variant="outlined"
+              density="comfortable"
+              rows="2"
+              auto-grow
+              class="mb-1"
+            />
+          </v-form>
+        </v-card-text>
+        <v-card-actions class="pa-5 pt-0">
+          <v-spacer />
+          <v-btn variant="text" class="text-none text-body-1" @click="dialogAusente = false">Cancelar</v-btn>
+          <v-tooltip
+            :disabled="formAusente.justificada !== 'justificada' || !!formAusente.motivo_ausencia?.trim()"
+            location="top"
+          >
+            <template #activator="{ props: tipProps }">
+              <span v-bind="tipProps">
+                <v-btn
+                  color="warning"
+                  :disabled="
+                    !formAusente.justificada ||
+                    (formAusente.justificada === 'justificada' && !formAusente.motivo_ausencia?.trim())
+                  "
+                  :loading="guardandoAccion"
+                  class="text-none text-body-1"
+                  @click="marcarAusente"
+                >
+                  Marcar ausente
+                </v-btn>
+              </span>
+            </template>
+            <span>Indique el motivo de ausencia</span>
+          </v-tooltip>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog cancelar guardia -->
+    <v-dialog v-model="dialogCancelar" :max-width="mobile ? undefined : 480" persistent scrollable>
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Cancelar Guardia</v-card-title>
+        <v-card-text class="pa-5">
+          <v-alert
+            role="alert"
+            v-if="erroresCancelar._global"
+            type="error"
+            variant="tonal"
+            density="compact"
+            closable
+            class="mb-4"
+            @click:close="erroresCancelar._global = null"
+          >
+            {{ erroresCancelar._global }}
+          </v-alert>
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            La guardia de <strong>{{ guardiaCancelar ? aspNombre(guardiaCancelar.asp_id) : '' }}</strong>
+            del <strong>{{ guardiaCancelar ? formatFecha(guardiaCancelar.fecha) : '' }}</strong> quedará cancelada.
+          </p>
+          <v-form @submit.prevent="cancelarGuardia">
+            <v-text-field
+              v-model="formCancelar.motivo"
+              label="Motivo (opcional)"
+              variant="outlined"
+              density="comfortable"
+              :error-messages="erroresCancelar.motivo"
+              class="mb-3"
+            />
+            <v-textarea
+              v-model="formCancelar.observaciones"
+              label="Observaciones (opcional)"
+              variant="outlined"
+              density="comfortable"
+              rows="2"
+              auto-grow
+              class="mb-1"
+            />
+          </v-form>
+        </v-card-text>
+        <v-card-actions class="pa-5 pt-0">
+          <v-spacer />
+          <v-btn variant="text" class="text-none text-body-1" @click="dialogCancelar = false">Volver</v-btn>
+          <v-btn
+            color="error"
+            :loading="guardandoAccion"
+            class="text-none text-body-1"
+            @click="cancelarGuardia"
+          >
+            Cancelar guardia
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Dialog registrar novedad -->
     <v-dialog v-model="dialogNovedad" :max-width="mobile ? undefined : 480" persistent>
       <v-card rounded="lg">
@@ -653,6 +817,16 @@ const dialogFinalizar = ref(false)
 const guardiaFinalizar = ref(null)
 const formFin = ref({ hora_fin_real: '', observaciones: '' })
 const erroresFinalizar = ref({})
+
+const dialogAusente = ref(false)
+const guardiaAusente = ref(null)
+const formAusente = ref({ justificada: null, motivo_ausencia: '', observaciones: '' })
+const erroresAusente = ref({})
+
+const dialogCancelar = ref(false)
+const guardiaCancelar = ref(null)
+const formCancelar = ref({ motivo: '', observaciones: '' })
+const erroresCancelar = ref({})
 
 const dialogNovedad = ref(false)
 const guardiaNovedad = ref(null)
@@ -1032,6 +1206,65 @@ async function finalizarGuardia() {
       erroresFinalizar.value = { _global: detail }
     } else {
       toast.error(normalizeApiError(e, 'Error al finalizar'))
+    }
+  } finally {
+    guardandoAccion.value = false
+  }
+}
+
+function abrirAusente(g) {
+  guardiaAusente.value = g
+  formAusente.value = { justificada: null, motivo_ausencia: '', observaciones: '' }
+  erroresAusente.value = {}
+  dialogAusente.value = true
+}
+
+async function marcarAusente() {
+  if (formAusente.value.justificada === 'justificada' && !formAusente.value.motivo_ausencia?.trim()) return
+  guardandoAccion.value = true
+  try {
+    const payload = {}
+    if (formAusente.value.justificada === 'justificada') payload.motivo_ausencia = formAusente.value.motivo_ausencia.trim()
+    if (formAusente.value.observaciones?.trim()) payload.observaciones = formAusente.value.observaciones.trim()
+    await guardiaApi.marcarAusente(guardiaAusente.value.id, payload)
+    toast.success('Guardia marcada como ausente')
+    dialogAusente.value = false
+    await cargarGuardias()
+  } catch (e) {
+    const detail = e?.response?.data?.detail
+    if (typeof detail === 'string') {
+      erroresAusente.value = { _global: detail }
+    } else {
+      toast.error(normalizeApiError(e, 'Error al marcar ausente'))
+    }
+  } finally {
+    guardandoAccion.value = false
+  }
+}
+
+function abrirCancelar(g) {
+  guardiaCancelar.value = g
+  formCancelar.value = { motivo: '', observaciones: '' }
+  erroresCancelar.value = {}
+  dialogCancelar.value = true
+}
+
+async function cancelarGuardia() {
+  guardandoAccion.value = true
+  try {
+    const payload = {}
+    if (formCancelar.value.motivo?.trim()) payload.motivo = formCancelar.value.motivo.trim()
+    if (formCancelar.value.observaciones?.trim()) payload.observaciones = formCancelar.value.observaciones.trim()
+    await guardiaApi.cancelar(guardiaCancelar.value.id, payload)
+    toast.success('Guardia cancelada')
+    dialogCancelar.value = false
+    await cargarGuardias()
+  } catch (e) {
+    const detail = e?.response?.data?.detail
+    if (typeof detail === 'string') {
+      erroresCancelar.value = { _global: detail }
+    } else {
+      toast.error(normalizeApiError(e, 'Error al cancelar guardia'))
     }
   } finally {
     guardandoAccion.value = false

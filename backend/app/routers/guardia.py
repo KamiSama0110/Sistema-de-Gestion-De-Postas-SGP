@@ -15,6 +15,8 @@ from app.schemas.guardia import (
     PaginatedNovedad,
     ConfirmarLlegadaRequest,
     FinalizarGuardiaRequest,
+    MarcarAusenteRequest,
+    CancelarGuardiaRequest,
     NovedadCreate,
     NovedadResponse,
 )
@@ -86,6 +88,28 @@ async def finalizar_guardia(
     _: Usuario = Depends(get_current_user),
 ):
     await guardia_service.finalizar_guardia(db, guardia_id, datos)
+    return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
+
+
+@router.patch("/{guardia_id}/ausente", response_model=GuardiaResponse)
+async def marcar_ausente(
+    guardia_id: int,
+    datos: MarcarAusenteRequest,
+    db: AsyncSession = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+):
+    await guardia_service.marcar_ausente(db, guardia_id, datos)
+    return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
+
+
+@router.patch("/{guardia_id}/cancelar", response_model=GuardiaResponse)
+async def cancelar_guardia(
+    guardia_id: int,
+    datos: CancelarGuardiaRequest,
+    db: AsyncSession = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+):
+    await guardia_service.cancelar_guardia(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
 
 

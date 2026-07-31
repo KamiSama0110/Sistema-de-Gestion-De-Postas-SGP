@@ -10,7 +10,8 @@ from app.models.asp import ASP
 from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum
 from app.schemas.guardia import (
     GuardiaCreate, GuardiaUpdate, NovedadCreate,
-    ConfirmarLlegadaRequest, FinalizarGuardiaRequest
+    ConfirmarLlegadaRequest, FinalizarGuardiaRequest,
+    MarcarAusenteRequest, CancelarGuardiaRequest,
 )
 from app.services.posta_service import get_turno_by_id
 from fastapi import HTTPException, status
@@ -322,6 +323,50 @@ async def finalizar_guardia(
     guardia.estado = EstadoGuardiaEnum.finalizada
     if datos.observaciones:
         guardia.observaciones = datos.observaciones
+
+    await db.commit()
+    return await get_guardia_by_id(db, guardia_id)
+
+
+async def marcar_ausente(
+    db: AsyncSession, guardia_id: int, datos: MarcarAusenteRequest
+) -> Guardia:
+    guardia = await get_guardia_by_id(db, guardia_id)
+
+    if guardia.estado != EstadoGuardiaEnum.planificada:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede marcar ausente una guardia en estado {guardia.estado.value}",
+        )
+
+    guardia.motivo_ausencia = datos.motivo_ausencia.strip() if datos.motivo_ausencia else None
+    if datos.observaciones and datos.observaciones.strip():
+        guardia.observaciones = datos.observaciones.strip()
+    guardia.estado = EstadoGuardiaEnum.ausente
+
+    await db.commit()
+    return await get_guardia_by_id(db, guardia_id)
+
+
+async def cancelar_guardia(
+    db: AsyncSession, guardia_id: int, datos: CancelarGuardiaRequest
+) -> Guardia:
+    guardia = await get_guardia_by_id(db, guardia_id)
+
+    if guardia.estado != EstadoGuardiaEnum.planificada:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede cancelar una guardia en estado {guardia.estado.value}",
+        )
+
+    motivo = datos.motivo.strip() if datos.motivo else None
+    if motivo:
+        guardia.observaciones = f"CANCELADA: {motivo}"
+    if datos.observaciones and datos.observaciones.strip():
+        base = guardia.observaciones or ""
+        extra = datos.observaciones.strip()
+        guardia.observaciones = f"{base}\n{extra}".strip()
+    guardia.estado = EstadoGuardiaEnum.cancelada
 
     await db.commit()
     return await get_guardia_by_id(db, guardia_id)

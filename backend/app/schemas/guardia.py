@@ -26,6 +26,16 @@ class FinalizarGuardiaRequest(BaseModel):
     observaciones: Optional[str] = None
 
 
+class MarcarAusenteRequest(BaseModel):
+    motivo_ausencia: Optional[str] = Field(None, min_length=1, max_length=200)
+    observaciones: Optional[str] = None
+
+
+class CancelarGuardiaRequest(BaseModel):
+    motivo: Optional[str] = Field(None, max_length=200)
+    observaciones: Optional[str] = None
+
+
 class NovedadCreate(BaseModel):
     tipo: TipoNovedadEnum
     descripcion: str = Field(..., min_length=1, max_length=500)

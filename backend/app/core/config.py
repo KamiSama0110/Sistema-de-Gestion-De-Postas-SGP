@@ -42,5 +42,8 @@ class Settings(BaseSettings):
     # CORS (lista separada por comas)
     CORS_ORIGINS: str = "http://localhost:5173"
 
+    # Seed (para despliegues demo en Render)
+    SEED_DB: bool = False
+
 
 settings = Settings()

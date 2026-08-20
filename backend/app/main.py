@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,11 +10,23 @@ from app.core.limiter import limiter
 from app.services.auth_service import crear_admin_inicial
 from app.routers import auth, asp, cargo, posta, guardia, reporte
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with AsyncSessionLocal() as db:
-        await crear_admin_inicial(db)
+    if settings.SEED_DB:
+        try:
+            logger.info("SEED_DB=true — ejecutando seed de base de datos")
+            import importlib
+            seed_module = importlib.import_module("seed")
+            await seed_module.seed()
+        except Exception as e:
+            logger.error(f"Error ejecutando seed: {e}")
+    else:
+        async with AsyncSessionLocal() as db:
+            await crear_admin_inicial(db)
+
     yield
 
 

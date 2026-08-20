@@ -1,7 +1,15 @@
+function toLocalDate(value) {
+  if (value instanceof Date) return value
+  let s = String(value)
+  if (typeof s === 'string' && !s.endsWith('Z') && !s.includes('+') && !s.endsWith('Z')) {
+    s += 'Z'
+  }
+  return new Date(s)
+}
+
 export function formatFecha(value) {
   if (!value) return ''
-  if (typeof value === 'string') return value.split('T')[0]
-  const d = value instanceof Date ? value : new Date(value)
+  const d = toLocalDate(value)
   const year = d.getFullYear()
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
@@ -17,9 +25,13 @@ export function formatHora(value) {
 
 export function formatFechaHora(value) {
   if (!value) return ''
-  if (typeof value === 'string') return value.replace('T', ' ').slice(0, 16)
-  const d = new Date(value)
-  return d.toISOString().replace('T', ' ').slice(0, 16)
+  const d = toLocalDate(value)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
 export function parseDateOnly(value) {

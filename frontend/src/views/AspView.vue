@@ -672,7 +672,8 @@ function formatFecha(f) {
 
 function formatFechaHora(f) {
   if (!f) return '—'
-  const d = new Date(f)
+  const s = typeof f === 'string' && !f.endsWith('Z') && !f.includes('+') ? f + 'Z' : f
+  const d = new Date(s)
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 

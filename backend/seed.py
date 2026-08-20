@@ -170,7 +170,7 @@ async def seed():
             # Distribuir cargos: 3 oficiales, 2 supervisores, 1 jefe, 3 asistentes, 4 tecnicos, 5 coordinadores
             cargo_dist = [0]*3 + [1]*2 + [2]*1 + [3]*3 + [4]*4 + [5]*5
             cargo_id = cargos[cargo_dist[i % len(cargo_dist)]].id
-            telefono = f'+535{random.randint(10000000, 99999999)}'
+            telefono = f'+53{random.randint(50000000, 59999999)}'
             estado = EstadoASPEnum.activo
             if i == 15:
                 estado = EstadoASPEnum.suspendido

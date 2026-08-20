@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Base de datos
+    DATABASE_URL: str = ""
+
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_NAME: str = "sgp_db"
@@ -19,7 +21,12 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = "sgp_password"
 
     @property
-    def DATABASE_URL(self) -> str:
+    def DATABASE_URL_RESOLVED(self) -> str:
+        if self.DATABASE_URL:
+            url = self.DATABASE_URL
+            if url.startswith("postgresql://"):
+                url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+            return url
         user = quote_plus(self.DB_USER)
         password = quote_plus(self.DB_PASSWORD)
         return f"postgresql+asyncpg://{user}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"

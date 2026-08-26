@@ -17,6 +17,8 @@ current_user_var: ContextVar[str] = ContextVar("current_user", default="admin")
 
 _tablas_excluidas: set[str] = {"novedad"}
 
+_objetos_nuevos_pendientes: list[Any] = []
+
 
 def _serializar_valor(valor: Any) -> Any:
     if valor is None or isinstance(valor, (int, float, str, bool)):
@@ -33,7 +35,7 @@ def _serializar_valor(valor: Any) -> Any:
 
 
 def _serializar_objeto(obj: Any) -> str:
-    mapper = inspect(obj)
+    mapper = inspect(obj).mapper
     datos: dict[str, Any] = {}
     for col in mapper.column_attrs:
         valor = getattr(obj, col.key)
@@ -45,24 +47,11 @@ def _serializar_objeto(obj: Any) -> str:
 def _before_flush(session, flush_context, instances):
     user = current_user_var.get()
 
-    for obj in session.new:
+    for obj in list(session.new):
         tabla = inspect(obj).mapper.local_table.name
         if tabla in _tablas_excluidas or tabla == "audit_log":
             continue
-        ident = inspect(obj).identity
-        if ident is None:
-            continue
-        pk = ident[0]
-        session.add(
-            AuditLog(
-                usuario=user,
-                entidad=inspect(obj).mapper.class_.__name__,
-                entidad_id=pk,
-                accion="crear",
-                datos_anteriores=None,
-                datos_nuevos=_serializar_objeto(obj),
-            )
-        )
+        _objetos_nuevos_pendientes.append(obj)
 
     for obj in session.dirty:
         tabla = inspect(obj).mapper.local_table.name
@@ -103,6 +92,35 @@ def _before_flush(session, flush_context, instances):
                 datos_nuevos=json.dumps(new, default=_serializar_valor),
             )
         )
+
+
+@event.listens_for(Session, "after_flush_postexec")
+def _after_flush(session, flush_context):
+    if not _objetos_nuevos_pendientes:
+        return
+
+    user = current_user_var.get()
+
+    for obj in _objetos_nuevos_pendientes:
+        tabla = inspect(obj).mapper.local_table.name
+        if tabla in _tablas_excluidas or tabla == "audit_log":
+            continue
+        ident = inspect(obj).identity
+        if ident is None:
+            continue
+        pk = ident[0]
+        session.add(
+            AuditLog(
+                usuario=user,
+                entidad=inspect(obj).mapper.class_.__name__,
+                entidad_id=pk,
+                accion="crear",
+                datos_anteriores=None,
+                datos_nuevos=_serializar_objeto(obj),
+            )
+        )
+
+    _objetos_nuevos_pendientes.clear()
 
 
 async def registrar_evento_auth(

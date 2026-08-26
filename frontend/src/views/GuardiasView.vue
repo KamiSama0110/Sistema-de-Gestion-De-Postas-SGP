@@ -104,6 +104,14 @@
               </v-btn>
               <v-btn
                 v-if="g.estado === 'planificada'"
+                icon size="x-small" variant="text" color="primary"
+                aria-label="Editar guardia"
+                @click="abrirEditar(g)"
+              >
+                <v-icon icon="mdi-pencil-outline" size="16" />
+              </v-btn>
+              <v-btn
+                v-if="g.estado === 'planificada'"
                 icon size="x-small" variant="text" color="success"
                 aria-label="Confirmar llegada"
                 @click="abrirConfirmar(g)"
@@ -182,6 +190,13 @@
                   <template #activator="{ props: tipProps }">
                     <v-btn icon size="small" variant="text" aria-label="Ver detalle" v-bind="tipProps" @click="abrirDetalle(g)">
                       <v-icon icon="mdi-eye-outline" size="18" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip v-if="g.estado === 'planificada'" text="Editar guardia" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn icon size="small" variant="text" color="primary" aria-label="Editar guardia" v-bind="tipProps" @click="abrirEditar(g)">
+                      <v-icon icon="mdi-pencil-outline" size="18" />
                     </v-btn>
                   </template>
                 </v-tooltip>
@@ -404,7 +419,6 @@
               <v-date-picker v-model="fechaFormDate" color="primary" />
             </v-menu>
             <v-textarea
-              v-if="!editando"
               v-model="form.observaciones"
               label="Observaciones (opcional)"
               variant="outlined"
@@ -1078,6 +1092,18 @@ function abrirCrear() {
   dialogForm.value = true
 }
 
+function abrirEditar(g) {
+  editando.value = g
+  form.value = {
+    asp_id: g.asp_id,
+    turno_posta_id: g.turno_posta_id,
+    fecha: g.fecha,
+    observaciones: g.observaciones || '',
+  }
+  errores.value = {}
+  dialogForm.value = true
+}
+
 function cerrarForm() {
   dialogForm.value = false
   errores.value = {}
@@ -1096,18 +1122,24 @@ async function guardar() {
   if (!validar()) return
   guardando.value = true
   try {
-    const payload = {
-      asp_id: form.value.asp_id,
-      turno_posta_id: form.value.turno_posta_id,
-      fecha: form.value.fecha,
-    }
-    if (!editando.value && form.value.observaciones?.trim()) {
-      payload.observaciones = form.value.observaciones.trim()
-    }
     if (editando.value) {
+      const payload = {}
+      if (form.value.observaciones?.trim()) {
+        payload.observaciones = form.value.observaciones.trim()
+      } else if (editando.value.observaciones) {
+        payload.observaciones = ''
+      }
       await guardiaApi.actualizar(editando.value.id, payload)
       toast.success('Guardia actualizada')
     } else {
+      const payload = {
+        asp_id: form.value.asp_id,
+        turno_posta_id: form.value.turno_posta_id,
+        fecha: form.value.fecha,
+      }
+      if (form.value.observaciones?.trim()) {
+        payload.observaciones = form.value.observaciones.trim()
+      }
       await guardiaApi.crear(payload)
       toast.success('Guardia creada')
     }

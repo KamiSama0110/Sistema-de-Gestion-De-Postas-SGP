@@ -713,14 +713,25 @@ function abrirCrear() {
   dialogForm.value = true
 }
 
-function abrirEditar(posta) {
+async function abrirEditar(posta) {
   editando.value = posta
-  form.value = {
-    nombre: posta.nombre,
-    tipo: posta.tipo,
-    descripcion: posta.descripcion || '',
-    ubicacion: posta.ubicacion || '',
-    observaciones: posta.observaciones || '',
+  try {
+    const res = await postaApi.obtener(posta.id)
+    form.value = {
+      nombre: res.data.nombre,
+      tipo: res.data.tipo,
+      descripcion: res.data.descripcion || '',
+      ubicacion: res.data.ubicacion || '',
+      observaciones: res.data.observaciones || '',
+    }
+  } catch {
+    form.value = {
+      nombre: posta.nombre,
+      tipo: posta.tipo,
+      descripcion: '',
+      ubicacion: '',
+      observaciones: '',
+    }
   }
   errores.value = {}
   dialogForm.value = true

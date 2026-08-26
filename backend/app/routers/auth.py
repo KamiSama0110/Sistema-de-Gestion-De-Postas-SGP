@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from app.core.security import get_token, revoke_token, is_token_revoked, decode_access_token
+from app.core.security import get_token, revoke_token, is_token_revoked, decode_access_token, set_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import create_access_token
@@ -10,6 +10,7 @@ from app.services.auth_service import (
     cambiar_password,
     get_usuario_by_username,
 )
+from app.services.auditoria_service import registrar_evento_auth
 from app.models.usuario import Usuario
 from app.core.limiter import limiter
 
@@ -44,6 +45,7 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario no encontrado o inactivo",
         )
+    set_current_user(usuario.username)
     return usuario
 
 
@@ -60,6 +62,8 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario o contraseña incorrectos",
         )
+    set_current_user(usuario.username)
+    await registrar_evento_auth(db, "login")
     await actualizar_ultimo_acceso(db, usuario)
     token = create_access_token(data={"sub": usuario.username})
     return TokenResponse(access_token=token)
@@ -69,10 +73,13 @@ async def login(
 async def logout(
     usuario: Usuario = Depends(get_current_user),
     token: str = Depends(get_token),
+    db: AsyncSession = Depends(get_db),
 ):
     payload = decode_access_token(token)
     if payload:
         revoke_token(payload.get("jti", ""))
+    await registrar_evento_auth(db, "logout")
+    await db.commit()
     return MensajeResponse(mensaje="Sesión cerrada correctamente")
 
 
@@ -83,4 +90,6 @@ async def cambiar_contrasena(
     db: AsyncSession = Depends(get_db),
 ):
     await cambiar_password(db, usuario, datos.password_actual, datos.password_nueva)
+    await registrar_evento_auth(db, "cambiar_password")
+    await db.commit()
     return MensajeResponse(mensaje="Contraseña actualizada correctamente")

@@ -59,3 +59,8 @@ def decode_access_token(token: str) -> Optional[dict]:
         return None
     except jwt.InvalidTokenError:
         return None
+
+
+def set_current_user(username: str) -> None:
+    from app.services.auditoria_service import current_user_var
+    current_user_var.set(username)

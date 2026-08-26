@@ -27,12 +27,13 @@ async def autenticar_usuario(db: AsyncSession, username: str, password: str) -> 
 
 
 async def actualizar_ultimo_acceso(db: AsyncSession, usuario: Usuario) -> None:
+    username = usuario.username
     try:
         usuario.ultimo_acceso = datetime.now(timezone.utc).replace(tzinfo=None)
         await db.commit()
     except Exception:
         await db.rollback()
-        logger.warning("No se pudo actualizar ultimo_acceso del usuario %s", usuario.username)
+        logger.warning("No se pudo actualizar ultimo_acceso del usuario %s", username)
 
 
 async def cambiar_password(

@@ -202,6 +202,20 @@ async def crear_guardia(db: AsyncSession, datos: GuardiaCreate) -> Guardia:
             detail="La posta asociada no está activa",
         )
 
+    count_q = select(func.count()).where(
+        Guardia.turno_posta_id == turno.id,
+        Guardia.fecha == datos.fecha,
+        Guardia.estado != EstadoGuardiaEnum.cancelada,
+    )
+    count_result = await db.execute(count_q)
+    guardias_existentes = count_result.scalar() or 0
+    if guardias_existentes >= turno.asp_requeridos:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El turno ya tiene {guardias_existentes} guardias asignadas "
+            f"(máximo permitido: {turno.asp_requeridos})",
+        )
+
     await validar_conflictos_guardia(db, datos.asp_id, turno, datos.fecha)
 
     guardia = Guardia(**datos.model_dump())

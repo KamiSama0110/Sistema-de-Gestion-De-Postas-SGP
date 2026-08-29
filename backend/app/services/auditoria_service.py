@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 current_user_var: ContextVar[str] = ContextVar("current_user", default="admin")
 
-_tablas_excluidas: set[str] = {"novedad"}
+_tablas_excluidas: set[str] = {"novedad", "refresh_token"}
 
 _objetos_nuevos_pendientes: list[Any] = []
 

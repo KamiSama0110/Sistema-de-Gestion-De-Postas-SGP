@@ -15,6 +15,11 @@ async def get_usuario_by_username(db: AsyncSession, username: str) -> Usuario | 
     return result.scalar_one_or_none()
 
 
+async def get_usuario_by_id(db: AsyncSession, usuario_id: int) -> Usuario | None:
+    result = await db.execute(select(Usuario).where(Usuario.id == usuario_id))
+    return result.scalar_one_or_none()
+
+
 async def autenticar_usuario(db: AsyncSession, username: str, password: str) -> Usuario | None:
     usuario = await get_usuario_by_username(db, username)
     if not usuario:

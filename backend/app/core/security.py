@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import uuid
+import secrets
+import hashlib
 import bcrypt
 import jwt
 from app.core.config import settings
@@ -42,11 +44,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(
-            hours=settings.ACCESS_TOKEN_EXPIRE_HOURS
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     jti = str(uuid.uuid4())
-    to_encode.update({"exp": expire, "jti": jti})
+    to_encode.update({"type": "access", "exp": expire, "jti": jti})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(48)
+
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def decode_access_token(token: str) -> Optional[dict]:

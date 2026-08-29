@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { getAccessToken } from '../api/token'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,10 +63,21 @@ const router = createRouter({
 })
 
 // Guard de navegación
-router.beforeEach((to) => {
+// Tras un F5 el access token (memoria) se pierde; si existe refresh token
+// en sessionStorage se restaura la sesión antes de decidir.
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
-  if (to.meta.requiresAuth !== false && !auth.isAuthenticated) {
-    return { name: 'login' }
+  if (to.meta.requiresAuth !== false) {
+    if (!auth.isAuthenticated) {
+      return { name: 'login' }
+    }
+    if (!getAccessToken()) {
+      const restaurada = await auth.refrescarSesion()
+      if (!restaurada) {
+        return { name: 'login' }
+      }
+    }
+    return true
   }
   if (to.name === 'login' && auth.isAuthenticated) {
     return { name: 'dashboard' }

@@ -1,13 +1,13 @@
 import json
 import logging
 from contextvars import ContextVar
-from datetime import date, time, datetime
+from datetime import date, datetime, time
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import inspect, event
-from sqlalchemy.orm import Session
+from sqlalchemy import event, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.models.auditoria import AuditLog
 
@@ -65,7 +65,13 @@ def _before_flush(session, flush_context, instances):
             hist = attr.history
             if not hist.has_changes():
                 continue
-            old_value = hist.deleted[0] if hist.deleted else hist.unchanged[0] if hist.unchanged else None
+            old_value = (
+                hist.deleted[0]
+                if hist.deleted
+                else hist.unchanged[0]
+                if hist.unchanged
+                else None
+            )
             new_value = hist.added[0] if hist.added else getattr(obj, attr.key)
             old[attr.key] = _serializar_valor(old_value)
             new[attr.key] = _serializar_valor(new_value)

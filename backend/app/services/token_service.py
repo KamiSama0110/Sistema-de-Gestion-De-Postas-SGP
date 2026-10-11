@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta, timezone
+
+from fastapi import HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
-from app.core.security import generate_refresh_token, hash_refresh_token
+
 from app.core.config import settings
+from app.core.security import generate_refresh_token, hash_refresh_token
 from app.models.refresh_token import RefreshToken
 
 
@@ -28,7 +30,9 @@ async def crear_refresh_token(db: AsyncSession, usuario_id: int) -> str:
     return raw
 
 
-async def obtener_usuario_id_por_token(db: AsyncSession, refresh_raw: str) -> int | None:
+async def obtener_usuario_id_por_token(
+    db: AsyncSession, refresh_raw: str
+) -> int | None:
     if not refresh_raw:
         return None
     result = await db.execute(

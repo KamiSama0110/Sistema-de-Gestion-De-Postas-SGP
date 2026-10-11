@@ -1,5 +1,6 @@
 <template>
-  <a href="#main-content" class="sgp-skip-link">Saltar al contenido</a>
+  <v-layout class="sgp-app-layout">
+    <a href="#main-content" class="sgp-skip-link">Saltar al contenido</a>
 
   <v-navigation-drawer
     v-model="drawer"
@@ -125,7 +126,25 @@
         </Transition>
       </RouterView>
     </v-container>
-  </v-main>
+    </v-main>
+
+    <v-dialog v-model="logoutDialog" max-width="400" :fullscreen="mobile">
+      <v-card class="pa-sm-5 pa-3">
+        <v-card-title class="d-flex align-center ga-2 text-subtitle-1 font-weight-bold">
+          <v-icon color="error">mdi-logout</v-icon>
+          Cerrar sesión
+        </v-card-title>
+        <v-card-text class="text-body-2 text-medium-emphasis">
+          ¿Seguro que deseas cerrar la sesión? Deberás iniciar sesión nuevamente.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="logoutDialog = false">Cancelar</v-btn>
+          <v-btn color="error" :loading="logoutLoading" @click="confirmLogout">Sí, salir</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-layout>
 </template>
 
 <script setup>
@@ -199,12 +218,22 @@ watch(() => route.fullPath, () => {
   if (mobile.value) drawer.value = false
 })
 
-async function handleLogout() {
+const logoutDialog = ref(false)
+const logoutLoading = ref(false)
+
+function handleLogout() {
+  logoutDialog.value = true
+}
+
+async function confirmLogout() {
+  logoutLoading.value = true
   try {
     await auth.logout()
   } catch {
     // logout falló pero limpiamos estado local
   } finally {
+    logoutLoading.value = false
+    logoutDialog.value = false
     router.push({ name: 'login' })
   }
 }

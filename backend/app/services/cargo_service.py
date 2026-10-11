@@ -1,10 +1,10 @@
-from typing import Optional
+from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+
 from app.models.cargo import Cargo
 from app.schemas.cargo import CargoCreate, CargoUpdate
 from app.utils.sql import _escape_like
-from fastapi import HTTPException, status
 
 
 async def get_cargo_by_id(db: AsyncSession, cargo_id: int) -> Cargo:
@@ -19,8 +19,11 @@ async def get_cargo_by_id(db: AsyncSession, cargo_id: int) -> Cargo:
 
 
 async def listar_cargos(
-    db: AsyncSession, solo_activos: bool = True, page: int = 1, size: int = 10,
-    buscar: Optional[str] = None,
+    db: AsyncSession,
+    solo_activos: bool = True,
+    page: int = 1,
+    size: int = 10,
+    buscar: str | None = None,
 ) -> dict:
     query = select(Cargo)
     if solo_activos:
@@ -28,26 +31,21 @@ async def listar_cargos(
     if buscar:
         escaped = _escape_like(buscar)
         query = query.where(
-            Cargo.nombre.ilike(f"%{escaped}%")
-            | Cargo.descripcion.ilike(f"%{escaped}%")
+            Cargo.nombre.ilike(f"%{escaped}%") | Cargo.descripcion.ilike(f"%{escaped}%")
         )
 
     total_q = select(func.count()).select_from(query.subquery())
     total = (await db.execute(total_q)).scalar() or 0
 
     result = await db.execute(
-        query.order_by(Cargo.nombre)
-        .offset((page - 1) * size)
-        .limit(size)
+        query.order_by(Cargo.nombre).offset((page - 1) * size).limit(size)
     )
     cargos = result.scalars().all()
     return {"total": total, "page": page, "size": size, "items": cargos}
 
 
 async def crear_cargo(db: AsyncSession, datos: CargoCreate) -> Cargo:
-    existente = await db.execute(
-        select(Cargo).where(Cargo.nombre == datos.nombre)
-    )
+    existente = await db.execute(select(Cargo).where(Cargo.nombre == datos.nombre))
     if existente.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -86,9 +84,7 @@ async def actualizar_cargo(
     return cargo
 
 
-async def cambiar_estado_cargo(
-    db: AsyncSession, cargo_id: int, activo: bool
-) -> Cargo:
+async def cambiar_estado_cargo(db: AsyncSession, cargo_id: int, activo: bool) -> Cargo:
     cargo = await get_cargo_by_id(db, cargo_id)
     cargo.activo = activo
     await db.commit()

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { authApi } from '../api/auth'
 import { renovarSesion } from '../api/index'
 import {
@@ -14,7 +14,9 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(getAccessToken())
   const usuario = ref(null)
 
-  const isAuthenticated = computed(() => !!getAccessToken() || !!getRefreshToken())
+  function isAuthenticated() {
+    return !!getAccessToken() || !!getRefreshToken()
+  }
 
   async function login(username, password) {
     const response = await authApi.login({ username, password })

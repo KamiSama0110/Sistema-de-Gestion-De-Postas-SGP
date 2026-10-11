@@ -1,13 +1,14 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional
-import uuid
-import secrets
 import hashlib
+import secrets
+import uuid
+from datetime import datetime, timedelta, timezone
+
 import bcrypt
 import jwt
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from app.core.config import settings
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import Depends, HTTPException, status
 
 bearer_scheme = HTTPBearer()
 
@@ -22,14 +23,15 @@ def is_token_revoked(jti: str) -> bool:
     return jti in token_blacklist
 
 
-def get_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> str:
+def get_token(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> str:
     return credentials.credentials
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(
-        plain_password.encode("utf-8"),
-        hashed_password.encode("utf-8")
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
     )
 
 
@@ -38,7 +40,7 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -59,7 +61,7 @@ def hash_refresh_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def decode_access_token(token: str) -> Optional[dict]:
+def decode_access_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
@@ -73,4 +75,5 @@ def decode_access_token(token: str) -> Optional[dict]:
 
 def set_current_user(username: str) -> None:
     from app.services.auditoria_service import current_user_var
+
     current_user_var.set(username)

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import date
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
 from app.models.usuario import Usuario
 from app.models.enums import EstadoGuardiaEnum
 from app.schemas.guardia import (
@@ -34,7 +34,7 @@ async def listar_guardias(
     asp_id: Optional[int] = None,
     posta_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.listar_guardias(
         db, page, size, fecha, estado, asp_id, posta_id
@@ -45,7 +45,7 @@ async def listar_guardias(
 async def crear_guardia(
     datos: GuardiaCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.crear_guardia(db, datos)
 
@@ -54,7 +54,7 @@ async def crear_guardia(
 async def obtener_guardia(
     guardia_id: int,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
 
@@ -64,7 +64,7 @@ async def actualizar_guardia(
     guardia_id: int,
     datos: GuardiaUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.actualizar_guardia(db, guardia_id, datos)
 
@@ -74,7 +74,7 @@ async def confirmar_llegada(
     guardia_id: int,
     datos: ConfirmarLlegadaRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.confirmar_llegada(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -85,7 +85,7 @@ async def finalizar_guardia(
     guardia_id: int,
     datos: FinalizarGuardiaRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.finalizar_guardia(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -96,7 +96,7 @@ async def marcar_ausente(
     guardia_id: int,
     datos: MarcarAusenteRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.marcar_ausente(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -107,7 +107,7 @@ async def cancelar_guardia(
     guardia_id: int,
     datos: CancelarGuardiaRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.cancelar_guardia(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -118,7 +118,7 @@ async def registrar_novedad(
     guardia_id: int,
     datos: NovedadCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.registrar_novedad(db, guardia_id, datos)
 
@@ -129,6 +129,6 @@ async def listar_novedades(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.listar_novedades(db, guardia_id, page, size)

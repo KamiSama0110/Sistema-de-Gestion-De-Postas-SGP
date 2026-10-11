@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from app.core.security import get_token, revoke_token, is_token_revoked, decode_access_token, set_current_user
+from app.core.security import get_token, revoke_token, is_token_revoked, decode_access_token, set_current_user, get_current_user, require_admin, require_cuadro
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import create_access_token
@@ -30,43 +30,6 @@ from app.models.usuario import Usuario
 from app.core.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
-
-
-async def get_current_user(
-    token: str = Depends(get_token),
-    db: AsyncSession = Depends(get_db)
-) -> Usuario:
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
-        )
-    if payload.get("type") != "access":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido",
-        )
-    jti = payload.get("jti", "")
-    if is_token_revoked(jti):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token revocado",
-        )
-    username = payload.get("sub")
-    if not username:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido",
-        )
-    usuario = await get_usuario_by_username(db, username)
-    if not usuario or not usuario.activo:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario no encontrado o inactivo",
-        )
-    set_current_user(usuario.username)
-    return usuario
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -145,3 +108,17 @@ async def cambiar_contrasena(
     await registrar_evento_auth(db, "cambiar_password")
     await db.commit()
     return MensajeResponse(mensaje="Contraseña actualizada correctamente")
+
+
+@router.get("/me")
+async def get_me(
+    usuario: Usuario = Depends(get_current_user),
+):
+    return {
+        "id": usuario.id,
+        "username": usuario.username,
+        "rol": usuario.rol,
+        "cuadro_id": usuario.cuadro_id,
+        "activo": usuario.activo,
+        "ultimo_acceso": usuario.ultimo_acceso,
+    }

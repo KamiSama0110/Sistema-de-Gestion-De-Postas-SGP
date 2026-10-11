@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
 from app.models.usuario import Usuario
 from app.schemas.cargo import CargoCreate, CargoUpdate, CargoCambiarEstado, CargoResponse, PaginatedCargo
 from app.services import cargo_service
@@ -17,7 +17,7 @@ async def listar_cargos(
     size: int = Query(10, ge=1, le=100),
     buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await cargo_service.listar_cargos(db, solo_activos, page, size, buscar)
 
@@ -26,7 +26,7 @@ async def listar_cargos(
 async def crear_cargo(
     datos: CargoCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await cargo_service.crear_cargo(db, datos)
 
@@ -35,7 +35,7 @@ async def crear_cargo(
 async def obtener_cargo(
     cargo_id: int,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await cargo_service.get_cargo_by_id(db, cargo_id)
 
@@ -45,7 +45,7 @@ async def actualizar_cargo(
     cargo_id: int,
     datos: CargoUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await cargo_service.actualizar_cargo(db, cargo_id, datos)
 
@@ -55,6 +55,6 @@ async def cambiar_estado(
     cargo_id: int,
     datos: CargoCambiarEstado,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await cargo_service.cambiar_estado_cargo(db, cargo_id, datos.activo)

@@ -49,3 +49,8 @@ class SeveridadEnum(str, enum.Enum):
     media = "media"
     alta = "alta"
     critica = "critica"
+
+
+class RolEnum(str, enum.Enum):
+    admin = "admin"
+    cuadro = "cuadro"

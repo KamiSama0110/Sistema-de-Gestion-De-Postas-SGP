@@ -7,7 +7,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
 from app.models.usuario import Usuario
 from app.models.auditoria import AuditLog
 from app.schemas.auditoria import (
@@ -29,7 +29,7 @@ async def listar_auditoria(
     fecha_desde: Optional[datetime] = None,
     fecha_hasta: Optional[datetime] = None,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     query = select(AuditLog)
 
@@ -58,7 +58,7 @@ async def listar_auditoria(
 async def obtener_diff(
     log_id: int,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     result = await db.execute(select(AuditLog).where(AuditLog.id == log_id))
     log = result.scalar_one_or_none()

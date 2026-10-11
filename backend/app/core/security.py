@@ -5,10 +5,14 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.database import get_db
+from app.models.usuario import Usuario
 
 bearer_scheme = HTTPBearer()
 
@@ -77,3 +81,63 @@ def set_current_user(username: str) -> None:
     from app.services.auditoria_service import current_user_var
 
     current_user_var.set(username)
+
+
+async def get_current_user(
+    token: str = Depends(get_token),
+    db: AsyncSession = Depends(get_db),
+) -> Usuario:
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+        )
+    if payload.get("type") != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+        )
+    jti = payload.get("jti", "")
+    if is_token_revoked(jti):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token revocado",
+        )
+    username = payload.get("sub")
+    if not username:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+        )
+    result = await db.execute(select(Usuario).where(Usuario.username == username))
+    usuario = result.scalar_one_or_none()
+    if not usuario or not usuario.activo:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario no encontrado o inactivo",
+        )
+    set_current_user(usuario.username)
+    return usuario
+
+
+async def require_admin(
+    usuario: Usuario = Depends(get_current_user),
+) -> Usuario:
+    if usuario.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de administrador",
+        )
+    return usuario
+
+
+async def require_cuadro(
+    usuario: Usuario = Depends(get_current_user),
+) -> Usuario:
+    if usuario.rol not in ("cuadro", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de cuadro o administrador",
+        )
+    return usuario

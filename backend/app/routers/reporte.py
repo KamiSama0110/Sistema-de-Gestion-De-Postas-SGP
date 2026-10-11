@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import date
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
 from app.models.usuario import Usuario
 from app.models.enums import SeveridadEnum
 from app.schemas.reporte import (
@@ -35,7 +35,7 @@ async def get_periodo(
 async def reporte_cobertura(
     periodo: PeriodoRequest = Depends(get_periodo),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await reporte_service.reporte_cobertura(db, periodo.fecha_desde, periodo.fecha_hasta)
 
@@ -44,7 +44,7 @@ async def reporte_cobertura(
 async def reporte_ausentismo(
     periodo: PeriodoRequest = Depends(get_periodo),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await reporte_service.reporte_ausentismo(db, periodo.fecha_desde, periodo.fecha_hasta)
 
@@ -53,7 +53,7 @@ async def reporte_ausentismo(
 async def reporte_horas(
     periodo: PeriodoRequest = Depends(get_periodo),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await reporte_service.reporte_horas(db, periodo.fecha_desde, periodo.fecha_hasta)
 
@@ -64,7 +64,7 @@ async def reporte_incidencias(
     severidad: Optional[SeveridadEnum] = None,
     posta_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await reporte_service.reporte_incidencias(
         db, periodo.fecha_desde, periodo.fecha_hasta, severidad, posta_id
@@ -76,7 +76,7 @@ async def reporte_tardanzas(
     periodo: PeriodoRequest = Depends(get_periodo),
     asp_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await reporte_service.reporte_tardanzas(
         db, periodo.fecha_desde, periodo.fecha_hasta, asp_id

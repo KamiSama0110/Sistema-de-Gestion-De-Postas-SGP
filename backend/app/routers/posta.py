@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
 from app.models.usuario import Usuario
 from app.models.enums import TipoPostaEnum
 from app.schemas.posta import (
@@ -28,7 +28,7 @@ async def listar_postas(
     tipo: Optional[TipoPostaEnum] = None,
     buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.listar_postas(db, activa, tipo, buscar, page, size)
 
@@ -37,7 +37,7 @@ async def listar_postas(
 async def crear_posta(
     datos: PostaCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.crear_posta(db, datos)
 
@@ -50,7 +50,7 @@ async def listar_turnos(
     activo: Optional[bool] = None,
     buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.listar_turnos(db, page, size, posta_id, activo, buscar)
 
@@ -59,7 +59,7 @@ async def listar_turnos(
 async def obtener_posta(
     posta_id: int,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.get_posta_by_id(db, posta_id)
 
@@ -69,7 +69,7 @@ async def actualizar_posta(
     posta_id: int,
     datos: PostaUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.actualizar_posta(db, posta_id, datos)
 
@@ -79,7 +79,7 @@ async def cambiar_estado_posta(
     posta_id: int,
     activa: bool = Query(...),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.cambiar_estado_posta(db, posta_id, activa)
 
@@ -89,7 +89,7 @@ async def agregar_turno(
     posta_id: int,
     datos: TurnoPostaCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.agregar_turno(db, posta_id, datos)
 
@@ -99,7 +99,7 @@ async def actualizar_turno(
     turno_id: int,
     datos: TurnoPostaUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.actualizar_turno(db, turno_id, datos)
 
@@ -109,6 +109,6 @@ async def cambiar_estado_turno(
     turno_id: int,
     activo: bool = Query(...),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.cambiar_estado_turno(db, turno_id, activo)

@@ -1,12 +1,12 @@
+from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
-from typing import Optional
+
 from app.models.asp import ASP
 from app.models.enums import EstadoASPEnum
-from app.schemas.asp import ASPCreate, ASPUpdate, ASPCambiarEstado
+from app.schemas.asp import ASPCambiarEstado, ASPCreate, ASPUpdate
 from app.utils.sql import _escape_like
-from fastapi import HTTPException, status
 
 TRANSICIONES_ASP = {
     "activo": {"baja_temporal", "baja_definitiva", "suspendido"},
@@ -35,9 +35,7 @@ def validar_relacion_fechas_asp(fecha_nacimiento, fecha_ingreso) -> None:
 
 async def get_asp_by_id(db: AsyncSession, asp_id: int) -> ASP:
     result = await db.execute(
-        select(ASP)
-        .options(selectinload(ASP.cargo))
-        .where(ASP.id == asp_id)
+        select(ASP).options(selectinload(ASP.cargo)).where(ASP.id == asp_id)
     )
     asp = result.scalar_one_or_none()
     if not asp:
@@ -48,7 +46,7 @@ async def get_asp_by_id(db: AsyncSession, asp_id: int) -> ASP:
     return asp
 
 
-async def get_asp_by_ci(db: AsyncSession, ci: str) -> Optional[ASP]:
+async def get_asp_by_ci(db: AsyncSession, ci: str) -> ASP | None:
     result = await db.execute(select(ASP).where(ASP.ci == ci))
     return result.scalar_one_or_none()
 
@@ -57,8 +55,8 @@ async def listar_asp(
     db: AsyncSession,
     page: int = 1,
     size: int = 20,
-    estado: Optional[EstadoASPEnum] = None,
-    buscar: Optional[str] = None,
+    estado: EstadoASPEnum | None = None,
+    buscar: str | None = None,
 ) -> dict:
     query = select(ASP)
 
@@ -91,6 +89,7 @@ async def crear_asp(db: AsyncSession, datos: ASPCreate) -> ASP:
         )
 
     from app.models.cargo import Cargo
+
     cargo_result = await db.execute(
         select(Cargo).where(Cargo.id == datos.cargo_id, Cargo.activo == True)
     )

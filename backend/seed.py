@@ -5,10 +5,12 @@ Recrea todas las tablas con datos de prueba consistentes y realistas.
 Uso:
     cd backend
     python seed.py
+    python seed.py --cuadros-prueba  # Para B4: inserta 30 hombres y 12 mujeres extra con CI TEST-
 """
 
 import asyncio
 import random
+import sys
 from datetime import date, datetime, time, timedelta, timezone
 from app.core.database import engine, Base
 from app.core.security import get_password_hash
@@ -22,6 +24,8 @@ from app.models.asp import ASP
 from app.models.posta import Posta, TurnoPosta
 from app.models.guardia import Guardia, Novedad
 from app.models.usuario import Usuario
+from app.models.cuadro import Cuadro, FranjaCuadro, Feriado
+from sqlalchemy import select
 
 random.seed(42)
 
@@ -75,6 +79,40 @@ APELLIDOS = [
     'Rivero Medina', 'Vargas León', 'Mendoza Rojas', 'Álvarez Reyes',
     'Jiménez Ortega', 'Delgado Salazar',
 ]
+
+# --- Cuadros (14: 8 hombres, 6 mujeres, 3 con sin_guardia_vie_dom, 1 inactivo) ---
+CUADROS_DATA = [
+    # Hombres (8)
+    ('Roberto', 'Pérez Herrera', 'Director de Seguridad', 'Dirección General', 'masculino', True, False, None),
+    ('Fernando', 'Díaz Lima', 'Vicerrector Académico', 'Vicerrectorado', 'masculino', True, False, None),
+    ('Héctor', 'Ramírez Cruz', 'Rector', 'Rectorado', 'masculino', True, False, 'Rector titular'),
+    ('Emilio', 'Torres Campos', 'Jefe de Departamento', 'Seguridad Física', 'masculino', True, True, None),
+    ('Antonio', 'Vargas León', 'Coordinador de Turnos', 'Operaciones', 'masculino', True, True, None),
+    ('Ricardo', 'Mendoza Rojas', 'Supervisor General', 'Control y Supervisión', 'masculino', True, False, None),
+    ('Jorge', 'Álvarez Reyes', 'Oficial de Enlace', 'Relaciones Institucionales', 'masculino', True, True, None),
+    ('Ernesto', 'Jiménez Ortega', 'Inspector de Seguridad', 'Inspección', 'masculino', False, False, 'En licencia médica'),
+
+    # Mujeres (6)
+    ('María', 'García Rodríguez', 'Directora Adjunta', 'Dirección General', 'femenino', True, False, None),
+    ('Ana', 'López Martínez', 'Vicerrectora Administrativa', 'Vicerrectorado', 'femenino', True, False, None),
+    ('Yanet', 'Hernández Sánchez', 'Jefa de Área', 'Recursos Humanos', 'femenino', True, False, None),
+    ('Odalis', 'González Pérez', 'Coordinadora de Personal', 'Administración', 'femenino', True, False, None),
+    ('Yamila', 'Rodríguez Díaz', 'Especialista en Protocolos', 'Normativa', 'femenino', True, False, None),
+    ('Daiquis', 'Fernández Castro', 'Analista de Riesgos', 'Planificación', 'femenino', True, False, None),
+]
+
+# Feriados fijos para get_feriados_sugeridos
+FERIADOS_FIJOS = [
+    (1, 1, "Año Nuevo"),
+    (1, 2, "Día de la Liberación"),
+    (5, 1, "Día del Trabajo"),
+    (7, 25, "Conmemoración del Asalto al Cuartel Moncada"),
+    (7, 26, "Día de la Rebeldía Nacional"),
+    (7, 27, "Día de la Rebeldía Nacional"),
+    (10, 10, "Inicio de las Guerras de Independencia"),
+    (12, 25, "Navidad"),
+]
+
 DIRECCIONES = [
     'Loma No. 45 entre 10 y 12, Camagüey',
     'Calle Martí No. 201, esquina a Maceo, Camagüey',
@@ -142,6 +180,71 @@ async def seed():
             cargos.append(cargo)
         await db.flush()
         print(f'  {len(cargos)} cargos creados')
+
+        # --- Cuadros ---
+        cuadros = []
+        usados_ci = set()
+        for i, (nombre, apellidos, cargo_str, area, sexo_str, activo, sin_guardia_vie_dom, observaciones) in enumerate(CUADROS_DATA):
+            sexo = SexoEnum.masculino if sexo_str == 'masculino' else SexoEnum.femenino
+            # Generar CI único
+            fecha_nac = random_date(date(1965, 1, 1), date(1995, 12, 31))
+            while True:
+                ci = generar_ci(fecha_nac, sexo)
+                if ci not in usados_ci:
+                    usados_ci.add(ci)
+                    break
+
+            cuadro = Cuadro(
+                nombre=nombre,
+                apellidos=apellidos,
+                ci=ci,
+                cargo=cargo_str,
+                area=area,
+                telefono=f'+53{random.randint(50000000, 59999999)}',
+                sexo=sexo,
+                activo=activo,
+                sin_guardia_vie_dom=sin_guardia_vie_dom,
+                observaciones=observaciones,
+            )
+            db.add(cuadro)
+            cuadros.append(cuadro)
+        await db.flush()
+        print(f'  {len(cuadros)} cuadros creados')
+
+        # --- Franjas ---
+        franjas = [
+            FranjaCuadro(
+                nombre="diurna",
+                hora_inicio="09:00",
+                hora_fin="16:00",
+                dias_semana=[5, 6],  # sábado, domingo
+                sexo_permitido=SexoEnum.femenino,
+                activa=True,
+            ),
+            FranjaCuadro(
+                nombre="nocturna",
+                hora_inicio="17:00",
+                hora_fin="07:00",
+                dias_semana=[0, 1, 2, 3, 4, 5, 6],  # lunes a domingo
+                sexo_permitido=SexoEnum.masculino,
+                activa=True,
+            ),
+        ]
+        for franja in franjas:
+            db.add(franja)
+        await db.flush()
+        print(f'  {len(franjas)} franjas creadas')
+
+        # --- Feriados sugeridos del año en curso ---
+        anio_actual = date.today().year
+        for mes, dia, descripcion in FERIADOS_FIJOS:
+            feriado = Feriado(
+                fecha=datetime(anio_actual, mes, dia),
+                descripcion=descripcion,
+            )
+            db.add(feriado)
+        await db.flush()
+        print(f'  {len(FERIADOS_FIJOS)} feriados sugeridos creados')
 
         # --- ASPs ---
         asps = []
@@ -278,19 +381,97 @@ async def seed():
             username=settings.ADMIN_USERNAME,
             hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
             activo=True,
+            rol="admin",
         )
         db.add(admin)
+
+        # --- Cuenta cuadro1 (vinculada a un hombre activo sin marca) ---
+        # Buscar el primer hombre activo sin sin_guardia_vie_dom (Roberto Pérez Herrera)
+        cuadro1 = next((c for c in cuadros if c.sexo == SexoEnum.masculino and c.activo and not c.sin_guardia_vie_dom), None)
+        if cuadro1:
+            usuario_cuadro1 = Usuario(
+                username="cuadro1",
+                hashed_password=get_password_hash("cuadro1234"),
+                activo=True,
+                rol="cuadro",
+                cuadro_id=cuadro1.id,
+            )
+            db.add(usuario_cuadro1)
+            print(f'  Cuenta cuadro1 creada para: {cuadro1.nombre} {cuadro1.apellidos}')
 
         await db.commit()
         print(f'\nSeed completado exitosamente.')
         print(f'  Cargos:     {len(cargos)}')
+        print(f'  Cuadros:    {len(cuadros)} ({sum(1 for c in cuadros if c.activo)} activos, {sum(1 for c in cuadros if not c.activo)} inactivos)')
+        print(f'  Franjas:    {len(franjas)}')
+        print(f'  Feriados:   {len(FERIADOS_FIJOS)}')
         print(f'  ASPs:       {len(asps)} ({len(asps_activos)} activos)')
         print(f'  Postas:     {len(postas)}')
         print(f'  Turnos:     {len(turnos)}')
         print(f'  Guardias:   {len(guardias_creadas)}')
         print(f'  Novedades:  {novedades_creadas if guardias_pasadas else 0}')
         print(f'  Admin:      {settings.ADMIN_USERNAME}')
+        print(f'  Cuadro1:    cuadro1 / cuadro1234')
+
+async def seed_cuadros_prueba():
+    """Seed adicional para B4: 30 hombres y 12 mujeres extra con CI TEST-"""
+    print('Insertando cuadros de prueba (TEST-)...')
+    from app.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as db:
+        usados_ci = set()
+        result = await db.execute(select(Cuadro).where(Cuadro.ci.like('TEST-%')))
+        for c in result.scalars().all():
+            usados_ci.add(c.ci)
+
+        # 30 hombres extra
+        for i in range(30):
+            fecha_nac = random_date(date(1965, 1, 1), date(1995, 12, 31))
+            while True:
+                ci = f'TEST-{random.randint(100000, 999999)}'
+                if ci not in usados_ci:
+                    usados_ci.add(ci)
+                    break
+            cuadro = Cuadro(
+                nombre=f'TestM{i+1}',
+                apellidos=pick(APELLIDOS),
+                ci=ci,
+                cargo='Oficial de Prueba',
+                area='Pruebas',
+                telefono=f'+53{random.randint(50000000, 59999999)}',
+                sexo=SexoEnum.masculino,
+                activo=True,
+                sin_guardia_vie_dom=False,
+            )
+            db.add(cuadro)
+
+        # 12 mujeres extra
+        for i in range(12):
+            fecha_nac = random_date(date(1965, 1, 1), date(1995, 12, 31))
+            while True:
+                ci = f'TEST-{random.randint(100000, 999999)}'
+                if ci not in usados_ci:
+                    usados_ci.add(ci)
+                    break
+            cuadro = Cuadro(
+                nombre=f'TestF{i+1}',
+                apellidos=pick(APELLIDOS),
+                ci=ci,
+                cargo='Oficial de Prueba',
+                area='Pruebas',
+                telefono=f'+53{random.randint(50000000, 59999999)}',
+                sexo=SexoEnum.femenino,
+                activo=True,
+                sin_guardia_vie_dom=False,
+            )
+            db.add(cuadro)
+
+        await db.commit()
+        print('  42 cuadros de prueba insertados (30 hombres, 12 mujeres)')
 
 
 if __name__ == '__main__':
-    asyncio.run(seed())
+    if "--cuadros-prueba" in sys.argv:
+        asyncio.run(seed_cuadros_prueba())
+    else:
+        asyncio.run(seed())

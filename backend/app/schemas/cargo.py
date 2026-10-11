@@ -1,17 +1,7 @@
 from pydantic import BaseModel, field_validator
 from typing import Optional
 
-
-def _validar_nombre_cargo(v):
-    if v is not None and isinstance(v, str) and not v.strip():
-        raise ValueError("El nombre del cargo no puede estar vacío")
-    return v
-
-
-def _validar_descripcion_cargo(v):
-    if v is not None and isinstance(v, str) and not v.strip():
-        raise ValueError("La descripción del cargo no puede estar vacía")
-    return v
+from app.utils.validators import texto_no_vacio, texto_opcional_no_vacio
 
 
 class CargoBase(BaseModel):
@@ -19,12 +9,14 @@ class CargoBase(BaseModel):
     descripcion: Optional[str] = None
 
     @field_validator('nombre')
+    @classmethod
     def validar_nombre(cls, v):
-        return _validar_nombre_cargo(v)
+        return texto_no_vacio(v, "El nombre del cargo")
 
     @field_validator('descripcion')
+    @classmethod
     def validar_descripcion(cls, v):
-        return _validar_descripcion_cargo(v)
+        return texto_opcional_no_vacio(v, "La descripción del cargo")
 
 
 class CargoCreate(CargoBase):
@@ -36,12 +28,14 @@ class CargoUpdate(BaseModel):
     descripcion: Optional[str] = None
 
     @field_validator('nombre')
+    @classmethod
     def validar_nombre(cls, v):
-        return _validar_nombre_cargo(v)
+        return texto_opcional_no_vacio(v, "El nombre del cargo")
 
     @field_validator('descripcion')
+    @classmethod
     def validar_descripcion(cls, v):
-        return _validar_descripcion_cargo(v)
+        return texto_opcional_no_vacio(v, "La descripción del cargo")
 
 
 class CargoCambiarEstado(BaseModel):

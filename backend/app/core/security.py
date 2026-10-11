@@ -8,6 +8,7 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -110,7 +111,9 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido",
         )
-    result = await db.execute(select(Usuario).where(Usuario.username == username))
+    result = await db.execute(
+        select(Usuario).options(selectinload(Usuario.cuadro)).where(Usuario.username == username)
+    )
     usuario = result.scalar_one_or_none()
     if not usuario or not usuario.activo:
         raise HTTPException(

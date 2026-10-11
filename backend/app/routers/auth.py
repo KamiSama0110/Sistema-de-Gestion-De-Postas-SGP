@@ -114,7 +114,7 @@ async def cambiar_contrasena(
 async def get_me(
     usuario: Usuario = Depends(get_current_user),
 ):
-    return {
+    response = {
         "id": usuario.id,
         "username": usuario.username,
         "rol": usuario.rol,
@@ -122,3 +122,15 @@ async def get_me(
         "activo": usuario.activo,
         "ultimo_acceso": usuario.ultimo_acceso,
     }
+
+    if usuario.rol == "cuadro" and usuario.cuadro:
+        response["cuadro"] = {
+            "id": usuario.cuadro.id,
+            "nombre": usuario.cuadro.nombre,
+            "apellidos": usuario.cuadro.apellidos,
+            "sexo": usuario.cuadro.sexo.value,
+            "cargo": usuario.cuadro.cargo,
+            "area": usuario.cuadro.area,
+        }
+
+    return response

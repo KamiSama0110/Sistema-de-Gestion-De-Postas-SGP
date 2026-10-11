@@ -1,5 +1,7 @@
 from pydantic import BaseModel, field_validator
 
+from app.utils.validators import validar_password
+
 
 class LoginRequest(BaseModel):
     username: str
@@ -27,9 +29,7 @@ class CambiarPasswordRequest(BaseModel):
     @field_validator("password_nueva")
     @classmethod
     def validar_password_nueva(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("La contraseña nueva debe tener al menos 8 caracteres")
-        return v
+        return validar_password(v)
 
 
 class MensajeResponse(BaseModel):

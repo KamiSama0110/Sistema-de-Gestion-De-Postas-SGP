@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.models.enums import (
     SexoEnum, EscolaridadEnum, EstadoASPEnum,
     TipoPostaEnum, EstadoGuardiaEnum, TipoNovedadEnum, SeveridadEnum,
+    EstadoPlanGuardiaEnum, EstadoGuardiaCuadroEnum,
 )
 from app.models.cargo import Cargo
 from app.models.asp import ASP
@@ -25,6 +26,7 @@ from app.models.posta import Posta, TurnoPosta
 from app.models.guardia import Guardia, Novedad
 from app.models.usuario import Usuario
 from app.models.cuadro import Cuadro, FranjaCuadro, Feriado
+from app.models.plan_guardia_cuadro import PlanGuardiaCuadro, GuardiaCuadro
 from sqlalchemy import select
 
 random.seed(42)
@@ -245,6 +247,41 @@ async def seed():
             db.add(feriado)
         await db.flush()
         print(f'  {len(FERIADOS_FIJOS)} feriados sugeridos creados')
+
+        # --- Plan de guardias de cuadro (borrador, mes en curso) ---
+        anio_plan = date.today().year
+        mes_plan = date.today().month
+        plan = PlanGuardiaCuadro(
+            anio=anio_plan,
+            mes=mes_plan,
+            estado=EstadoPlanGuardiaEnum.borrador,
+            generado_automaticamente=False,
+            observaciones="Plan de prueba generado por seed",
+        )
+        db.add(plan)
+        await db.flush()
+
+        # Asignaciones válidas: 2 nocturnas (hombres) y 2 diurnas (mujeres)
+        guardias_plan = [
+            (1, 2, date(anio_plan, mes_plan, 13)),  # Roberto, nocturna
+            (2, 2, date(anio_plan, mes_plan, 14)),  # Fernando, nocturna
+            (9, 1, date(anio_plan, mes_plan, 17)),  # María, diurna (sábado)
+            (10, 1, date(anio_plan, mes_plan, 18)),  # Ana, diurna (domingo)
+        ]
+        for cuadro_id, franja_id, fecha in guardias_plan:
+            if fecha.month != mes_plan:
+                continue
+            db.add(
+                GuardiaCuadro(
+                    plan_id=plan.id,
+                    cuadro_id=cuadro_id,
+                    franja_id=franja_id,
+                    fecha=fecha,
+                    estado=EstadoGuardiaCuadroEnum.planificada,
+                )
+            )
+        await db.flush()
+        print(f'  Plan {anio_plan}-{mes_plan:02d} creado con {len(guardias_plan)} guardias')
 
         # --- ASPs ---
         asps = []

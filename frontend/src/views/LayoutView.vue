@@ -203,6 +203,7 @@ const navItems = [
   { to: '/postas', icon: 'mdi-office-building-outline', label: 'Postas', roles: ['admin'] },
   { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias', roles: ['admin'] },
   { to: '/cuadros', icon: 'mdi-account-tie-outline', label: 'Cuadros', roles: ['admin'] },
+  { to: '/planes-cuadro', icon: 'mdi-calendar-month-outline', label: 'Planificación de cuadros', roles: ['admin'] },
   { to: '/configuracion-guardias', icon: 'mdi-tune-variant', label: 'Config. de guardias', roles: ['admin'] },
   { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes', roles: ['admin'] },
 ]
@@ -212,7 +213,7 @@ const navFiltrados = computed(() =>
 )
 
 const sectionLabel = computed(() => {
-  const item = navFiltrados.value.find((n) => n.to === route.path)
+  const item = navFiltrados.value.find((n) => isActive(n.to))
   return item?.label || 'Panel'
 })
 

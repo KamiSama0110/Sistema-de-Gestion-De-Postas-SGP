@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.core.limiter import limiter
 from app.services.auth_service import crear_admin_inicial
-from app.routers import auth, asp, cargo, posta, guardia, reporte, auditoria, cuadro, franja, feriado, plan, guardia_cuadro
+from app.routers import auth, asp, cargo, posta, guardia, reporte, auditoria, cuadro, franja, feriado, plan, guardia_cuadro, incidencias_cuadro, mis_guardias
 import app.services.auditoria_service
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,8 @@ app.include_router(franja.router, prefix="/api/v1")
 app.include_router(feriado.router, prefix="/api/v1")
 app.include_router(plan.router, prefix="/api/v1")
 app.include_router(guardia_cuadro.router, prefix="/api/v1")
+app.include_router(incidencias_cuadro.router, prefix="/api/v1")
+app.include_router(mis_guardias.router, prefix="/api/v1")
 
 
 @app.get("/")

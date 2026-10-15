@@ -120,6 +120,11 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario no encontrado o inactivo",
         )
+    if usuario.rol == "cuadro" and (usuario.cuadro is None or not usuario.cuadro.activo):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario no encontrado o inactivo",
+        )
     set_current_user(usuario.username)
     return usuario
 
@@ -138,9 +143,9 @@ async def require_admin(
 async def require_cuadro(
     usuario: Usuario = Depends(get_current_user),
 ) -> Usuario:
-    if usuario.rol not in ("cuadro", "admin"):
+    if usuario.rol != "cuadro":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requiere rol de cuadro o administrador",
+            detail="Se requiere rol de cuadro",
         )
     return usuario

@@ -98,4 +98,15 @@ from app.schemas.plan import (
     PaginatedGuardiaCuadro,
     CalendarioResponse,
     CandidatosResponse,
+    IncumplirGuardiaRequest,
+    CancelarGuardiaCuadroRequest,
+    MiPlanificacionResponse,
+)
+from app.schemas.incidencia import (
+    IncidenciaCreate,
+    IncidenciaUpdate,
+    IncidenciaResponse,
+    PaginatedIncidencia,
+    OpcionSimple,
+    OpcionesIncidenciaResponse,
 )

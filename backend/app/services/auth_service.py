@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
@@ -13,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 async def get_usuario_by_username(db: AsyncSession, username: str) -> Usuario | None:
-    result = await db.execute(select(Usuario).where(Usuario.username == username))
+    result = await db.execute(
+        select(Usuario)
+        .options(selectinload(Usuario.cuadro))
+        .where(Usuario.username == username)
+    )
     return result.scalar_one_or_none()
 
 
@@ -31,6 +36,8 @@ async def autenticar_usuario(
     if not verify_password(password, usuario.hashed_password):
         return None
     if not usuario.activo:
+        return None
+    if usuario.rol == "cuadro" and (usuario.cuadro is None or not usuario.cuadro.activo):
         return None
     return usuario
 

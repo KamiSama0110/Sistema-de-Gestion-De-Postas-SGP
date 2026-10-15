@@ -47,5 +47,8 @@ class Settings(BaseSettings):
     # Seed (para despliegues demo en Render)
     SEED_DB: bool = False
 
+    # Panel del cuadro
+    CUADRO_VENTANA_INICIO_MIN: int = 30
+
 
 settings = Settings()

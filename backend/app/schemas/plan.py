@@ -78,6 +78,15 @@ class GuardiaCuadroUpdate(BaseModel):
     fecha: Optional[date] = None
 
 
+class IncumplirGuardiaRequest(BaseModel):
+    motivo: str = Field(..., min_length=1, max_length=300)
+    justificada: bool
+
+
+class CancelarGuardiaCuadroRequest(BaseModel):
+    motivo: str = Field(..., min_length=1, max_length=300)
+
+
 class GuardiaCuadroResponse(BaseModel):
     id: int
     plan_id: int
@@ -90,6 +99,7 @@ class GuardiaCuadroResponse(BaseModel):
     inicio_real: Optional[datetime] = None
     fin_real: Optional[datetime] = None
     motivo_incumplimiento: Optional[str] = None
+    motivo_cancelacion: Optional[str] = None
     justificada: Optional[bool] = None
 
     model_config = {"from_attributes": True}
@@ -183,3 +193,10 @@ class GenerarPlanResponse(BaseModel):
     sin_cubrir: list[SlotSinCubrir]
     cuadros_sin_asignar: list[CuadroSinAsignar]
     advertencias: list[str]
+
+
+class MiPlanificacionResponse(BaseModel):
+    plan_id: Optional[int] = None
+    anio: int
+    mes: int
+    guardias: list[GuardiaCuadroResponse]

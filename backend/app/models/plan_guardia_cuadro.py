@@ -48,12 +48,17 @@ class GuardiaCuadro(Base):
     inicio_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     fin_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     motivo_incumplimiento: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    motivo_cancelacion: Mapped[str | None] = mapped_column(String(300), nullable=True)
     justificada: Mapped[bool | None] = mapped_column(nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     plan: Mapped["PlanGuardiaCuadro"] = relationship(back_populates="guardias")
     cuadro: Mapped["Cuadro"] = relationship()
     franja: Mapped["FranjaCuadro"] = relationship()
+    incidencias: Mapped[list["IncidenciaCuadro"]] = relationship(
+        back_populates="guardia",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def cuadro_nombre(self) -> str:

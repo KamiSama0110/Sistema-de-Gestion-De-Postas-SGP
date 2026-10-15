@@ -27,6 +27,7 @@ from app.models.guardia import Guardia, Novedad
 from app.models.usuario import Usuario
 from app.models.cuadro import Cuadro, FranjaCuadro, Feriado
 from app.models.plan_guardia_cuadro import PlanGuardiaCuadro, GuardiaCuadro
+from app.models.incidencia_cuadro import IncidenciaCuadro
 from sqlalchemy import select
 
 random.seed(42)
@@ -436,6 +437,19 @@ async def seed():
             db.add(usuario_cuadro1)
             print(f'  Cuenta cuadro1 creada para: {cuadro1.nombre} {cuadro1.apellidos}')
 
+        # --- Cuenta cuadro2 (vinculada a una mujer activa) ---
+        cuadro2 = next((c for c in cuadros if c.sexo == SexoEnum.femenino and c.activo), None)
+        if cuadro2:
+            usuario_cuadro2 = Usuario(
+                username="cuadro2",
+                hashed_password=get_password_hash("cuadro1234"),
+                activo=True,
+                rol="cuadro",
+                cuadro_id=cuadro2.id,
+            )
+            db.add(usuario_cuadro2)
+            print(f'  Cuenta cuadro2 creada para: {cuadro2.nombre} {cuadro2.apellidos}')
+
         await db.commit()
         print(f'\nSeed completado exitosamente.')
         print(f'  Cargos:     {len(cargos)}')
@@ -449,6 +463,7 @@ async def seed():
         print(f'  Novedades:  {novedades_creadas if guardias_pasadas else 0}')
         print(f'  Admin:      {settings.ADMIN_USERNAME}')
         print(f'  Cuadro1:    cuadro1 / cuadro1234')
+        print(f'  Cuadro2:    cuadro2 / cuadro1234')
 
 async def seed_cuadros_prueba():
     """Seed adicional para B4: 30 hombres y 12 mujeres extra con CI TEST-"""

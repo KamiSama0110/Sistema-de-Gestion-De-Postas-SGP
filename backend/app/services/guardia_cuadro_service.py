@@ -15,6 +15,10 @@ from app.schemas.plan import (
     PlanRechazar,
     PlanUpdate,
 )
+from app.schemas.plan import (
+    IncumplirGuardiaRequest,
+    CancelarGuardiaCuadroRequest,
+)
 from app.services.cuadro_service import get_cuadro_by_id
 from app.services.feriado_service import get_feriado_by_fecha
 from app.services.franja_service import get_franja_by_id
@@ -26,6 +30,14 @@ TRANSICIONES_PLAN = {
     "pendiente_aprobacion": {"aprobado", "rechazado"},
     "rechazado": {"borrador"},
     "aprobado": set(),
+}
+
+TRANSICIONES_GUARDIA_CUADRO = {
+    "planificada": {"activa", "incumplida", "cancelada"},
+    "activa": {"finalizada", "incumplida"},
+    "finalizada": set(),
+    "incumplida": set(),
+    "cancelada": set(),
 }
 
 
@@ -463,6 +475,79 @@ async def eliminar_guardia(db: AsyncSession, guardia_id: int) -> None:
         )
     await db.delete(guardia)
     await db.commit()
+
+
+def _plan_aprobado(guardia: GuardiaCuadro) -> bool:
+    return (
+        guardia.plan is not None
+        and guardia.plan.estado == EstadoPlanGuardiaEnum.aprobado
+    )
+
+
+async def _transicionar_guardia(
+    db: AsyncSession,
+    guardia: GuardiaCuadro,
+    nuevo_estado: EstadoGuardiaCuadroEnum,
+    requerir_aprobado: bool = True,
+) -> None:
+    if requerir_aprobado and not _plan_aprobado(guardia):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo se pueden iniciar, finalizar o incumplir guardias de planes aprobados",
+        )
+    permitidas = TRANSICIONES_GUARDIA_CUADRO.get(guardia.estado.value, set())
+    if nuevo_estado.value not in permitidas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"No se puede transicionar de '{guardia.estado.value}' "
+                f"a '{nuevo_estado.value}'"
+            ),
+        )
+    guardia.estado = nuevo_estado
+
+
+async def iniciar_guardia(db: AsyncSession, guardia_id: int) -> GuardiaCuadro:
+    guardia = await get_guardia_by_id(db, guardia_id)
+    await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.activa)
+    guardia.inicio_real = datetime.now()
+    await db.commit()
+    await db.refresh(guardia, ["plan", "cuadro", "franja"])
+    return guardia
+
+
+async def finalizar_guardia(db: AsyncSession, guardia_id: int) -> GuardiaCuadro:
+    guardia = await get_guardia_by_id(db, guardia_id)
+    await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.finalizada)
+    guardia.fin_real = datetime.now()
+    await db.commit()
+    await db.refresh(guardia, ["plan", "cuadro", "franja"])
+    return guardia
+
+
+async def incumplir_guardia(
+    db: AsyncSession, guardia_id: int, datos: IncumplirGuardiaRequest
+) -> GuardiaCuadro:
+    guardia = await get_guardia_by_id(db, guardia_id)
+    await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.incumplida)
+    guardia.motivo_incumplimiento = datos.motivo
+    guardia.justificada = datos.justificada
+    await db.commit()
+    await db.refresh(guardia, ["plan", "cuadro", "franja"])
+    return guardia
+
+
+async def cancelar_guardia(
+    db: AsyncSession, guardia_id: int, datos: CancelarGuardiaCuadroRequest
+) -> GuardiaCuadro:
+    guardia = await get_guardia_by_id(db, guardia_id)
+    await _transicionar_guardia(
+        db, guardia, EstadoGuardiaCuadroEnum.cancelada, requerir_aprobado=False
+    )
+    guardia.motivo_cancelacion = datos.motivo
+    await db.commit()
+    await db.refresh(guardia, ["plan", "cuadro", "franja"])
+    return guardia
 
 
 async def listar_guardias(

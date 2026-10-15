@@ -54,6 +54,17 @@ from app.schemas.reporte import (
     ReporteIncidenciasResponse,
     ReporteTardanzasResponse,
 )
+from app.schemas.reporte_cuadro import (
+    ReporteCumplimientoResponse,
+    CuadroReporteItem,
+    ReporteGuardiasPorCuadroResponse,
+    ReporteIncidenciasCuadroResponse,
+    SlotSinCubrir,
+    FeriadoItem,
+    ReporteDiasSinCubrirResponse,
+    IncumplimientoItem,
+    ReporteIncumplimientosResponse,
+)
 from app.schemas.auditoria import (
     AuditLogResponse,
     AuditDiffCampo,

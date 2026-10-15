@@ -4,6 +4,7 @@ from app.services import cargo_service
 from app.services import posta_service
 from app.services import guardia_service
 from app.services import reporte_service
+from app.services import reporte_cuadro_service
 from app.services import auditoria_service
 from app.services import token_service
 from app.services import cuadro_service

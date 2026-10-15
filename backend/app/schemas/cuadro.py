@@ -146,5 +146,4 @@ class CuadroCuentaCreate(BaseModel):
 
 
 class CuadroCuentaPassword(BaseModel):
-    password_actual: str
     password_nueva: str = Field(..., min_length=8, max_length=100)

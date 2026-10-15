@@ -20,53 +20,51 @@
           class="postas-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              :variant="filtroTipo === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroTipo === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroTipo = 'todos'"
-            >
-              Todos
-            </v-btn>
-            <v-btn
-              v-for="t in tipoItems"
-              :key="t.value"
-              :variant="filtroTipo === t.value ? 'flat' : 'outlined'"
-              :color="filtroTipo === t.value ? t.color : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroTipo = t.value"
-            >
-              {{ t.label }}
-            </v-btn>
-          </div>
-          <div class="d-flex ga-2 justify-center">
-            <v-btn
-              :variant="filtroActiva === 'activas' ? 'flat' : 'outlined'"
-              :color="filtroActiva === 'activas' ? 'success' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActiva = 'activas'"
-            >
-              Activas
-            </v-btn>
-            <v-btn
-              :variant="filtroActiva === 'todas' ? 'flat' : 'outlined'"
-              :color="filtroActiva === 'todas' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActiva = 'todas'"
-            >
-              Todas
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-btn
+          :variant="filtroTipo === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroTipo === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroTipo = 'todos'"
+        >
+          Todos
+        </v-btn>
+        <v-btn
+          v-for="t in tipoItems"
+          :key="t.value"
+          :variant="filtroTipo === t.value ? 'flat' : 'outlined'"
+          :color="filtroTipo === t.value ? t.color : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroTipo = t.value"
+        >
+          {{ t.label }}
+        </v-btn>
+        <v-divider vertical class="mx-1" />
+        <v-btn
+          :variant="filtroActiva === 'activas' ? 'flat' : 'outlined'"
+          :color="filtroActiva === 'activas' ? 'success' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActiva = 'activas'"
+        >
+          Activas
+        </v-btn>
+        <v-btn
+          :variant="filtroActiva === 'todas' ? 'flat' : 'outlined'"
+          :color="filtroActiva === 'todas' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActiva = 'todas'"
+        >
+          Todas
+        </v-btn>
       </div>
 
       <div aria-live="polite">

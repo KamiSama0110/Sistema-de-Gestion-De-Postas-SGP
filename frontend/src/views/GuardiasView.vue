@@ -20,49 +20,46 @@
           class="guardias-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-menu location="bottom start">
-              <template #activator="{ props: menuProps }">
-                <v-text-field
-                  :model-value="filtroFecha || ''"
-                  label="Fecha"
-                  readonly
-                  append-inner-icon="mdi-calendar"
-                  variant="solo-filled"
-                  density="compact"
-                  hide-details
-                  clearable
-                  bg-color="grey-lighten-4"
-                  class="guardias-fecha"
-                  v-bind="menuProps"
-                  @click:clear="filtroFecha = null; pagina = 1; cargarGuardias()"
-                />
-              </template>
-              <v-date-picker
-                v-model="fechaPicker"
-                color="primary"
-                @update:model-value="onFechaSelect"
-              />
-            </v-menu>
-          </div>
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              v-for="e in estadosItems"
-              :key="e.value"
-              :variant="filtroEstado === e.value ? 'flat' : 'outlined'"
-              :color="filtroEstado === e.value ? e.color : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroEstado = filtroEstado === e.value ? null : e.value"
-            >
-              {{ e.label }}
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-menu location="bottom start">
+          <template #activator="{ props: menuProps }">
+            <v-text-field
+              :model-value="filtroFecha || ''"
+              label="Fecha"
+              readonly
+              append-inner-icon="mdi-calendar"
+              variant="solo-filled"
+              density="compact"
+              hide-details
+              clearable
+              bg-color="grey-lighten-4"
+              class="guardias-fecha"
+              v-bind="menuProps"
+              @click:clear="filtroFecha = null; pagina = 1; cargarGuardias()"
+            />
+          </template>
+          <v-date-picker
+            v-model="fechaPicker"
+            color="primary"
+          />
+        </v-menu>
+        <v-divider vertical class="mx-1" />
+        <v-btn
+          v-for="e in estadosItems"
+          :key="e.value"
+          :variant="filtroEstado === e.value ? 'flat' : 'outlined'"
+          :color="filtroEstado === e.value ? e.color : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroEstado = filtroEstado === e.value ? null : e.value"
+        >
+          {{ e.label }}
+        </v-btn>
       </div>
 
       <div aria-live="polite">

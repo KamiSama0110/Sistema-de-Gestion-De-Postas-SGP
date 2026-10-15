@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useToast } from '../composables/useToast'
 import {
   getAccessToken,
   setAccessToken,
@@ -78,6 +79,10 @@ api.interceptors.response.use(
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }
+    }
+    if (error.response?.status === 403) {
+      useToast().error('No tiene permisos para esta acción')
+      return Promise.reject(error)
     }
     return Promise.reject(error)
   },

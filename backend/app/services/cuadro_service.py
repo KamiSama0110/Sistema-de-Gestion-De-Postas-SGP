@@ -3,7 +3,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.security import get_password_hash, verify_password
+from app.core.security import get_password_hash
 from app.models.cuadro import Cuadro
 from app.models.enums import SexoEnum
 from app.models.usuario import Usuario
@@ -197,12 +197,6 @@ async def cambiar_password_cuadro_cuenta(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="El cuadro no tiene cuenta de acceso",
-        )
-
-    if not verify_password(datos.password_actual, cuadro.usuario.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La contraseña actual es incorrecta",
         )
 
     cuadro.usuario.hashed_password = get_password_hash(datos.password_nueva)

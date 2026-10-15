@@ -1,5 +1,5 @@
 <template>
-  <v-layout class="sgp-app-layout">
+  <div class="sgp-app-layout">
     <a href="#main-content" class="sgp-skip-link">Saltar al contenido</a>
 
   <v-navigation-drawer
@@ -26,7 +26,7 @@
 
     <!-- Rail mode: icon buttons -->
     <div v-if="isRail" class="d-flex flex-column align-center ga-1 py-2">
-      <v-tooltip v-for="item in navItems" :key="item.to" :text="item.label" location="end">
+      <v-tooltip v-for="item in navFiltrados" :key="item.to" :text="item.label" location="end">
         <template #activator="{ props: tipProps }">
           <v-btn
             v-bind="tipProps"
@@ -47,7 +47,7 @@
     <!-- Expanded mode: standard list -->
     <v-list v-else nav density="comfortable" class="px-2" active-class="sgp-nav-active" aria-label="Navegación principal">
       <v-list-item
-        v-for="item in navItems"
+        v-for="item in navFiltrados"
         :key="item.to"
         :to="item.to"
         :prepend-icon="item.icon"
@@ -117,6 +117,19 @@
         <v-icon size="16" icon="mdi-calendar-clock-outline" />
         <span>{{ now }}</span>
       </div>
+      <div class="d-flex align-center ga-2 mr-2">
+        <span class="text-body-2 font-weight-medium d-none d-sm-inline text-truncate">{{
+          auth.nombreMostrado
+        }}</span>
+        <v-chip
+          size="small"
+          variant="tonal"
+          :color="auth.esAdmin ? 'primary' : 'secondary'"
+          :prepend-icon="auth.esAdmin ? 'mdi-shield-account-outline' : 'mdi-account-outline'"
+        >
+          {{ auth.esAdmin ? 'Administrador' : 'Cuadro' }}
+        </v-chip>
+      </div>
     </v-app-bar>
 
     <v-container fluid id="main-content" tabindex="-1" class="pa-4 pa-sm-6">
@@ -144,7 +157,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-layout>
+  </div>
 </template>
 
 <script setup>
@@ -182,17 +195,24 @@ onUnmounted(() => {
 const isRail = computed(() => !mobile.value && rail.value)
 
 const navItems = [
-  { to: '/', icon: 'mdi-view-dashboard-outline', label: 'Dashboard' },
-  { to: '/asp', icon: 'mdi-account-group-outline', label: 'ASP' },
-  { to: '/cargos', icon: 'mdi-card-account-details-outline', label: 'Cargos' },
-  { to: '/turnos', icon: 'mdi-clock-outline', label: 'Turnos' },
-  { to: '/postas', icon: 'mdi-office-building-outline', label: 'Postas' },
-  { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias' },
-  { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes' },
+  { to: '/', icon: 'mdi-view-dashboard-outline', label: 'Dashboard', roles: ['admin'] },
+  { to: '/mis-guardias', icon: 'mdi-shield-account-outline', label: 'Mis guardias', roles: ['cuadro'] },
+  { to: '/asp', icon: 'mdi-account-group-outline', label: 'ASP', roles: ['admin'] },
+  { to: '/cargos', icon: 'mdi-card-account-details-outline', label: 'Cargos', roles: ['admin'] },
+  { to: '/turnos', icon: 'mdi-clock-outline', label: 'Turnos', roles: ['admin'] },
+  { to: '/postas', icon: 'mdi-office-building-outline', label: 'Postas', roles: ['admin'] },
+  { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias', roles: ['admin'] },
+  { to: '/cuadros', icon: 'mdi-account-tie-outline', label: 'Cuadros', roles: ['admin'] },
+  { to: '/configuracion-guardias', icon: 'mdi-tune-variant', label: 'Config. de guardias', roles: ['admin'] },
+  { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes', roles: ['admin'] },
 ]
 
+const navFiltrados = computed(() =>
+  navItems.filter((item) => item.roles.includes(auth.rol)),
+)
+
 const sectionLabel = computed(() => {
-  const item = navItems.find((n) => n.to === route.path)
+  const item = navFiltrados.value.find((n) => n.to === route.path)
   return item?.label || 'Panel'
 })
 
@@ -240,6 +260,12 @@ async function confirmLogout() {
 </script>
 
 <style>
+.sgp-app-layout {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .sgp-sidebar {
   border-right: 1px solid rgb(var(--v-border-color)) !important;
 }

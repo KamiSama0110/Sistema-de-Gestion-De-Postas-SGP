@@ -20,47 +20,44 @@
           class="turnos-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-select
-              v-model="filtroPostaId"
-              :items="postasList"
-              item-title="nombre"
-              item-value="id"
-              label="Posta"
-              variant="solo-filled"
-              density="compact"
-              hide-details
-              clearable
-              bg-color="grey-lighten-4"
-              class="turnos-posta-select"
-              @update:model-value="pagina = 1; cargarTurnos()"
-            />
-          </div>
-          <div class="d-flex ga-2 justify-center">
-            <v-btn
-              :variant="filtroActivo === 'activos' ? 'flat' : 'outlined'"
-              :color="filtroActivo === 'activos' ? 'success' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivo = 'activos'"
-            >
-              Activos
-            </v-btn>
-            <v-btn
-              :variant="filtroActivo === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroActivo === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivo = 'todos'"
-            >
-              Todos
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-select
+          v-model="filtroPostaId"
+          :items="postasList"
+          item-title="nombre"
+          item-value="id"
+          label="Posta"
+          variant="solo-filled"
+          density="compact"
+          hide-details
+          clearable
+          bg-color="grey-lighten-4"
+          class="turnos-posta-select"
+          @update:model-value="pagina = 1; cargarTurnos()"
+        />
+        <v-btn
+          :variant="filtroActivo === 'activos' ? 'flat' : 'outlined'"
+          :color="filtroActivo === 'activos' ? 'success' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivo = 'activos'"
+        >
+          Activos
+        </v-btn>
+        <v-btn
+          :variant="filtroActivo === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroActivo === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivo = 'todos'"
+        >
+          Todos
+        </v-btn>
       </div>
 
       <div aria-live="polite">

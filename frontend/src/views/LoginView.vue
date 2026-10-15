@@ -94,7 +94,7 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.login(form.username, form.password)
-    router.push({ name: 'dashboard' })
+    router.push({ name: auth.esCuadro ? 'mis-guardias' : 'dashboard' })
   } catch (err) {
     if (err?.response?.status === 401) {
       error.value = 'Usuario o contraseña incorrectos'

@@ -20,42 +20,41 @@
           class="asp-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              :variant="filtroEstado === 'activo' ? 'flat' : 'outlined'"
-              :color="filtroEstado === 'activo' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="cambiarFiltro('activo')"
-            >
-              Activos
-            </v-btn>
-            <v-btn
-              v-for="est in estadosDisponibles"
-              :key="est.value"
-              :variant="filtroEstado === est.value ? 'flat' : 'outlined'"
-              :color="filtroEstado === est.value ? est.color : 'default'"
-              size="small"
-              class="text-none"
-              @click="cambiarFiltro(est.value)"
-            >
-              {{ est.label }}
-            </v-btn>
-            <v-btn
-              :variant="filtroEstado === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroEstado === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="cambiarFiltro('todos')"
-            >
-              Todos
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-btn
+          :variant="filtroEstado === 'activo' ? 'flat' : 'outlined'"
+          :color="filtroEstado === 'activo' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="cambiarFiltro('activo')"
+        >
+          Activos
+        </v-btn>
+        <v-btn
+          v-for="est in estadosDisponibles"
+          :key="est.value"
+          :variant="filtroEstado === est.value ? 'flat' : 'outlined'"
+          :color="filtroEstado === est.value ? est.color : 'default'"
+          size="small"
+          class="text-none"
+          @click="cambiarFiltro(est.value)"
+        >
+          {{ est.label }}
+        </v-btn>
+        <v-btn
+          :variant="filtroEstado === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroEstado === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="cambiarFiltro('todos')"
+        >
+          Todos
+        </v-btn>
       </div>
 
       <div aria-live="polite">

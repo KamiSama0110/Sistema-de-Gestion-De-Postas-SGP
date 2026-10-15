@@ -20,31 +20,30 @@
           class="cargos-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              :variant="filtroActivos === 'activos' ? 'flat' : 'outlined'"
-              :color="filtroActivos === 'activos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivos = 'activos'"
-            >
-              Activos
-            </v-btn>
-            <v-btn
-              :variant="filtroActivos === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroActivos === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivos = 'todos'"
-            >
-              Todos
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-btn
+          :variant="filtroActivos === 'activos' ? 'flat' : 'outlined'"
+          :color="filtroActivos === 'activos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivos = 'activos'"
+        >
+          Activos
+        </v-btn>
+        <v-btn
+          :variant="filtroActivos === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroActivos === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivos = 'todos'"
+        >
+          Todos
+        </v-btn>
       </div>
 
       <div aria-live="polite">

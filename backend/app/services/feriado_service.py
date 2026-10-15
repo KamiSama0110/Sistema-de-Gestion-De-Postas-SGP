@@ -1,12 +1,11 @@
 from datetime import date, datetime
-from typing import Optional
-from sqlalchemy import select, func, and_
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.cuadro import Feriado
 from app.schemas.feriado import FeriadoCreate, FeriadoUpdate
-
 
 FERIADOS_FIJOS = [
     (1, 1, "Año Nuevo"),
@@ -24,7 +23,9 @@ async def get_feriado_by_id(db: AsyncSession, feriado_id: int) -> Feriado:
     result = await db.execute(select(Feriado).where(Feriado.id == feriado_id))
     feriado = result.scalar_one_or_none()
     if not feriado:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feriado no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Feriado no encontrado"
+        )
     return feriado
 
 
@@ -37,7 +38,7 @@ async def listar_feriados(
     db: AsyncSession,
     page: int = 1,
     size: int = 20,
-    anio: Optional[int] = None,
+    anio: int | None = None,
 ) -> dict:
     query = select(Feriado)
 
@@ -59,7 +60,10 @@ async def listar_feriados(
 async def crear_feriado(db: AsyncSession, datos: FeriadoCreate) -> Feriado:
     existing = await get_feriado_by_fecha(db, datos.fecha)
     if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe un feriado en esa fecha")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe un feriado en esa fecha",
+        )
 
     feriado = Feriado(
         fecha=datetime.combine(datos.fecha, datetime.min.time()),
@@ -71,7 +75,9 @@ async def crear_feriado(db: AsyncSession, datos: FeriadoCreate) -> Feriado:
     return feriado
 
 
-async def actualizar_feriado(db: AsyncSession, feriado_id: int, datos: FeriadoUpdate) -> Feriado:
+async def actualizar_feriado(
+    db: AsyncSession, feriado_id: int, datos: FeriadoUpdate
+) -> Feriado:
     feriado = await get_feriado_by_id(db, feriado_id)
 
     update_data = datos.model_dump(exclude_unset=True)
@@ -80,7 +86,10 @@ async def actualizar_feriado(db: AsyncSession, feriado_id: int, datos: FeriadoUp
         new_fecha = update_data["fecha"]
         existing = await get_feriado_by_fecha(db, new_fecha)
         if existing and existing.id != feriado_id:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe un feriado en esa fecha")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ya existe un feriado en esa fecha",
+            )
         update_data["fecha"] = datetime.combine(new_fecha, datetime.min.time())
 
     for field, value in update_data.items():

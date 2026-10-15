@@ -1,32 +1,42 @@
-from datetime import datetime
-from typing import Optional
-from sqlalchemy import select, func, or_
+from fastapi import HTTPException, status
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from fastapi import HTTPException, status
 
-from app.models.cuadro import Cuadro
-from app.models.usuario import Usuario
-from app.models.enums import SexoEnum
-from app.schemas.cuadro import CuadroCreate, CuadroUpdate, CuadroCambiarEstado, CuadroCuentaCreate, CuadroCuentaPassword
 from app.core.security import get_password_hash, verify_password
+from app.models.cuadro import Cuadro
+from app.models.enums import SexoEnum
+from app.models.usuario import Usuario
+from app.schemas.cuadro import (
+    CuadroCambiarEstado,
+    CuadroCreate,
+    CuadroCuentaCreate,
+    CuadroCuentaPassword,
+    CuadroUpdate,
+)
 
 
 async def get_cuadro_by_id(db: AsyncSession, cuadro_id: int) -> Cuadro:
     result = await db.execute(select(Cuadro).where(Cuadro.id == cuadro_id))
     cuadro = result.scalar_one_or_none()
     if not cuadro:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cuadro no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Cuadro no encontrado"
+        )
     return cuadro
 
 
 async def get_cuadro_by_id_with_usuario(db: AsyncSession, cuadro_id: int) -> Cuadro:
     result = await db.execute(
-        select(Cuadro).options(selectinload(Cuadro.usuario)).where(Cuadro.id == cuadro_id)
+        select(Cuadro)
+        .options(selectinload(Cuadro.usuario))
+        .where(Cuadro.id == cuadro_id)
     )
     cuadro = result.scalar_one_or_none()
     if not cuadro:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cuadro no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Cuadro no encontrado"
+        )
     return cuadro
 
 
@@ -39,10 +49,10 @@ async def listar_cuadros(
     db: AsyncSession,
     page: int = 1,
     size: int = 20,
-    q: Optional[str] = None,
-    sexo: Optional[SexoEnum] = None,
-    activo: Optional[bool] = None,
-    sin_guardia_vie_dom: Optional[bool] = None,
+    q: str | None = None,
+    sexo: SexoEnum | None = None,
+    activo: bool | None = None,
+    sin_guardia_vie_dom: bool | None = None,
 ) -> dict:
     query = select(Cuadro)
 
@@ -78,7 +88,9 @@ async def crear_cuadro(db: AsyncSession, datos: CuadroCreate) -> Cuadro:
     if datos.ci:
         existing = await get_cuadro_by_ci(db, datos.ci)
         if existing:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El CI ya está registrado")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="El CI ya está registrado"
+            )
 
     cuadro = Cuadro(
         nombre=datos.nombre,
@@ -98,7 +110,9 @@ async def crear_cuadro(db: AsyncSession, datos: CuadroCreate) -> Cuadro:
     return cuadro
 
 
-async def actualizar_cuadro(db: AsyncSession, cuadro_id: int, datos: CuadroUpdate) -> Cuadro:
+async def actualizar_cuadro(
+    db: AsyncSession, cuadro_id: int, datos: CuadroUpdate
+) -> Cuadro:
     cuadro = await get_cuadro_by_id(db, cuadro_id)
 
     update_data = datos.model_dump(exclude_unset=True)
@@ -106,7 +120,9 @@ async def actualizar_cuadro(db: AsyncSession, cuadro_id: int, datos: CuadroUpdat
     if "ci" in update_data and update_data["ci"] is not None:
         existing = await get_cuadro_by_ci(db, update_data["ci"])
         if existing and existing.id != cuadro_id:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El CI ya está registrado")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="El CI ya está registrado"
+            )
 
     for field, value in update_data.items():
         setattr(cuadro, field, value)
@@ -116,7 +132,9 @@ async def actualizar_cuadro(db: AsyncSession, cuadro_id: int, datos: CuadroUpdat
     return cuadro
 
 
-async def cambiar_estado_cuadro(db: AsyncSession, cuadro_id: int, datos: CuadroCambiarEstado) -> Cuadro:
+async def cambiar_estado_cuadro(
+    db: AsyncSession, cuadro_id: int, datos: CuadroCambiarEstado
+) -> Cuadro:
     cuadro = await get_cuadro_by_id_with_usuario(db, cuadro_id)
     cuadro.activo = datos.activo
 
@@ -132,18 +150,30 @@ async def get_cuadro_cuenta(db: AsyncSession, cuadro_id: int) -> dict:
     cuadro = await get_cuadro_by_id_with_usuario(db, cuadro_id)
     if not cuadro.usuario:
         return {"existe": False}
-    return {"existe": True, "username": cuadro.usuario.username, "activo": cuadro.usuario.activo}
+    return {
+        "existe": True,
+        "username": cuadro.usuario.username,
+        "activo": cuadro.usuario.activo,
+    }
 
 
-async def crear_cuadro_cuenta(db: AsyncSession, cuadro_id: int, datos: CuadroCuentaCreate) -> Usuario:
+async def crear_cuadro_cuenta(
+    db: AsyncSession, cuadro_id: int, datos: CuadroCuentaCreate
+) -> Usuario:
     cuadro = await get_cuadro_by_id_with_usuario(db, cuadro_id)
 
     if cuadro.usuario:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El cuadro ya tiene una cuenta de acceso")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El cuadro ya tiene una cuenta de acceso",
+        )
 
     result = await db.execute(select(Usuario).where(Usuario.username == datos.username))
     if result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El nombre de usuario ya existe")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El nombre de usuario ya existe",
+        )
 
     usuario = Usuario(
         username=datos.username,
@@ -158,14 +188,22 @@ async def crear_cuadro_cuenta(db: AsyncSession, cuadro_id: int, datos: CuadroCue
     return usuario
 
 
-async def cambiar_password_cuadro_cuenta(db: AsyncSession, cuadro_id: int, datos: CuadroCuentaPassword) -> Usuario:
+async def cambiar_password_cuadro_cuenta(
+    db: AsyncSession, cuadro_id: int, datos: CuadroCuentaPassword
+) -> Usuario:
     cuadro = await get_cuadro_by_id_with_usuario(db, cuadro_id)
 
     if not cuadro.usuario:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El cuadro no tiene cuenta de acceso")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El cuadro no tiene cuenta de acceso",
+        )
 
     if not verify_password(datos.password_actual, cuadro.usuario.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña actual es incorrecta")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual es incorrecta",
+        )
 
     cuadro.usuario.hashed_password = get_password_hash(datos.password_nueva)
     await db.commit()

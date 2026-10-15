@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -156,3 +156,30 @@ class CandidatosResponse(BaseModel):
     franja_id: int
     elegibles: list[dict]
     descartados: list[CandidatoDescartado]
+
+
+class GenerarPlanRequest(BaseModel):
+    modo: Literal["completar", "reemplazar"]
+    semilla: Optional[int] = None
+
+
+class SlotSinCubrir(BaseModel):
+    fecha: date
+    franja_id: int
+    franja_nombre: str
+
+
+class CuadroSinAsignar(BaseModel):
+    cuadro_id: int
+    nombre: str
+    motivo: str
+
+
+class GenerarPlanResponse(BaseModel):
+    plan_id: int
+    slots_totales: int
+    cubiertos: int
+    creadas: int
+    sin_cubrir: list[SlotSinCubrir]
+    cuadros_sin_asignar: list[CuadroSinAsignar]
+    advertencias: list[str]

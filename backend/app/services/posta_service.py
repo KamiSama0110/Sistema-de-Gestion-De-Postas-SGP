@@ -1,11 +1,16 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
-from typing import Optional
-from app.models.posta import Posta, TurnoPosta
-from app.schemas.posta import PostaCreate, PostaUpdate, TurnoPostaCreate, TurnoPostaUpdate
-from app.utils.sql import _escape_like
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.posta import Posta, TurnoPosta
+from app.schemas.posta import (
+    PostaCreate,
+    PostaUpdate,
+    TurnoPostaCreate,
+    TurnoPostaUpdate,
+)
+from app.utils.sql import _escape_like
 
 
 def calcular_cruza_medianoche(hora_inicio, hora_fin) -> bool:
@@ -14,9 +19,7 @@ def calcular_cruza_medianoche(hora_inicio, hora_fin) -> bool:
 
 async def get_posta_by_id(db: AsyncSession, posta_id: int) -> Posta:
     result = await db.execute(
-        select(Posta)
-        .options(selectinload(Posta.turnos))
-        .where(Posta.id == posta_id)
+        select(Posta).options(selectinload(Posta.turnos)).where(Posta.id == posta_id)
     )
     posta = result.scalar_one_or_none()
     if not posta:
@@ -29,9 +32,9 @@ async def get_posta_by_id(db: AsyncSession, posta_id: int) -> Posta:
 
 async def listar_postas(
     db: AsyncSession,
-    activa: Optional[bool] = None,
-    tipo: Optional[str] = None,
-    buscar: Optional[str] = None,
+    activa: bool | None = None,
+    tipo: str | None = None,
+    buscar: str | None = None,
     page: int = 1,
     size: int = 10,
 ) -> dict:
@@ -48,9 +51,7 @@ async def listar_postas(
     total = (await db.execute(total_q)).scalar() or 0
 
     result = await db.execute(
-        query.order_by(Posta.nombre)
-        .offset((page - 1) * size)
-        .limit(size)
+        query.order_by(Posta.nombre).offset((page - 1) * size).limit(size)
     )
     postas = result.scalars().all()
 
@@ -66,21 +67,21 @@ async def listar_postas(
 
     items = []
     for p in postas:
-        items.append({
-            "id": p.id,
-            "nombre": p.nombre,
-            "tipo": p.tipo,
-            "activa": p.activa,
-            "total_turnos": turno_counts.get(p.id, 0),
-        })
+        items.append(
+            {
+                "id": p.id,
+                "nombre": p.nombre,
+                "tipo": p.tipo,
+                "activa": p.activa,
+                "total_turnos": turno_counts.get(p.id, 0),
+            }
+        )
 
     return {"total": total, "page": page, "size": size, "items": items}
 
 
 async def crear_posta(db: AsyncSession, datos: PostaCreate) -> Posta:
-    existente = await db.execute(
-        select(Posta).where(Posta.nombre == datos.nombre)
-    )
+    existente = await db.execute(select(Posta).where(Posta.nombre == datos.nombre))
     if existente.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -127,9 +128,7 @@ async def actualizar_posta(
     return posta
 
 
-async def cambiar_estado_posta(
-    db: AsyncSession, posta_id: int, activa: bool
-) -> Posta:
+async def cambiar_estado_posta(db: AsyncSession, posta_id: int, activa: bool) -> Posta:
     posta = await get_posta_by_id(db, posta_id)
     posta.activa = activa
     await db.commit()
@@ -141,9 +140,9 @@ async def listar_turnos(
     db: AsyncSession,
     page: int = 1,
     size: int = 10,
-    posta_id: Optional[int] = None,
-    activo: Optional[bool] = None,
-    buscar: Optional[str] = None,
+    posta_id: int | None = None,
+    activo: bool | None = None,
+    buscar: str | None = None,
 ) -> dict:
     def aplicar_filtros(query):
         if posta_id:
@@ -214,9 +213,7 @@ async def agregar_turno(
         )
     turno = TurnoPosta(
         posta_id=posta_id,
-        cruza_medianoche=calcular_cruza_medianoche(
-            datos.hora_inicio, datos.hora_fin
-        ),
+        cruza_medianoche=calcular_cruza_medianoche(datos.hora_inicio, datos.hora_fin),
         **datos.model_dump(),
     )
     db.add(turno)
@@ -226,9 +223,7 @@ async def agregar_turno(
 
 
 async def get_turno_by_id(db: AsyncSession, turno_id: int) -> TurnoPosta:
-    result = await db.execute(
-        select(TurnoPosta).where(TurnoPosta.id == turno_id)
-    )
+    result = await db.execute(select(TurnoPosta).where(TurnoPosta.id == turno_id))
     turno = result.scalar_one_or_none()
     if not turno:
         raise HTTPException(
@@ -243,7 +238,11 @@ async def actualizar_turno(
 ) -> TurnoPosta:
     turno = await get_turno_by_id(db, turno_id)
     update_data = datos.model_dump(exclude_unset=True)
-    if "nombre" in update_data or "hora_inicio" in update_data or "hora_fin" in update_data:
+    if (
+        "nombre" in update_data
+        or "hora_inicio" in update_data
+        or "hora_fin" in update_data
+    ):
         nombre = update_data.get("nombre", turno.nombre)
         hora_inicio = update_data.get("hora_inicio", turno.hora_inicio)
         hora_fin = update_data.get("hora_fin", turno.hora_fin)

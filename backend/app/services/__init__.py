@@ -10,3 +10,4 @@ from app.services import cuadro_service
 from app.services import franja_service
 from app.services import feriado_service
 from app.services import guardia_cuadro_service
+from app.services import generacion_cuadros_service

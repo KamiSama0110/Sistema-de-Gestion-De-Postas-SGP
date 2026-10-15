@@ -1,23 +1,23 @@
 from datetime import date, datetime, time, timedelta
-from typing import Optional
-from sqlalchemy import select, func
+
+from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from fastapi import HTTPException, status
 
-from app.models.plan_guardia_cuadro import PlanGuardiaCuadro, GuardiaCuadro
 from app.models.cuadro import Cuadro
-from app.models.enums import EstadoPlanGuardiaEnum, EstadoGuardiaCuadroEnum
+from app.models.enums import EstadoGuardiaCuadroEnum, EstadoPlanGuardiaEnum
+from app.models.plan_guardia_cuadro import GuardiaCuadro, PlanGuardiaCuadro
 from app.schemas.plan import (
-    PlanCreate,
-    PlanUpdate,
-    PlanRechazar,
     GuardiaCuadroCreate,
     GuardiaCuadroUpdate,
+    PlanCreate,
+    PlanRechazar,
+    PlanUpdate,
 )
 from app.services.cuadro_service import get_cuadro_by_id
-from app.services.franja_service import get_franja_by_id
 from app.services.feriado_service import get_feriado_by_fecha
+from app.services.franja_service import get_franja_by_id
 
 MAX_GUARDIAS_CUADRO_POR_MES = 1
 
@@ -41,14 +41,20 @@ def _construir_intervalo_franja(fecha: date, franja) -> tuple[datetime, datetime
 
 
 async def get_plan_by_id(db: AsyncSession, plan_id: int) -> PlanGuardiaCuadro:
-    result = await db.execute(select(PlanGuardiaCuadro).where(PlanGuardiaCuadro.id == plan_id))
+    result = await db.execute(
+        select(PlanGuardiaCuadro).where(PlanGuardiaCuadro.id == plan_id)
+    )
     plan = result.scalar_one_or_none()
     if not plan:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Plan no encontrado"
+        )
     return plan
 
 
-async def get_plan_by_anio_mes(db: AsyncSession, anio: int, mes: int) -> PlanGuardiaCuadro | None:
+async def get_plan_by_anio_mes(
+    db: AsyncSession, anio: int, mes: int
+) -> PlanGuardiaCuadro | None:
     result = await db.execute(
         select(PlanGuardiaCuadro).where(
             PlanGuardiaCuadro.anio == anio, PlanGuardiaCuadro.mes == mes
@@ -63,7 +69,7 @@ async def evaluar_asignacion(
     cuadro_id: int,
     fecha: date,
     franja_id: int,
-    excluir_guardia_id: Optional[int] = None,
+    excluir_guardia_id: int | None = None,
 ) -> tuple[bool, str | None]:
     """Evalúa las reglas de asignación de un cuadro a un slot del plan.
 
@@ -113,23 +119,34 @@ async def evaluar_asignacion(
         return False, "La franja ya está ocupada ese día"
 
     # 8. Límite mensual del cuadro en el plan (las canceladas no cuentan)
-    count_query = select(func.count()).select_from(GuardiaCuadro).where(
-        GuardiaCuadro.plan_id == plan.id,
-        GuardiaCuadro.cuadro_id == cuadro.id,
-        GuardiaCuadro.estado != EstadoGuardiaCuadroEnum.cancelada,
+    count_query = (
+        select(func.count())
+        .select_from(GuardiaCuadro)
+        .where(
+            GuardiaCuadro.plan_id == plan.id,
+            GuardiaCuadro.cuadro_id == cuadro.id,
+            GuardiaCuadro.estado != EstadoGuardiaCuadroEnum.cancelada,
+        )
     )
     if excluir_guardia_id is not None:
         count_query = count_query.where(GuardiaCuadro.id != excluir_guardia_id)
     cantidad = (await db.execute(count_query)).scalar() or 0
     if cantidad >= MAX_GUARDIAS_CUADRO_POR_MES:
-        return False, f"El cuadro ya tiene {MAX_GUARDIAS_CUADRO_POR_MES} guardia este mes"
+        return (
+            False,
+            f"El cuadro ya tiene {MAX_GUARDIAS_CUADRO_POR_MES} guardia este mes",
+        )
 
     # 9. Solape en el tiempo con otras guardias del cuadro (la nocturna
     #    ocupa hasta las 07:00 del día siguiente)
     inicio_nuevo, fin_nuevo = _construir_intervalo_franja(fecha, franja)
-    solape_query = select(GuardiaCuadro).options(selectinload(GuardiaCuadro.franja)).where(
-        GuardiaCuadro.cuadro_id == cuadro.id,
-        GuardiaCuadro.estado != EstadoGuardiaCuadroEnum.cancelada,
+    solape_query = (
+        select(GuardiaCuadro)
+        .options(selectinload(GuardiaCuadro.franja))
+        .where(
+            GuardiaCuadro.cuadro_id == cuadro.id,
+            GuardiaCuadro.estado != EstadoGuardiaCuadroEnum.cancelada,
+        )
     )
     if excluir_guardia_id is not None:
         solape_query = solape_query.where(GuardiaCuadro.id != excluir_guardia_id)
@@ -138,7 +155,9 @@ async def evaluar_asignacion(
     for existente in guardias_del_cuadro:
         if not existente.franja:
             continue
-        inicio_ex, fin_ex = _construir_intervalo_franja(existente.fecha, existente.franja)
+        inicio_ex, fin_ex = _construir_intervalo_franja(
+            existente.fecha, existente.franja
+        )
         if inicio_nuevo < fin_ex and inicio_ex < fin_nuevo:
             return False, "Se solapa con otra guardia del cuadro"
 
@@ -155,7 +174,7 @@ async def validar_asignacion(
     cuadro_id: int,
     fecha: date,
     franja_id: int,
-    excluir_guardia_id: Optional[int] = None,
+    excluir_guardia_id: int | None = None,
 ) -> None:
     """Levanta 409 con un mensaje específico si la asignación no es válida."""
     elegible, motivo = await evaluar_asignacion(
@@ -169,9 +188,9 @@ async def listar_planes(
     db: AsyncSession,
     page: int = 1,
     size: int = 20,
-    anio: Optional[int] = None,
-    mes: Optional[int] = None,
-    estado: Optional[EstadoPlanGuardiaEnum] = None,
+    anio: int | None = None,
+    mes: int | None = None,
+    estado: EstadoPlanGuardiaEnum | None = None,
 ) -> dict:
     query = select(PlanGuardiaCuadro)
     if anio is not None:
@@ -335,7 +354,9 @@ async def reabrir_plan(db: AsyncSession, plan_id: int) -> PlanGuardiaCuadro:
     return plan
 
 
-async def _puede_editar_guardia(plan: PlanGuardiaCuadro, guardia: GuardiaCuadro) -> bool:
+async def _puede_editar_guardia(
+    plan: PlanGuardiaCuadro, guardia: GuardiaCuadro
+) -> bool:
     """Reglas de edición según el estado del plan."""
     if plan.estado in (
         EstadoPlanGuardiaEnum.borrador,
@@ -346,7 +367,8 @@ async def _puede_editar_guardia(plan: PlanGuardiaCuadro, guardia: GuardiaCuadro)
         return False
     # aprobado: solo guardias planificada con fecha posterior a hoy
     return (
-        guardia.estado == EstadoGuardiaCuadroEnum.planificada and guardia.fecha > date.today()
+        guardia.estado == EstadoGuardiaCuadroEnum.planificada
+        and guardia.fecha > date.today()
     )
 
 
@@ -389,7 +411,8 @@ async def get_guardia_by_id(db: AsyncSession, guardia_id: int) -> GuardiaCuadro:
     guardia = result.scalar_one_or_none()
     if not guardia:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Guardia de cuadro no encontrada"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guardia de cuadro no encontrada",
         )
     return guardia
 
@@ -401,12 +424,12 @@ async def actualizar_guardia(
     if not _puede_editar_guardia(guardia.plan, guardia):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "No se puede modificar esta guardia con el estado actual del plan"
-            ),
+            detail=("No se puede modificar esta guardia con el estado actual del plan"),
         )
 
-    nuevo_cuadro_id = datos.cuadro_id if datos.cuadro_id is not None else guardia.cuadro_id
+    nuevo_cuadro_id = (
+        datos.cuadro_id if datos.cuadro_id is not None else guardia.cuadro_id
+    )
     nueva_fecha = datos.fecha if datos.fecha is not None else guardia.fecha
     nueva_franja_id = (
         datos.franja_id if datos.franja_id is not None else guardia.franja_id
@@ -446,15 +469,14 @@ async def listar_guardias(
     db: AsyncSession,
     page: int = 1,
     size: int = 20,
-    plan_id: Optional[int] = None,
-    cuadro_id: Optional[int] = None,
-    estado: Optional[EstadoGuardiaCuadroEnum] = None,
-    desde: Optional[date] = None,
-    hasta: Optional[date] = None,
+    plan_id: int | None = None,
+    cuadro_id: int | None = None,
+    estado: EstadoGuardiaCuadroEnum | None = None,
+    desde: date | None = None,
+    hasta: date | None = None,
 ) -> dict:
-    query = (
-        select(GuardiaCuadro)
-        .options(selectinload(GuardiaCuadro.cuadro), selectinload(GuardiaCuadro.franja))
+    query = select(GuardiaCuadro).options(
+        selectinload(GuardiaCuadro.cuadro), selectinload(GuardiaCuadro.franja)
     )
     if plan_id is not None:
         query = query.where(GuardiaCuadro.plan_id == plan_id)
@@ -479,21 +501,28 @@ async def listar_guardias(
 
 async def generar_calendario(db: AsyncSession, plan: PlanGuardiaCuadro) -> dict:
     """Calendario mensual: una entrada por día con sus franjas y guardias."""
-    dias_por_mes = [
-        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-    ]
+    dias_por_mes = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     dia_max = dias_por_mes[plan.mes - 1]
-    if plan.mes == 2 and (plan.anio % 4 == 0 and (plan.anio % 100 != 0 or plan.anio % 400 == 0)):
+    if plan.mes == 2 and (
+        plan.anio % 4 == 0 and (plan.anio % 100 != 0 or plan.anio % 400 == 0)
+    ):
         dia_max = 29
 
     franjas = await get_franjas_activas(db)
     guardias = (
-        await db.execute(
-            select(GuardiaCuadro)
-            .options(selectinload(GuardiaCuadro.cuadro), selectinload(GuardiaCuadro.franja))
-            .where(GuardiaCuadro.plan_id == plan.id)
+        (
+            await db.execute(
+                select(GuardiaCuadro)
+                .options(
+                    selectinload(GuardiaCuadro.cuadro),
+                    selectinload(GuardiaCuadro.franja),
+                )
+                .where(GuardiaCuadro.plan_id == plan.id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     guardias_por_slot = {(g.fecha, g.franja_id): g for g in guardias}
 
     dias = []
@@ -510,7 +539,11 @@ async def generar_calendario(db: AsyncSession, plan: PlanGuardiaCuadro) -> dict:
 
         franjas_dia = []
         for franja in franjas:
-            aplica = franja.activa and fecha.weekday() in franja.dias_semana and not es_feriado
+            aplica = (
+                franja.activa
+                and fecha.weekday() in franja.dias_semana
+                and not es_feriado
+            )
             guardia_info = None
             if aplica:
                 slots_totales += 1
@@ -574,7 +607,6 @@ async def get_candidatos(
     result = await db.execute(select(Cuadro))
     cuadros = result.scalars().all()
 
-    franja = await get_franja_by_id(db, franja_id)
     elegibles = []
     descartados = []
 
@@ -582,15 +614,28 @@ async def get_candidatos(
         nombre = f"{cuadro.nombre} {cuadro.apellidos}"
         if not cuadro.activo:
             descartados.append(
-                {"cuadro_id": cuadro.id, "cuadro_nombre": nombre, "motivo": "El cuadro está inactivo"}
+                {
+                    "cuadro_id": cuadro.id,
+                    "cuadro_nombre": nombre,
+                    "motivo": "El cuadro está inactivo",
+                }
             )
             continue
-        elegible, motivo = await evaluar_asignacion(db, plan, cuadro.id, fecha, franja_id)
+        elegible, motivo = await evaluar_asignacion(
+            db, plan, cuadro.id, fecha, franja_id
+        )
         if elegible:
-            elegibles.append({"cuadro_id": cuadro.id, "cuadro_nombre": nombre, "activo": True})
+            elegibles.append(
+                {"cuadro_id": cuadro.id, "cuadro_nombre": nombre, "activo": True}
+            )
         else:
             descartados.append(
                 {"cuadro_id": cuadro.id, "cuadro_nombre": nombre, "motivo": motivo}
             )
 
-    return {"fecha": fecha, "franja_id": franja_id, "elegibles": elegibles, "descartados": descartados}
+    return {
+        "fecha": fecha,
+        "franja_id": franja_id,
+        "elegibles": elegibles,
+        "descartados": descartados,
+    }

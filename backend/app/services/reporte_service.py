@@ -1,19 +1,26 @@
 from datetime import date
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
+
+from app.models.asp import ASP
+from app.models.enums import EstadoGuardiaEnum, SeveridadEnum, TipoNovedadEnum
 from app.models.guardia import Guardia, Novedad
 from app.models.posta import Posta, TurnoPosta
-from app.models.asp import ASP
-from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum, SeveridadEnum
-from app.services.guardia_service import calcular_tardanza
 from app.schemas.reporte import (
-    ReporteCoberturaResponse, CoberturaPosta,
-    ReporteAusentismoResponse, AusentismoASP,
-    ReporteHorasResponse, HorasASP,
-    ReporteIncidenciasResponse, IncidenciaItem,
-    ReporteTardanzasResponse, TardanzaASP,
+    AusentismoASP,
+    CoberturaPosta,
+    HorasASP,
+    IncidenciaItem,
+    ReporteAusentismoResponse,
+    ReporteCoberturaResponse,
+    ReporteHorasResponse,
+    ReporteIncidenciasResponse,
+    ReporteTardanzasResponse,
+    TardanzaASP,
 )
+from app.services.guardia_service import calcular_tardanza
 
 
 async def reporte_cobertura(
@@ -51,20 +58,28 @@ async def reporte_cobertura(
     total_finalizadas = 0
 
     for posta_id, s in stats.items():
-        pct = (s["finalizadas"] / s["planificadas"] * 100) if s["planificadas"] > 0 else 0
-        por_posta.append(CoberturaPosta(
-            posta_id=posta_id,
-            posta_nombre=postas[posta_id].nombre if posta_id in postas else f"Posta {posta_id}",
-            planificadas=s["planificadas"],
-            finalizadas=s["finalizadas"],
-            ausentes=s["ausentes"],
-            porcentaje_cobertura=round(pct, 1),
-        ))
+        pct = (
+            (s["finalizadas"] / s["planificadas"] * 100) if s["planificadas"] > 0 else 0
+        )
+        por_posta.append(
+            CoberturaPosta(
+                posta_id=posta_id,
+                posta_nombre=postas[posta_id].nombre
+                if posta_id in postas
+                else f"Posta {posta_id}",
+                planificadas=s["planificadas"],
+                finalizadas=s["finalizadas"],
+                ausentes=s["ausentes"],
+                porcentaje_cobertura=round(pct, 1),
+            )
+        )
         total_planificadas += s["planificadas"]
         total_finalizadas += s["finalizadas"]
 
     por_posta.sort(key=lambda x: x.porcentaje_cobertura)
-    cobertura_general = (total_finalizadas / total_planificadas * 100) if total_planificadas > 0 else 0
+    cobertura_general = (
+        (total_finalizadas / total_planificadas * 100) if total_planificadas > 0 else 0
+    )
 
     return ReporteCoberturaResponse(
         fecha_desde=fecha_desde,
@@ -184,8 +199,11 @@ async def reporte_horas(
 
 
 async def reporte_incidencias(
-    db: AsyncSession, fecha_desde: date, fecha_hasta: date,
-    severidad: SeveridadEnum = None, posta_id: int = None
+    db: AsyncSession,
+    fecha_desde: date,
+    fecha_hasta: date,
+    severidad: SeveridadEnum = None,
+    posta_id: int | None = None,
 ) -> ReporteIncidenciasResponse:
     query = (
         select(Novedad)
@@ -201,14 +219,8 @@ async def reporte_incidencias(
                 ),
             )
         )
-        .options(
-            selectinload(Novedad.guardia)
-            .selectinload(Guardia.asp)
-        )
-        .options(
-            selectinload(Novedad.guardia)
-            .selectinload(Guardia.turno_posta)
-        )
+        .options(selectinload(Novedad.guardia).selectinload(Guardia.asp))
+        .options(selectinload(Novedad.guardia).selectinload(Guardia.turno_posta))
     )
     if severidad:
         query = query.where(Novedad.severidad == severidad)
@@ -224,16 +236,18 @@ async def reporte_incidencias(
     items = []
     for n in novedades:
         posta_id_turno = n.guardia.turno_posta.posta_id
-        items.append(IncidenciaItem(
-            guardia_id=n.guardia_id,
-            posta_nombre=postas.get(posta_id_turno, "Desconocida"),
-            asp_nombre=f"{n.guardia.asp.nombre} {n.guardia.asp.apellidos}",
-            fecha=n.guardia.fecha,
-            fecha_hora=str(n.fecha_hora),
-            tipo=n.tipo.value,
-            descripcion=n.descripcion,
-            severidad=n.severidad.value,
-        ))
+        items.append(
+            IncidenciaItem(
+                guardia_id=n.guardia_id,
+                posta_nombre=postas.get(posta_id_turno, "Desconocida"),
+                asp_nombre=f"{n.guardia.asp.nombre} {n.guardia.asp.apellidos}",
+                fecha=n.guardia.fecha,
+                fecha_hora=str(n.fecha_hora),
+                tipo=n.tipo.value,
+                descripcion=n.descripcion,
+                severidad=n.severidad.value,
+            )
+        )
 
     severidad_orden = {
         SeveridadEnum.baja.value: 0,
@@ -252,8 +266,7 @@ async def reporte_incidencias(
 
 
 async def reporte_tardanzas(
-    db: AsyncSession, fecha_desde: date, fecha_hasta: date,
-    asp_id: int = None
+    db: AsyncSession, fecha_desde: date, fecha_hasta: date, asp_id: int | None= None
 ) -> ReporteTardanzasResponse:
     query = (
         select(Guardia)

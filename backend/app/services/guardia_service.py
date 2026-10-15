@@ -1,20 +1,25 @@
 from datetime import date, datetime, timedelta
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func
+
+from fastapi import HTTPException, status
+from sqlalchemy import and_, func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from typing import Optional
-from app.models.guardia import Guardia, Novedad
-from app.models.posta import TurnoPosta, Posta
+
 from app.models.asp import ASP
 from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum
+from app.models.guardia import Guardia, Novedad
+from app.models.posta import Posta, TurnoPosta
 from app.schemas.guardia import (
-    GuardiaCreate, GuardiaUpdate, NovedadCreate,
-    ConfirmarLlegadaRequest, FinalizarGuardiaRequest,
-    MarcarAusenteRequest, CancelarGuardiaRequest,
+    CancelarGuardiaRequest,
+    ConfirmarLlegadaRequest,
+    FinalizarGuardiaRequest,
+    GuardiaCreate,
+    GuardiaUpdate,
+    MarcarAusenteRequest,
+    NovedadCreate,
 )
 from app.services.posta_service import get_turno_by_id
-from fastapi import HTTPException, status
 
 
 def strip_timezone(dt: datetime) -> datetime:
@@ -26,15 +31,19 @@ def strip_timezone(dt: datetime) -> datetime:
 def calcular_tardanza(
     turno: TurnoPosta,
     hora_llegada: datetime,
-    fecha_guardia: Optional[date] = None,
+    fecha_guardia: date | None = None,
 ) -> int:
     hora_llegada = strip_timezone(hora_llegada)
-    hora_inicio = datetime.combine(fecha_guardia or hora_llegada.date(), turno.hora_inicio)
+    hora_inicio = datetime.combine(
+        fecha_guardia or hora_llegada.date(), turno.hora_inicio
+    )
     diferencia = (hora_llegada - hora_inicio).total_seconds() / 60
     return max(0, int(diferencia))
 
 
-def construir_intervalo_turno(fecha_turno: date, turno: TurnoPosta) -> tuple[datetime, datetime]:
+def construir_intervalo_turno(
+    fecha_turno: date, turno: TurnoPosta
+) -> tuple[datetime, datetime]:
     inicio = datetime.combine(fecha_turno, turno.hora_inicio)
     if turno.cruza_medianoche:
         fin = datetime.combine(fecha_turno + timedelta(days=1), turno.hora_fin)
@@ -48,7 +57,7 @@ async def validar_conflictos_guardia(
     asp_id: int,
     turno: TurnoPosta,
     fecha: date,
-    excluir_id: Optional[int] = None,
+    excluir_id: int | None = None,
 ) -> None:
     exacta_query = select(Guardia.id).where(
         Guardia.asp_id == asp_id,
@@ -66,12 +75,16 @@ async def validar_conflictos_guardia(
         )
 
     inicio_nuevo, fin_nuevo = construir_intervalo_turno(fecha, turno)
-    query = select(Guardia).options(selectinload(Guardia.turno_posta)).where(
-        and_(
-            Guardia.asp_id == asp_id,
-            Guardia.fecha == fecha,
-            Guardia.estado != EstadoGuardiaEnum.cancelada,
-            Guardia.turno_posta_id != turno.id,
+    query = (
+        select(Guardia)
+        .options(selectinload(Guardia.turno_posta))
+        .where(
+            and_(
+                Guardia.asp_id == asp_id,
+                Guardia.fecha == fecha,
+                Guardia.estado != EstadoGuardiaEnum.cancelada,
+                Guardia.turno_posta_id != turno.id,
+            )
         )
     )
     if excluir_id is not None:
@@ -81,12 +94,16 @@ async def validar_conflictos_guardia(
     guardias_existentes = list(result.scalars().all())
 
     dia_anterior = fecha - timedelta(days=1)
-    query_anterior = select(Guardia).options(selectinload(Guardia.turno_posta)).where(
-        and_(
-            Guardia.asp_id == asp_id,
-            Guardia.fecha == dia_anterior,
-            Guardia.estado != EstadoGuardiaEnum.cancelada,
-            TurnoPosta.cruza_medianoche == True,
+    query_anterior = (
+        select(Guardia)
+        .options(selectinload(Guardia.turno_posta))
+        .where(
+            and_(
+                Guardia.asp_id == asp_id,
+                Guardia.fecha == dia_anterior,
+                Guardia.estado != EstadoGuardiaEnum.cancelada,
+                TurnoPosta.cruza_medianoche == True,
+            )
         )
     )
     if excluir_id is not None:
@@ -106,6 +123,7 @@ async def validar_conflictos_guardia(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="El ASP ya tiene una guardia asignada que se solapa en ese horario",
             )
+
 
 async def get_guardia_by_id(db: AsyncSession, guardia_id: int) -> Guardia:
     result = await db.execute(
@@ -129,10 +147,10 @@ async def listar_guardias(
     db: AsyncSession,
     page: int = 1,
     size: int = 10,
-    fecha: Optional[date] = None,
-    estado: Optional[EstadoGuardiaEnum] = None,
-    asp_id: Optional[int] = None,
-    posta_id: Optional[int] = None,
+    fecha: date | None = None,
+    estado: EstadoGuardiaEnum | None = None,
+    asp_id: int | None = None,
+    posta_id: int | None = None,
 ) -> dict:
     query = select(Guardia).options(
         selectinload(Guardia.turno_posta),
@@ -158,16 +176,20 @@ async def listar_guardias(
     for guardia in guardias:
         tardanza = None
         if guardia.hora_inicio_real and guardia.turno_posta:
-            tardanza = calcular_tardanza(guardia.turno_posta, guardia.hora_inicio_real, guardia.fecha)
-        data.append({
-            "id": guardia.id,
-            "asp_id": guardia.asp_id,
-            "turno_posta_id": guardia.turno_posta_id,
-            "fecha": guardia.fecha,
-            "estado": guardia.estado,
-            "hora_inicio_real": guardia.hora_inicio_real,
-            "tardanza_minutos": tardanza,
-        })
+            tardanza = calcular_tardanza(
+                guardia.turno_posta, guardia.hora_inicio_real, guardia.fecha
+            )
+        data.append(
+            {
+                "id": guardia.id,
+                "asp_id": guardia.asp_id,
+                "turno_posta_id": guardia.turno_posta_id,
+                "fecha": guardia.fecha,
+                "estado": guardia.estado,
+                "hora_inicio_real": guardia.hora_inicio_real,
+                "tardanza_minutos": tardanza,
+            }
+        )
 
     return {"total": total, "page": page, "size": size, "items": data}
 
@@ -291,9 +313,7 @@ async def listar_novedades(
     total = (await db.execute(total_q)).scalar() or 0
 
     result = await db.execute(
-        query.order_by(Novedad.fecha_hora.desc())
-        .offset((page - 1) * size)
-        .limit(size)
+        query.order_by(Novedad.fecha_hora.desc()).offset((page - 1) * size).limit(size)
     )
     novedades = result.scalars().all()
     return {"total": total, "page": page, "size": size, "items": novedades}
@@ -311,8 +331,7 @@ async def finalizar_guardia(
         )
 
     tiene_entrega = any(
-        n.tipo == TipoNovedadEnum.entrega_recepcion
-        for n in guardia.novedades
+        n.tipo == TipoNovedadEnum.entrega_recepcion for n in guardia.novedades
     )
     if not tiene_entrega:
         raise HTTPException(
@@ -328,7 +347,10 @@ async def finalizar_guardia(
             detail="La hora de fin debe ser posterior a la hora de inicio",
         )
 
-    if guardia.hora_inicio_real and guardia.hora_fin_real > guardia.hora_inicio_real + timedelta(hours=24):
+    if (
+        guardia.hora_inicio_real
+        and guardia.hora_fin_real > guardia.hora_inicio_real + timedelta(hours=24)
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La hora de fin no puede ser más de 24 horas después del inicio",
@@ -353,7 +375,9 @@ async def marcar_ausente(
             detail=f"No se puede marcar ausente una guardia en estado {guardia.estado.value}",
         )
 
-    guardia.motivo_ausencia = datos.motivo_ausencia.strip() if datos.motivo_ausencia else None
+    guardia.motivo_ausencia = (
+        datos.motivo_ausencia.strip() if datos.motivo_ausencia else None
+    )
     if datos.observaciones and datos.observaciones.strip():
         guardia.observaciones = datos.observaciones.strip()
     guardia.estado = EstadoGuardiaEnum.ausente
@@ -440,11 +464,14 @@ async def actualizar_guardia(
         )
     return await get_guardia_by_id(db, guardia_id)
 
+
 async def get_guardia_con_tardanza(db: AsyncSession, guardia_id: int) -> dict:
     guardia = await get_guardia_by_id(db, guardia_id)
     tardanza = None
     if guardia.hora_inicio_real and guardia.turno_posta:
-        tardanza = calcular_tardanza(guardia.turno_posta, guardia.hora_inicio_real, guardia.fecha)
+        tardanza = calcular_tardanza(
+            guardia.turno_posta, guardia.hora_inicio_real, guardia.fecha
+        )
 
     data = {
         "id": guardia.id,

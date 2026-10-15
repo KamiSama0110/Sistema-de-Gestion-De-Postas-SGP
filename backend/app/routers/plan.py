@@ -18,8 +18,10 @@ from app.schemas.plan import (
     GuardiaCuadroResponse,
     CalendarioResponse,
     CandidatosResponse,
+    GenerarPlanRequest,
+    GenerarPlanResponse,
 )
-from app.services import guardia_cuadro_service
+from app.services import generacion_cuadros_service, guardia_cuadro_service
 
 router = APIRouter(prefix="/planes-guardia-cuadro", tags=["Planes de Guardia de Cuadro"])
 
@@ -142,3 +144,14 @@ async def obtener_candidatos(
 ):
     plan = await guardia_cuadro_service.get_plan_by_id(db, plan_id)
     return await guardia_cuadro_service.get_candidatos(db, plan, fecha, franja_id)
+
+
+@router.post("/{plan_id}/generar", response_model=GenerarPlanResponse)
+async def generar_plan(
+    plan_id: int,
+    datos: GenerarPlanRequest,
+    db: AsyncSession = Depends(get_db),
+    _: Usuario = Depends(require_admin),
+):
+    plan = await guardia_cuadro_service.get_plan_by_id(db, plan_id)
+    return await generacion_cuadros_service.generar_plan(db, plan, datos)

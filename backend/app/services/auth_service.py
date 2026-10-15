@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -38,7 +38,7 @@ async def autenticar_usuario(
 async def actualizar_ultimo_acceso(db: AsyncSession, usuario: Usuario) -> None:
     username = usuario.username
     try:
-        usuario.ultimo_acceso = datetime.now(timezone.utc).replace(tzinfo=None)
+        usuario.ultimo_acceso = datetime.now(UTC).replace(tzinfo=None)
         await db.commit()
     except Exception:
         await db.rollback()

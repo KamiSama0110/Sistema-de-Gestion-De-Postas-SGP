@@ -13,6 +13,8 @@ from app.schemas.plan import (
     GuardiaCuadroUpdate,
     GuardiaCuadroResponse,
     PaginatedGuardiaCuadro,
+    IniciarGuardiaRequest,
+    FinalizarGuardiaRequest,
     IncumplirGuardiaRequest,
     CancelarGuardiaCuadroRequest,
 )
@@ -30,30 +32,33 @@ async def listar_guardias(
     estado: Optional[EstadoGuardiaCuadroEnum] = None,
     desde: Optional[date] = None,
     hasta: Optional[date] = None,
+    buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
     return await guardia_cuadro_service.listar_guardias(
-        db, page, size, plan_id, cuadro_id, estado, desde, hasta
+        db, page, size, plan_id, cuadro_id, estado, desde, hasta, buscar
     )
 
 
 @router.post("/{guardia_id}/iniciar", response_model=GuardiaCuadroResponse)
 async def iniciar_guardia(
     guardia_id: int,
+    datos: IniciarGuardiaRequest | None = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
-    return await guardia_cuadro_service.iniciar_guardia(db, guardia_id)
+    return await guardia_cuadro_service.iniciar_guardia(db, guardia_id, datos)
 
 
 @router.post("/{guardia_id}/finalizar", response_model=GuardiaCuadroResponse)
 async def finalizar_guardia(
     guardia_id: int,
+    datos: FinalizarGuardiaRequest | None = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
-    return await guardia_cuadro_service.finalizar_guardia(db, guardia_id)
+    return await guardia_cuadro_service.finalizar_guardia(db, guardia_id, datos)
 
 
 @router.post("/{guardia_id}/incumplir", response_model=GuardiaCuadroResponse)

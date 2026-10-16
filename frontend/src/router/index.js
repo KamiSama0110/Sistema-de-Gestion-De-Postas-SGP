@@ -78,6 +78,18 @@ const router = createRouter({
           meta: { roles: ['admin'] },
         },
         {
+          path: 'operativo-cuadro',
+          name: 'operativo-cuadro',
+          component: () => import('../views/GuardiasCuadroView.vue'),
+          meta: { roles: ['admin'] },
+        },
+        {
+          path: 'incidencias-cuadro',
+          name: 'incidencias-cuadro',
+          component: () => import('../views/IncidenciasCuadroView.vue'),
+          meta: { roles: ['admin'] },
+        },
+        {
           path: 'reportes',
           name: 'reportes',
           component: () => import('../views/ReportesView.vue'),

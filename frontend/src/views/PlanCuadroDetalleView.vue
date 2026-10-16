@@ -145,7 +145,7 @@
                     :class="{ 'cal-chip--ro': !esInteractivo(celda, f) }"
                     @click="abrirSlot(celda, f)"
                   >
-                    {{ f.guardia ? f.guardia.cuadro_nombre : 'Sin cubrir' }}
+                    {{ chipTexto(f) }}
                   </v-chip>
                 </template>
               </template>
@@ -182,7 +182,7 @@
                   :class="{ 'cal-chip--ro': !esInteractivo(dia, f) }"
                   @click="abrirSlot(dia, f)"
                 >
-                  {{ f.nombre }}: {{ f.guardia ? f.guardia.cuadro_nombre : 'Sin cubrir' }}
+                  {{ f.nombre }}: {{ chipTexto(f) }}
                 </v-chip>
               </div>
             </div>
@@ -192,7 +192,7 @@
     </template>
 
     <!-- Dialog de slot (asignar / gestionar) -->
-    <v-dialog v-model="dialogSlot" :max-width="mobile ? undefined : 520" :fullscreen="mobile" scrollable>
+    <v-dialog v-model="dialogSlot" :max-width="xs ? undefined : 520" :fullscreen="xs" scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ slotFranja?.nombre }} · {{ formatFechaCorta(slotDia?.fecha) }}
@@ -225,9 +225,21 @@
                 {{ guardiaEstadoLabel(slotGuardia.estado) }}
               </v-chip>
             </div>
+
             <p v-if="!puedeEditarGuardiaActual" class="text-body-2 text-medium-emphasis mt-4">
               Esta guardia no se puede modificar con el estado actual del plan.
             </p>
+
+            <v-btn
+              color="primary"
+              variant="tonal"
+              size="small"
+              prepend-icon="mdi-shield-account-outline"
+              class="text-none mt-4"
+              @click="irAGuardiasCuadro"
+            >
+              Operar en Guardias de cuadro
+            </v-btn>
           </template>
 
           <!-- Asignar / cambiar cuadro -->
@@ -298,7 +310,7 @@
     </v-dialog>
 
     <!-- Confirmar quitar -->
-    <v-dialog v-model="dialogConfirmQuitar" max-width="420" :fullscreen="mobile">
+    <v-dialog v-model="dialogConfirmQuitar" max-width="400">
       <v-card rounded="lg" class="pa-sm-5 pa-3">
         <v-card-title class="text-h6 font-weight-bold">Quitar guardia</v-card-title>
         <v-card-text class="text-body-2 text-medium-emphasis">
@@ -315,7 +327,7 @@
     </v-dialog>
 
     <!-- Dialog generar -->
-    <v-dialog v-model="dialogGenerar" :max-width="mobile ? undefined : 520" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogGenerar" :max-width="xs ? undefined : 520" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Generar automáticamente</v-card-title>
         <v-card-text class="pa-5">
@@ -366,7 +378,7 @@
     </v-dialog>
 
     <!-- Resultado de generación -->
-    <v-dialog v-model="dialogResultado" :max-width="mobile ? undefined : 560" :fullscreen="mobile" scrollable>
+    <v-dialog v-model="dialogResultado" :max-width="xs ? undefined : 560" :fullscreen="xs" scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Resumen de generación</v-card-title>
         <v-card-text v-if="resultadoGeneracion" class="pa-5">
@@ -425,7 +437,7 @@
     </v-dialog>
 
     <!-- Dialog rechazar -->
-    <v-dialog v-model="dialogRechazar" :max-width="mobile ? undefined : 440" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogRechazar" :max-width="xs ? undefined : 440" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Rechazar plan</v-card-title>
         <v-card-text class="pa-5">
@@ -450,7 +462,7 @@
     </v-dialog>
 
     <!-- Confirmar eliminar -->
-    <v-dialog v-model="dialogConfirmEliminar" max-width="420" :fullscreen="mobile">
+    <v-dialog v-model="dialogConfirmEliminar" max-width="400">
       <v-card rounded="lg" class="pa-sm-5 pa-3">
         <v-card-title class="text-h6 font-weight-bold">Eliminar plan</v-card-title>
         <v-card-text class="text-body-2 text-medium-emphasis">
@@ -479,7 +491,7 @@ import SkeletonList from '../components/SkeletonList.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -631,6 +643,12 @@ function franjasAplicables(dia) {
   return (dia.franjas || []).filter((f) => f.aplica)
 }
 
+function chipTexto(f) {
+  if (!f.guardia) return 'Sin cubrir'
+  if (f.guardia.estado === 'cancelada') return 'Cancelada'
+  return f.guardia.cuadro_nombre
+}
+
 function puedeEditarGuardia(guardia, fecha) {
   if (!plan.value) return false
   if (['borrador', 'pendiente_aprobacion'].includes(plan.value.estado)) return true
@@ -684,6 +702,11 @@ function abrirSlot(dia, franja) {
   errorSlot.value = null
   dialogSlot.value = true
   if (!franja.guardia) cargarCandidatos()
+}
+
+function irAGuardiasCuadro() {
+  dialogSlot.value = false
+  router.push({ path: '/operativo-cuadro', query: { plan_id: planId } })
 }
 
 async function cargarCandidatos() {
@@ -853,6 +876,8 @@ onMounted(async () => {
 
 .pre-wrap {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .cal-grid {

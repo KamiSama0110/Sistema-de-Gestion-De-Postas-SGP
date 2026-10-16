@@ -212,7 +212,7 @@
     </v-card>
 
     <!-- Dialog crear/editar -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 680" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 680" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editando ? 'Editar Cuadro' : 'Nuevo Cuadro' }}
@@ -359,7 +359,7 @@
     </v-dialog>
 
     <!-- Dialog cuenta de acceso -->
-    <v-dialog v-model="dialogCuenta" :max-width="mobile ? undefined : 460" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogCuenta" :max-width="xs ? undefined : 460" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Cuenta de acceso
@@ -463,7 +463,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const cuadros = ref([])
 const cargando = ref(true)
@@ -694,10 +694,6 @@ async function abrirCuenta(cuadro) {
 
 function cerrarCuenta() {
   dialogCuenta.value = false
-  cuentaCuadro.value = null
-  cuenta.value = null
-  cuentaForm.value = { username: '', password: '', password_nueva: '' }
-  erroresCuenta.value = {}
 }
 
 async function crearCuenta() {
@@ -717,6 +713,7 @@ async function crearCuenta() {
     cuenta.value = res.data
     cuentaForm.value.password = ''
     toast.success('Cuenta de acceso creada correctamente')
+    cerrarCuenta()
   } catch (e) {
     const fieldErrors = extractFieldErrors(e)
     if (fieldErrors.username || fieldErrors.password) {
@@ -739,6 +736,7 @@ async function cambiarPassword() {
     await cuadroApi.cambiarPassword(cuentaCuadro.value.id, cuentaForm.value.password_nueva)
     cuentaForm.value.password_nueva = ''
     toast.success('Contraseña actualizada correctamente')
+    cerrarCuenta()
   } catch (e) {
     const fieldErrors = extractFieldErrors(e)
     if (fieldErrors.password_nueva) {

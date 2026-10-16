@@ -25,36 +25,47 @@
     <v-divider v-if="!isRail" class="mx-3 mb-2" />
 
     <!-- Rail mode: icon buttons -->
-    <div v-if="isRail" class="d-flex flex-column align-center ga-1 py-2">
-      <v-tooltip v-for="item in navFiltrados" :key="item.to" :text="item.label" location="end">
-        <template #activator="{ props: tipProps }">
-          <v-btn
-            v-bind="tipProps"
-            :to="item.to"
-            icon
-            size="small"
-            variant="text"
-            :color="isActive(item.to) ? 'primary' : undefined"
-            :class="{ 'sgp-nav-active-rail': isActive(item.to) }"
-            :aria-label="item.label"
-          >
-            <v-icon :icon="item.icon" size="20" />
-          </v-btn>
-        </template>
-      </v-tooltip>
+    <div v-if="isRail" class="d-flex flex-column align-center py-2">
+      <template v-for="(group, gi) in navGroupsVisibles" :key="group.label">
+        <v-divider v-if="gi > 0 && group.mostrarCabecera" class="mx-3 my-2" />
+        <div class="d-flex flex-column align-center ga-1">
+          <v-tooltip v-for="item in group.items" :key="item.to" :text="item.label" location="end">
+            <template #activator="{ props: tipProps }">
+              <v-btn
+                v-bind="tipProps"
+                :to="item.to"
+                icon
+                size="small"
+                variant="text"
+                :color="isActive(item.to) ? 'primary' : undefined"
+                :class="{ 'sgp-nav-active-rail': isActive(item.to) }"
+                :aria-label="item.label"
+              >
+                <v-icon :icon="item.icon" size="20" />
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </div>
+      </template>
     </div>
 
     <!-- Expanded mode: standard list -->
     <v-list v-else nav density="comfortable" class="px-2" active-class="sgp-nav-active" aria-label="Navegación principal">
-      <v-list-item
-        v-for="item in navFiltrados"
-        :key="item.to"
-        :to="item.to"
-        :prepend-icon="item.icon"
-        :title="item.label"
-        rounded="lg"
-        :active="isActive(item.to)"
-      />
+      <template v-for="(group, gi) in navGroupsVisibles" :key="group.label">
+        <v-divider v-if="gi > 0 && group.mostrarCabecera" class="mx-3 mb-1" />
+        <v-list-subheader v-if="group.mostrarCabecera" class="sgp-nav-header">
+          {{ group.label }}
+        </v-list-subheader>
+        <v-list-item
+          v-for="item in group.items"
+          :key="item.to"
+          :to="item.to"
+          :prepend-icon="item.icon"
+          :title="item.label"
+          rounded="lg"
+          :active="isActive(item.to)"
+        />
+      </template>
     </v-list>
 
     <template #append>
@@ -141,7 +152,7 @@
     </v-container>
     </v-main>
 
-    <v-dialog v-model="logoutDialog" max-width="400" :fullscreen="mobile">
+    <v-dialog v-model="logoutDialog" max-width="400">
       <v-card class="pa-sm-5 pa-3">
         <v-card-title class="d-flex align-center ga-2 text-subtitle-1 font-weight-bold">
           <v-icon color="error">mdi-logout</v-icon>
@@ -194,23 +205,53 @@ onUnmounted(() => {
 
 const isRail = computed(() => !mobile.value && rail.value)
 
-const navItems = [
-  { to: '/', icon: 'mdi-view-dashboard-outline', label: 'Dashboard', roles: ['admin'] },
-  { to: '/mis-guardias', icon: 'mdi-shield-account-outline', label: 'Mis guardias', roles: ['cuadro'] },
-  { to: '/asp', icon: 'mdi-account-group-outline', label: 'ASP', roles: ['admin'] },
-  { to: '/cargos', icon: 'mdi-card-account-details-outline', label: 'Cargos', roles: ['admin'] },
-  { to: '/turnos', icon: 'mdi-clock-outline', label: 'Turnos', roles: ['admin'] },
-  { to: '/postas', icon: 'mdi-office-building-outline', label: 'Postas', roles: ['admin'] },
-  { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias', roles: ['admin'] },
-  { to: '/cuadros', icon: 'mdi-account-tie-outline', label: 'Cuadros', roles: ['admin'] },
-  { to: '/planes-cuadro', icon: 'mdi-calendar-month-outline', label: 'Planificación de cuadros', roles: ['admin'] },
-  { to: '/configuracion-guardias', icon: 'mdi-tune-variant', label: 'Config. de guardias', roles: ['admin'] },
-  { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes', roles: ['admin'] },
+const navGroups = [
+  {
+    label: 'General',
+    items: [{ to: '/', icon: 'mdi-view-dashboard-outline', label: 'Dashboard', roles: ['admin'] }],
+  },
+  {
+    label: 'Operación ASP',
+    items: [
+      { to: '/cargos', icon: 'mdi-card-account-details-outline', label: 'Cargos', roles: ['admin'] },
+      { to: '/postas', icon: 'mdi-office-building-outline', label: 'Postas', roles: ['admin'] },
+      { to: '/turnos', icon: 'mdi-clock-outline', label: 'Turnos', roles: ['admin'] },
+      { to: '/asp', icon: 'mdi-account-group-outline', label: 'ASP', roles: ['admin'] },
+      { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias', roles: ['admin'] },
+    ],
+  },
+  {
+    label: 'Cuadros',
+    items: [
+      { to: '/cuadros', icon: 'mdi-account-tie-outline', label: 'Cuadros', roles: ['admin'] },
+      { to: '/planes-cuadro', icon: 'mdi-calendar-month-outline', label: 'Planificación de cuadros', roles: ['admin'] },
+      { to: '/operativo-cuadro', icon: 'mdi-clipboard-clock-outline', label: 'Guardias de cuadro', roles: ['admin'] },
+      { to: '/incidencias-cuadro', icon: 'mdi-clipboard-alert-outline', label: 'Incidencias de cuadros', roles: ['admin'] },
+    ],
+  },
+  {
+    label: 'Sistema',
+    items: [
+      { to: '/configuracion-guardias', icon: 'mdi-tune-variant', label: 'Config. de guardias', roles: ['admin'] },
+      { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes', roles: ['admin'] },
+    ],
+  },
+  {
+    label: 'Mis guardias',
+    items: [{ to: '/mis-guardias', icon: 'mdi-shield-account-outline', label: 'Mis guardias', roles: ['cuadro'] }],
+  },
 ]
 
-const navFiltrados = computed(() =>
-  navItems.filter((item) => item.roles.includes(auth.rol)),
+const navGroupsVisibles = computed(() =>
+  navGroups
+    .map((g) => {
+      const items = g.items.filter((i) => i.roles.includes(auth.rol))
+      return { label: g.label, items, mostrarCabecera: items.length > 1 }
+    })
+    .filter((g) => g.items.length > 0),
 )
+
+const navFiltrados = computed(() => navGroupsVisibles.value.flatMap((g) => g.items))
 
 const sectionLabel = computed(() => {
   const item = navFiltrados.value.find((n) => isActive(n.to))
@@ -274,6 +315,16 @@ async function confirmLogout() {
 .sgp-nav-active {
   background-color: rgba(21, 101, 192, 0.08) !important;
   color: rgb(var(--v-theme-primary)) !important;
+}
+
+.sgp-nav-header {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.45);
+  height: 32px;
+  min-height: 32px;
 }
 
 .sgp-nav-active-rail {

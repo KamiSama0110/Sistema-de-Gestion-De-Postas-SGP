@@ -178,7 +178,7 @@
       </div>
     </v-card>
 
-    <v-dialog v-model="dialogAbierto" :max-width="mobile ? undefined : 480" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogAbierto" :max-width="xs ? undefined : 480" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ tituloDialog }}
@@ -256,7 +256,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const cargos = ref([])
 const cargando = ref(true)

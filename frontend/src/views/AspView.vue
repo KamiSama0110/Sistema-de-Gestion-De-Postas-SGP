@@ -170,7 +170,7 @@
     </v-card>
 
     <!-- Dialog ficha ASP -->
-    <v-dialog v-model="dialogFicha" :max-width="mobile ? undefined : 600" :fullscreen="mobile">
+    <v-dialog v-model="dialogFicha" :max-width="xs ? undefined : 600" :fullscreen="xs">
       <v-card rounded="lg" v-if="fichaAsp">
         <v-card-title class="d-flex align-center justify-space-between pa-6 pb-2">
           <span class="text-h6 font-weight-bold">{{ fichaAsp.nombre }} {{ fichaAsp.apellidos }}</span>
@@ -252,7 +252,7 @@
     </v-dialog>
 
     <!-- Dialog crear/editar -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 640" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 640" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ tituloForm }}
@@ -446,7 +446,7 @@
     </v-dialog>
 
     <!-- Dialog cambiar estado -->
-    <v-dialog v-model="dialogEstado" :max-width="mobile ? undefined : 420" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogEstado" :max-width="xs ? undefined : 420" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Cambiar estado
@@ -513,7 +513,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const asps = ref([])
 const cargando = ref(true)

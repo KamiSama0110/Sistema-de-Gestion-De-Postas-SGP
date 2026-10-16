@@ -4,6 +4,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.enums import EstadoPlanGuardiaEnum, EstadoGuardiaCuadroEnum
+from app.schemas.franja import FranjaCuadroListResponse
 from app.utils.validators import texto_opcional_no_vacio
 
 
@@ -78,6 +79,14 @@ class GuardiaCuadroUpdate(BaseModel):
     fecha: Optional[date] = None
 
 
+class IniciarGuardiaRequest(BaseModel):
+    inicio_real: Optional[datetime] = None
+
+
+class FinalizarGuardiaRequest(BaseModel):
+    fin_real: Optional[datetime] = None
+
+
 class IncumplirGuardiaRequest(BaseModel):
     motivo: str = Field(..., min_length=1, max_length=300)
     justificada: bool
@@ -94,6 +103,7 @@ class GuardiaCuadroResponse(BaseModel):
     cuadro_nombre: str
     franja_id: int
     franja_nombre: str
+    franja: Optional[FranjaCuadroListResponse] = None
     fecha: date
     estado: EstadoGuardiaCuadroEnum
     inicio_real: Optional[datetime] = None
@@ -105,24 +115,11 @@ class GuardiaCuadroResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class GuardiaCuadroListResponse(BaseModel):
-    id: int
-    plan_id: int
-    cuadro_id: int
-    cuadro_nombre: str
-    franja_id: int
-    franja_nombre: str
-    fecha: date
-    estado: EstadoGuardiaCuadroEnum
-
-    model_config = {"from_attributes": True}
-
-
 class PaginatedGuardiaCuadro(BaseModel):
     total: int
     page: int
     size: int
-    items: list[GuardiaCuadroListResponse]
+    items: list[GuardiaCuadroResponse]
 
 
 class CalendarioFranja(BaseModel):

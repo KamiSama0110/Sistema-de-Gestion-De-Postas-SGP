@@ -18,10 +18,13 @@ from app.schemas.plan import (
 from app.schemas.plan import (
     IncumplirGuardiaRequest,
     CancelarGuardiaCuadroRequest,
+    IniciarGuardiaRequest,
+    FinalizarGuardiaRequest,
 )
 from app.services.cuadro_service import get_cuadro_by_id
 from app.services.feriado_service import get_feriado_by_fecha
 from app.services.franja_service import get_franja_by_id
+from app.utils.sql import _escape_like
 
 MAX_GUARDIAS_CUADRO_POR_MES = 1
 
@@ -507,19 +510,62 @@ async def _transicionar_guardia(
     guardia.estado = nuevo_estado
 
 
-async def iniciar_guardia(db: AsyncSession, guardia_id: int) -> GuardiaCuadro:
+async def iniciar_guardia(
+    db: AsyncSession, guardia_id: int, datos: IniciarGuardiaRequest | None = None
+) -> GuardiaCuadro:
     guardia = await get_guardia_by_id(db, guardia_id)
+    momento = (
+        datos.inicio_real
+        if datos is not None and datos.inicio_real is not None
+        else datetime.now()
+    )
+    if datos is not None and datos.inicio_real is not None:
+        inicio_esperado, _ = _construir_intervalo_franja(guardia.fecha, guardia.franja)
+        diferencia = abs((momento - inicio_esperado).total_seconds())
+        if diferencia > 24 * 3600:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "La hora de llegada no puede diferir más de 24 horas "
+                    "del inicio de la guardia"
+                ),
+            )
     await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.activa)
-    guardia.inicio_real = datetime.now()
+    guardia.inicio_real = momento
     await db.commit()
     await db.refresh(guardia, ["plan", "cuadro", "franja"])
     return guardia
 
 
-async def finalizar_guardia(db: AsyncSession, guardia_id: int) -> GuardiaCuadro:
+async def finalizar_guardia(
+    db: AsyncSession, guardia_id: int, datos: FinalizarGuardiaRequest | None = None
+) -> GuardiaCuadro:
     guardia = await get_guardia_by_id(db, guardia_id)
+    momento = (
+        datos.fin_real
+        if datos is not None and datos.fin_real is not None
+        else datetime.now()
+    )
+    if (
+        datos is not None
+        and datos.fin_real is not None
+        and guardia.inicio_real is not None
+    ):
+        if momento <= guardia.inicio_real:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La hora de fin debe ser posterior a la de inicio",
+            )
+        if momento > guardia.inicio_real + timedelta(hours=24):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "La hora de fin no puede ser más de 24 horas "
+                    "después del inicio"
+                ),
+            )
     await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.finalizada)
-    guardia.fin_real = datetime.now()
+    guardia.fin_real = momento
     await db.commit()
     await db.refresh(guardia, ["plan", "cuadro", "franja"])
     return guardia
@@ -559,6 +605,7 @@ async def listar_guardias(
     estado: EstadoGuardiaCuadroEnum | None = None,
     desde: date | None = None,
     hasta: date | None = None,
+    buscar: str | None = None,
 ) -> dict:
     query = select(GuardiaCuadro).options(
         selectinload(GuardiaCuadro.cuadro), selectinload(GuardiaCuadro.franja)
@@ -573,6 +620,12 @@ async def listar_guardias(
         query = query.where(GuardiaCuadro.fecha >= desde)
     if hasta is not None:
         query = query.where(GuardiaCuadro.fecha <= hasta)
+    if buscar:
+        escaped = _escape_like(buscar)
+        cuadros_match = select(Cuadro.id).where(
+            Cuadro.nombre.ilike(f"%{escaped}%") | Cuadro.apellidos.ilike(f"%{escaped}%")
+        )
+        query = query.where(GuardiaCuadro.cuadro_id.in_(cuadros_match))
 
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
@@ -633,8 +686,9 @@ async def generar_calendario(db: AsyncSession, plan: PlanGuardiaCuadro) -> dict:
             if aplica:
                 slots_totales += 1
                 guardia = guardias_por_slot.get((fecha, franja.id))
-                if guardia and guardia.estado != EstadoGuardiaCuadroEnum.cancelada:
-                    cubiertos += 1
+                if guardia:
+                    if guardia.estado != EstadoGuardiaCuadroEnum.cancelada:
+                        cubiertos += 1
                     guardia_info = {
                         "id": guardia.id,
                         "cuadro_id": guardia.cuadro_id,

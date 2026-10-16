@@ -197,7 +197,7 @@
     </v-card>
 
     <!-- Dialog ficha / detalle posta -->
-    <v-dialog v-model="dialogFicha" :max-width="mobile ? undefined : 700" :fullscreen="mobile">
+    <v-dialog v-model="dialogFicha" :max-width="xs ? undefined : 700" :fullscreen="xs">
       <v-card rounded="lg" v-if="fichaPosta">
         <v-card-title class="d-flex align-center justify-space-between pa-6 pb-2">
           <div class="d-flex align-center ga-3">
@@ -310,7 +310,7 @@
     </v-dialog>
 
     <!-- Dialog crear/editar posta -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 560" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 560" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editando ? 'Editar Posta' : 'Nueva Posta' }}
@@ -411,7 +411,7 @@
     </v-dialog>
 
     <!-- Dialog crear/editar turno -->
-    <v-dialog v-model="dialogTurno" :max-width="mobile ? undefined : 480" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogTurno" :max-width="xs ? undefined : 480" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editandoTurno ? 'Editar Turno' : 'Nuevo Turno' }}
@@ -571,7 +571,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const postas = ref([])
 const cargando = ref(true)

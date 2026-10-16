@@ -1,18 +1,11 @@
-from datetime import datetime, timedelta
-
 from fastapi import HTTPException, status
 from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.config import settings
 from app.models.enums import EstadoGuardiaCuadroEnum, EstadoPlanGuardiaEnum
 from app.models.plan_guardia_cuadro import GuardiaCuadro, PlanGuardiaCuadro
-from app.services.guardia_cuadro_service import (
-    _construir_intervalo_franja,
-    _transicionar_guardia,
-    get_guardia_by_id,
-)
+from app.services.guardia_cuadro_service import get_guardia_by_id
 
 _RELACIONES = (
     selectinload(GuardiaCuadro.plan),
@@ -113,37 +106,3 @@ async def mi_planificacion(
         "mes": mes,
         "guardias": guardias,
     }
-
-
-async def iniciar_mi_guardia(
-    db: AsyncSession, guardia_id: int, cuadro_id: int
-) -> GuardiaCuadro:
-    guardia = await _get_guardia_aprobada(db, guardia_id, cuadro_id)
-    inicio, fin = _construir_intervalo_franja(guardia.fecha, guardia.franja)
-    ventana = timedelta(minutes=settings.CUADRO_VENTANA_INICIO_MIN)
-    ahora = datetime.now()
-    if not (inicio - ventana <= ahora <= fin):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Fuera de la ventana para iniciar la guardia: solo se permite "
-                f"entre {inicio - ventana:%Y-%m-%d %H:%M} y {fin:%Y-%m-%d %H:%M}"
-            ),
-        )
-
-    await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.activa)
-    guardia.inicio_real = ahora
-    await db.commit()
-    await db.refresh(guardia, ["plan", "cuadro", "franja"])
-    return guardia
-
-
-async def finalizar_mi_guardia(
-    db: AsyncSession, guardia_id: int, cuadro_id: int
-) -> GuardiaCuadro:
-    guardia = await _get_guardia_aprobada(db, guardia_id, cuadro_id)
-    await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.finalizada)
-    guardia.fin_real = datetime.now()
-    await db.commit()
-    await db.refresh(guardia, ["plan", "cuadro", "franja"])
-    return guardia

@@ -81,26 +81,6 @@ async def obtener_mi_guardia(
     return await mis_guardias_service.get_mi_guardia(db, guardia_id, cuadro_id)
 
 
-@router.post("/mis-guardias/{guardia_id}/iniciar", response_model=GuardiaCuadroResponse)
-async def iniciar_mi_guardia(
-    guardia_id: int,
-    cuadro_id: int = Depends(cuadro_id_actual),
-    db: AsyncSession = Depends(get_db),
-):
-    return await mis_guardias_service.iniciar_mi_guardia(db, guardia_id, cuadro_id)
-
-
-@router.post(
-    "/mis-guardias/{guardia_id}/finalizar", response_model=GuardiaCuadroResponse
-)
-async def finalizar_mi_guardia(
-    guardia_id: int,
-    cuadro_id: int = Depends(cuadro_id_actual),
-    db: AsyncSession = Depends(get_db),
-):
-    return await mis_guardias_service.finalizar_mi_guardia(db, guardia_id, cuadro_id)
-
-
 @router.get(
     "/mis-guardias/{guardia_id}/incidencias", response_model=PaginatedIncidencia
 )

@@ -183,7 +183,7 @@
     </v-card>
 
     <!-- Dialog crear/editar turno -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 480" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 480" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editando ? 'Editar Turno' : 'Nuevo Turno' }}
@@ -355,7 +355,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const turnos = ref([])
 const cargando = ref(true)

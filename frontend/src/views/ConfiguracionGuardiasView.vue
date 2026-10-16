@@ -277,7 +277,7 @@
     </v-card>
 
     <!-- Dialog crear/editar feriado -->
-    <v-dialog v-model="dialogFeriado" :max-width="mobile ? undefined : 480" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogFeriado" :max-width="xs ? undefined : 480" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editandoFeriado ? 'Editar feriado' : 'Nuevo feriado' }}
@@ -341,7 +341,7 @@
     </v-dialog>
 
     <!-- Dialog eliminar feriado -->
-    <v-dialog v-model="dialogEliminar" :max-width="mobile ? undefined : 420" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogEliminar" max-width="420" persistent>
       <v-card rounded="lg" class="pa-sm-5 pa-3">
         <v-card-title class="d-flex align-center ga-2 text-subtitle-1 font-weight-bold">
           <v-icon color="error">mdi-trash-can-outline</v-icon>
@@ -363,7 +363,7 @@
     </v-dialog>
 
     <!-- Dialog sugeridos: vista previa -->
-    <v-dialog v-model="dialogSugeridos" :max-width="mobile ? undefined : 520" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogSugeridos" :max-width="xs ? undefined : 520" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Feriados sugeridos {{ anio }}
@@ -414,7 +414,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 

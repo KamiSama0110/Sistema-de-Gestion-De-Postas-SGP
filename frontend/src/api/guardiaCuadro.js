@@ -13,4 +13,19 @@ export const guardiaCuadroApi = {
   eliminar(id) {
     return api.delete(`/guardias-cuadro/${id}`)
   },
+  iniciar(id, datos = {}) {
+    return api.post(`/guardias-cuadro/${id}/iniciar`, datos)
+  },
+  finalizar(id, datos = {}) {
+    return api.post(`/guardias-cuadro/${id}/finalizar`, datos)
+  },
+  incumplir(id, datos) {
+    return api.post(`/guardias-cuadro/${id}/incumplir`, datos)
+  },
+  cancelar(id, datos) {
+    return api.post(`/guardias-cuadro/${id}/cancelar`, datos)
+  },
+  crearIncidencia(id, datos) {
+    return api.post(`/guardias-cuadro/${id}/incidencias`, datos)
+  },
 }

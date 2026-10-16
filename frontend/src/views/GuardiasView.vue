@@ -251,7 +251,7 @@
     </v-card>
 
     <!-- Dialog detalle guardia -->
-    <v-dialog v-model="dialogDetalle" :max-width="mobile ? undefined : 650" :fullscreen="mobile">
+    <v-dialog v-model="dialogDetalle" :max-width="xs ? undefined : 650" :fullscreen="xs">
       <v-card rounded="lg" v-if="detalleGuardia">
         <v-card-title class="d-flex align-center justify-space-between pa-6 pb-2">
           <div class="d-flex align-center ga-3">
@@ -355,7 +355,7 @@
     </v-dialog>
 
     <!-- Dialog crear guardia -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 520" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 520" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editando ? 'Editar Guardia' : 'Nueva Guardia' }}
@@ -450,7 +450,7 @@
     </v-dialog>
 
     <!-- Dialog confirmar llegada -->
-    <v-dialog v-model="dialogConfirmar" :max-width="mobile ? undefined : 400" persistent>
+    <v-dialog v-model="dialogConfirmar" :max-width="xs ? undefined : 400" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Confirmar Llegada</v-card-title>
         <v-card-text class="pa-5">
@@ -510,7 +510,7 @@
     </v-dialog>
 
     <!-- Dialog finalizar guardia -->
-    <v-dialog v-model="dialogFinalizar" :max-width="mobile ? undefined : 480" persistent scrollable>
+    <v-dialog v-model="dialogFinalizar" :max-width="xs ? undefined : 480" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Finalizar Guardia</v-card-title>
         <v-card-text class="pa-5">
@@ -579,7 +579,7 @@
     </v-dialog>
 
     <!-- Dialog marcar ausente -->
-    <v-dialog v-model="dialogAusente" :max-width="mobile ? undefined : 480" persistent scrollable>
+    <v-dialog v-model="dialogAusente" :max-width="xs ? undefined : 480" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Marcar como Ausente</v-card-title>
         <v-card-text class="pa-5">
@@ -657,7 +657,7 @@
     </v-dialog>
 
     <!-- Dialog cancelar guardia -->
-    <v-dialog v-model="dialogCancelar" :max-width="mobile ? undefined : 480" persistent scrollable>
+    <v-dialog v-model="dialogCancelar" :max-width="xs ? undefined : 480" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Cancelar Guardia</v-card-title>
         <v-card-text class="pa-5">
@@ -713,7 +713,7 @@
     </v-dialog>
 
     <!-- Dialog registrar novedad -->
-    <v-dialog v-model="dialogNovedad" :max-width="mobile ? undefined : 480" persistent>
+    <v-dialog v-model="dialogNovedad" :max-width="xs ? undefined : 480" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Registrar Novedad</v-card-title>
         <v-card-text class="pa-5">
@@ -792,7 +792,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 const route = useRoute()
 
 const guardias = ref([])

@@ -125,3 +125,19 @@ body {
   opacity: 0;
   transform: translateY(-6px);
 }
+
+/* Fade-slide — cambio de pestaña / filtro (más suave y corto) */
+.fade-slide-enter-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fade-slide-leave-active {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}

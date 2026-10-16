@@ -90,6 +90,12 @@ const router = createRouter({
           meta: { roles: ['admin'] },
         },
         {
+          path: 'reportes-cuadros',
+          name: 'reportes-cuadros',
+          component: () => import('../views/ReportesCuadrosView.vue'),
+          meta: { roles: ['admin'] },
+        },
+        {
           path: 'reportes',
           name: 'reportes',
           component: () => import('../views/ReportesView.vue'),

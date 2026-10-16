@@ -27,7 +27,7 @@
     <!-- Rail mode: icon buttons -->
     <div v-if="isRail" class="d-flex flex-column align-center py-2">
       <template v-for="(group, gi) in navGroupsVisibles" :key="group.label">
-        <v-divider v-if="gi > 0 && group.mostrarCabecera" class="mx-3 my-2" />
+        <v-divider v-if="gi > 0 && group.mostrarCabecera" class="my-2" style="width: 32px" />
         <div class="d-flex flex-column align-center ga-1">
           <v-tooltip v-for="item in group.items" :key="item.to" :text="item.label" location="end">
             <template #activator="{ props: tipProps }">
@@ -218,22 +218,18 @@ const navGroups = [
       { to: '/turnos', icon: 'mdi-clock-outline', label: 'Turnos', roles: ['admin'] },
       { to: '/asp', icon: 'mdi-account-group-outline', label: 'ASP', roles: ['admin'] },
       { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias', roles: ['admin'] },
+      { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes', roles: ['admin'] },
     ],
   },
   {
     label: 'Cuadros',
     items: [
       { to: '/cuadros', icon: 'mdi-account-tie-outline', label: 'Cuadros', roles: ['admin'] },
+      { to: '/configuracion-guardias', icon: 'mdi-tune-variant', label: 'Config. de guardias', roles: ['admin'] },
       { to: '/planes-cuadro', icon: 'mdi-calendar-month-outline', label: 'Planificación de cuadros', roles: ['admin'] },
       { to: '/operativo-cuadro', icon: 'mdi-clipboard-clock-outline', label: 'Guardias de cuadro', roles: ['admin'] },
       { to: '/incidencias-cuadro', icon: 'mdi-clipboard-alert-outline', label: 'Incidencias de cuadros', roles: ['admin'] },
-    ],
-  },
-  {
-    label: 'Sistema',
-    items: [
-      { to: '/configuracion-guardias', icon: 'mdi-tune-variant', label: 'Config. de guardias', roles: ['admin'] },
-      { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes', roles: ['admin'] },
+      { to: '/reportes-cuadros', icon: 'mdi-file-chart-outline', label: 'Reportes de cuadros', roles: ['admin'] },
     ],
   },
   {
@@ -260,7 +256,7 @@ const sectionLabel = computed(() => {
 
 function isActive(to) {
   if (to === '/') return route.path === '/'
-  return route.path.startsWith(to)
+  return route.path === to || route.path.startsWith(`${to}/`)
 }
 
 function toggleRail() {

@@ -11,7 +11,6 @@ from app.core.security import require_admin
 from app.models.usuario import Usuario
 from app.models.auditoria import AuditLog
 from app.schemas.auditoria import (
-    AuditLogResponse,
     AuditDiffCampo,
     AuditDiffResponse,
     PaginatedAudit,

@@ -21,12 +21,13 @@ from app.schemas.plan import (
     IniciarGuardiaRequest,
     FinalizarGuardiaRequest,
 )
+from app.core.config import settings
 from app.services.cuadro_service import get_cuadro_by_id
 from app.services.feriado_service import get_feriado_by_fecha
 from app.services.franja_service import get_franja_by_id
 from app.utils.sql import _escape_like
 
-MAX_GUARDIAS_CUADRO_POR_MES = 1
+MAX_GUARDIAS_CUADRO_POR_MES = settings.MAX_GUARDIAS_CUADRO_POR_MES
 
 TRANSICIONES_PLAN = {
     "borrador": {"pendiente_aprobacion"},

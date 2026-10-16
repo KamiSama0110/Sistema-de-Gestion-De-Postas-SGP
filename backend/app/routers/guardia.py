@@ -10,7 +10,6 @@ from app.schemas.guardia import (
     GuardiaCreate,
     GuardiaUpdate,
     GuardiaResponse,
-    GuardiaListResponse,
     PaginatedGuardia,
     PaginatedNovedad,
     ConfirmarLlegadaRequest,

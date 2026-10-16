@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator, StringC
 
 from app.models.enums import SexoEnum
 from app.utils.validators import (
-    texto_no_vacio,
     texto_opcional_no_vacio,
     normalizar_telefono,
     validar_ci_formato,

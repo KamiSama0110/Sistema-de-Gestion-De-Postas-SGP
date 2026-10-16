@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from app.core.security import get_token, revoke_token, is_token_revoked, decode_access_token, set_current_user, get_current_user, require_admin, require_cuadro
+from app.core.security import get_token, revoke_token, decode_access_token, set_current_user, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import create_access_token
@@ -15,7 +15,6 @@ from app.services.auth_service import (
     autenticar_usuario,
     actualizar_ultimo_acceso,
     cambiar_password,
-    get_usuario_by_username,
     get_usuario_by_id,
 )
 from app.services.token_service import (

@@ -35,6 +35,10 @@ export function formatFechaHora(value) {
   return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
+export function soloDigitos(value, maxLength = 11) {
+  return String(value ?? '').replace(/\D/g, '').slice(0, maxLength)
+}
+
 export function parseDateOnly(value) {
   if (!value) return null
   if (value instanceof Date) return value

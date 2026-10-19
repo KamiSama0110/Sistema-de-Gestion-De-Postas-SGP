@@ -258,14 +258,19 @@
             <v-row dense>
               <v-col cols="12" sm="6">
                 <v-text-field
-                  v-model="form.ci"
+                  :model-value="form.ci"
                   label="CI *"
                   placeholder="00000000000"
                   variant="outlined"
                   density="comfortable"
                   :error-messages="errores.ci"
-                  maxlength="20"
+                  maxlength="11"
+                  counter="11"
+                  inputmode="numeric"
                   class="mb-1"
+                  @update:model-value="onCIInput"
+                  @keydown="bloquearTeclaCI"
+                  @paste="bloquearPasteCI"
                 />
               </v-col>
               <v-col cols="12" sm="6">
@@ -459,6 +464,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { cuadroApi } from '../api/cuadro'
 import { extractFieldErrors, normalizeApiError } from '../utils/error'
+import { soloDigitos } from '../utils/formatters'
 import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
@@ -605,6 +611,27 @@ function abrirEditar(cuadro) {
 function cerrarForm() {
   dialogForm.value = false
   errores.value = {}
+}
+
+function onCIInput(valor) {
+  form.value.ci = soloDigitos(valor, 11)
+}
+
+function bloquearTeclaCI(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  if (e.key.length === 1 && !/\d/.test(e.key)) e.preventDefault()
+}
+
+function bloquearPasteCI(e) {
+  const texto = e.clipboardData?.getData('text') ?? ''
+  if (/^\d*$/.test(texto)) return
+  e.preventDefault()
+  const digitos = soloDigitos(texto, 11)
+  if (!digitos) return
+  const el = e.target
+  const inicio = el.selectionStart ?? el.value.length
+  const fin = el.selectionEnd ?? inicio
+  form.value.ci = soloDigitos(el.value.slice(0, inicio) + digitos + el.value.slice(fin), 11)
 }
 
 function validar() {

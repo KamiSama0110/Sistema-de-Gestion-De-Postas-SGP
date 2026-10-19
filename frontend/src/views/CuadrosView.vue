@@ -386,7 +386,7 @@
               <v-text-field
                 v-model="cuentaForm.password_nueva"
                 label="Nueva contraseña"
-                type="password"
+                :type="mostrarPassword ? 'text' : 'password'"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="erroresCuenta.password_nueva"
@@ -394,7 +394,18 @@
                 persistent-hint
                 autocomplete="new-password"
                 @update:model-value="erroresCuenta.password_nueva = null"
-              />
+              >
+                <template #append-inner>
+                  <v-btn
+                    :icon="mostrarPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+                    :aria-label="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                    variant="text"
+                    size="small"
+                    density="comfortable"
+                    @click="mostrarPassword = !mostrarPassword"
+                  />
+                </template>
+              </v-text-field>
             </v-form>
           </template>
 
@@ -418,7 +429,7 @@
               <v-text-field
                 v-model="cuentaForm.password"
                 label="Contraseña"
-                type="password"
+                :type="mostrarPassword ? 'text' : 'password'"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="erroresCuenta.password"
@@ -426,7 +437,18 @@
                 persistent-hint
                 autocomplete="new-password"
                 @update:model-value="erroresCuenta.password = null"
-              />
+              >
+                <template #append-inner>
+                  <v-btn
+                    :icon="mostrarPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+                    :aria-label="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                    variant="text"
+                    size="small"
+                    density="comfortable"
+                    @click="mostrarPassword = !mostrarPassword"
+                  />
+                </template>
+              </v-text-field>
             </v-form>
           </template>
         </v-card-text>
@@ -509,6 +531,7 @@ const cargandoCuenta = ref(false)
 const guardandoCuenta = ref(false)
 const cuentaForm = ref({ username: '', password: '', password_nueva: '' })
 const erroresCuenta = ref({})
+const mostrarPassword = ref(false)
 
 const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina.value)))
 
@@ -706,6 +729,7 @@ async function abrirCuenta(cuadro) {
   cuenta.value = null
   cuentaForm.value = { username: '', password: '', password_nueva: '' }
   erroresCuenta.value = {}
+  mostrarPassword.value = false
   dialogCuenta.value = true
   cargandoCuenta.value = true
   try {
@@ -721,6 +745,7 @@ async function abrirCuenta(cuadro) {
 
 function cerrarCuenta() {
   dialogCuenta.value = false
+  mostrarPassword.value = false
 }
 
 async function crearCuenta() {

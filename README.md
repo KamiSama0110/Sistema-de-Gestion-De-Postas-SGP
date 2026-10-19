@@ -99,7 +99,6 @@ El rol se lee de la base de datos en cada peticion (no del token).
 | `ADMIN_PASSWORD` | (min 8) | Password admin inicial |
 | `CORS_ORIGINS` | `http://localhost:5173` | Origenes permitidos (separados por coma) |
 | `SEED_DB` | `false` | Ejecuta el seed al arrancar (util en demos/Render) |
-| `CUADRO_VENTANA_INICIO_MIN` | `30` | Ventana (min) para iniciar una guardia de cuadro |
 | `MAX_GUARDIAS_CUADRO_POR_MES` | `1` | Maximo de guardias de un cuadro por mes |
 
 ## Datos de prueba (seed)

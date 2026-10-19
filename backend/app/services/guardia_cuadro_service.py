@@ -87,11 +87,7 @@ async def evaluar_asignacion(
     franja_id: int,
     excluir_guardia_id: int | None = None,
 ) -> tuple[bool, str | None]:
-    """Evalúa las reglas de asignación de un cuadro a un slot del plan.
-
-    Devuelve (elegible, motivo). Si elegible es True, motivo es None.
-    El orden de las comprobaciones define el mensaje de descarte.
-    """
+    
     cuadro = await get_cuadro_by_id(db, cuadro_id)
     franja = await get_franja_by_id(db, franja_id)
 
@@ -127,7 +123,6 @@ async def evaluar_asignacion(
         GuardiaCuadro.plan_id == plan.id,
         GuardiaCuadro.fecha == fecha,
         GuardiaCuadro.franja_id == franja.id,
-        GuardiaCuadro.estado != EstadoGuardiaCuadroEnum.cancelada,
     )
     if excluir_guardia_id is not None:
         slot_query = slot_query.where(GuardiaCuadro.id != excluir_guardia_id)
@@ -437,7 +432,7 @@ async def actualizar_guardia(
     db: AsyncSession, guardia_id: int, datos: GuardiaCuadroUpdate
 ) -> GuardiaCuadro:
     guardia = await get_guardia_by_id(db, guardia_id)
-    if not _puede_editar_guardia(guardia.plan, guardia):
+    if not await _puede_editar_guardia(guardia.plan, guardia):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=("No se puede modificar esta guardia con el estado actual del plan"),
@@ -459,8 +454,7 @@ async def actualizar_guardia(
     guardia.fecha = nueva_fecha
     guardia.franja_id = nueva_franja_id
     await db.commit()
-    # expire_on_commit=False deja las relaciones viejas en el identity map;
-    # las recargamos explícitamente para que la respuesta no quede stale
+    
     await db.refresh(guardia, ["plan", "cuadro", "franja"])
     return guardia
 
@@ -472,7 +466,7 @@ async def eliminar_guardia(db: AsyncSession, guardia_id: int) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Solo se puede eliminar una guardia en estado planificada",
         )
-    if not _puede_editar_guardia(guardia.plan, guardia):
+    if not await _puede_editar_guardia(guardia.plan, guardia):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No se puede modificar este plan en su estado actual",

@@ -48,7 +48,6 @@ class Settings(BaseSettings):
     SEED_DB: bool = False
 
     # Panel del cuadro
-    CUADRO_VENTANA_INICIO_MIN: int = 30
     MAX_GUARDIAS_CUADRO_POR_MES: int = 1
 
 

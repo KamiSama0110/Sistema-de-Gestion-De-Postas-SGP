@@ -25,7 +25,8 @@
               </v-btn>
             </span>
           </template>
-          <span>Solo se pueden registrar incidencias en guardias activas o finalizadas</span>
+          <span v-if="modo === 'cuadro'">Solo en guardias activas o finalizadas o dentro de las 24 horas antes o después de la fecha de guardia</span>
+          <span v-else>Solo se pueden registrar incidencias en guardias activas o finalizadas</span>
         </v-tooltip>
       </v-card-title>
       <v-card-text class="pa-5">
@@ -93,6 +94,7 @@
       :incidencia="incidenciaEditando"
       :modo="modo"
       :opciones="opciones"
+      :aviso="avisoIncidencia"
       @saved="onSaved"
     />
   </v-dialog>
@@ -107,7 +109,14 @@ import { incidenciaCuadroApi } from '../api/incidenciaCuadro'
 import { normalizeApiError } from '../utils/error'
 import { useToast } from '../composables/useToast'
 import { formatFechaHora } from '../utils/formatters'
-import { severidadColor, severidadLabel, tipoLabel } from '../utils/incidencia'
+import {
+  AVISO_FUERA_FECHA,
+  puedeRegistrarIncidencia,
+  requiereAvisoAdministrador,
+  severidadColor,
+  severidadLabel,
+  tipoLabel,
+} from '../utils/incidencia'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -125,9 +134,17 @@ const cargando = ref(false)
 const dialogIncidencia = ref(false)
 const incidenciaEditando = ref(null)
 
-const permiteIncidencias = computed(
-  () => !!props.guardia && ['activa', 'finalizada'].includes(props.guardia.estado),
-)
+const permiteIncidencias = computed(() => {
+  const g = props.guardia
+  if (!g) return false
+  if (props.modo === 'cuadro') return puedeRegistrarIncidencia(g)
+  return ['activa', 'finalizada'].includes(g.estado)
+})
+
+const avisoIncidencia = computed(() => {
+  if (props.modo !== 'cuadro') return ''
+  return requiereAvisoAdministrador(props.guardia) ? AVISO_FUERA_FECHA : ''
+})
 
 async function cargar() {
   if (!props.guardia) return

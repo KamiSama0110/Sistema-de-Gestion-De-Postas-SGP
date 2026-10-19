@@ -127,7 +127,7 @@
                     </v-btn>
                   </span>
                 </template>
-                <span>Solo en guardias activas o finalizadas</span>
+                <span>Solo en guardias activas o finalizadas o dentro de las 24 horas antes o después de la fecha de guardia</span>
               </v-tooltip>
 
               <v-btn
@@ -140,6 +140,17 @@
                 Ver incidencias
               </v-btn>
             </div>
+
+            <v-alert
+              v-if="fueraDeFecha(g)"
+              type="warning"
+              density="compact"
+              variant="tonal"
+              icon="mdi-account-alert-outline"
+              class="mt-2 mb-0"
+            >
+              {{ AVISO_FUERA_FECHA }}
+            </v-alert>
           </v-card>
         </div>
       </div>
@@ -150,6 +161,7 @@
       :guardia-id="guardiaAccion?.id"
       :modo="'cuadro'"
       :opciones="opciones"
+      :aviso="avisoIncidencia"
       @saved="onIncidenciaSaved"
     />
 
@@ -171,6 +183,11 @@ import { useToast } from '../composables/useToast'
 import { formatFechaHora, formatHora } from '../utils/formatters'
 import IncidenciaDialog from '../components/IncidenciaDialog.vue'
 import IncidenciasGuardiaDialog from '../components/IncidenciasGuardiaDialog.vue'
+import {
+  AVISO_FUERA_FECHA,
+  puedeRegistrarIncidencia,
+  requiereAvisoAdministrador,
+} from '../utils/incidencia'
 
 const toast = useToast()
 const { mobile } = useDisplay()
@@ -255,7 +272,11 @@ function textoFaltante(fecha) {
 }
 
 function puedeRegistrar(g) {
-  return ['activa', 'finalizada'].includes(g.estado)
+  return puedeRegistrarIncidencia(g)
+}
+
+function fueraDeFecha(g) {
+  return requiereAvisoAdministrador(g)
 }
 
 const proximaGuardia = computed(() => {
@@ -306,6 +327,10 @@ function registrarIncidencia(g) {
   guardiaAccion.value = g
   dialogIncidencia.value = true
 }
+
+const avisoIncidencia = computed(() =>
+  guardiaAccion.value && fueraDeFecha(guardiaAccion.value) ? AVISO_FUERA_FECHA : '',
+)
 
 function verIncidencias(g) {
   guardiaAccion.value = g

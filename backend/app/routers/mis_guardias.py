@@ -1,23 +1,21 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_cuadro
-from app.models.usuario import Usuario
 from app.models.enums import EstadoGuardiaCuadroEnum
+from app.models.usuario import Usuario
 from app.schemas.incidencia import (
     IncidenciaCreate,
-    IncidenciaUpdate,
     IncidenciaResponse,
-    PaginatedIncidencia,
+    IncidenciaUpdate,
     OpcionesIncidenciaResponse,
+    PaginatedIncidencia,
 )
 from app.schemas.plan import (
     GuardiaCuadroResponse,
-    PaginatedGuardiaCuadro,
     MiPlanificacionResponse,
+    PaginatedGuardiaCuadro,
 )
 from app.services import (
     incidencia_cuadro_service,
@@ -40,9 +38,9 @@ async def cuadro_id_actual(usuario: Usuario = Depends(require_cuadro)) -> int:
 async def listar_mis_guardias(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    anio: Optional[int] = None,
-    mes: Optional[int] = None,
-    estado: Optional[EstadoGuardiaCuadroEnum] = None,
+    anio: int | None = None,
+    mes: int | None = None,
+    estado: EstadoGuardiaCuadroEnum | None = None,
     cuadro_id: int = Depends(cuadro_id_actual),
     db: AsyncSession = Depends(get_db),
 ):
@@ -109,7 +107,9 @@ async def crear_mi_incidencia(
     db: AsyncSession = Depends(get_db),
 ):
     guardia = await mis_guardias_service.get_mi_guardia(db, guardia_id, cuadro_id)
-    return await incidencia_cuadro_service.crear_incidencia(db, guardia, datos)
+    return await incidencia_cuadro_service.crear_incidencia(
+        db, guardia, datos, para_cuadro=True
+    )
 
 
 @router.patch("/mis-incidencias/{incidencia_id}", response_model=IncidenciaResponse)

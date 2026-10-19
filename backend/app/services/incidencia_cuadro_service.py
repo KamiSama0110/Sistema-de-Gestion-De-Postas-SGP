@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -6,10 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.asp import ASP
-from app.models.enums import EstadoASPEnum, EstadoGuardiaCuadroEnum, SeveridadEnum, TipoNovedadEnum
+from app.models.enums import (
+    EstadoASPEnum,
+    EstadoGuardiaCuadroEnum,
+    SeveridadEnum,
+    TipoNovedadEnum,
+)
 from app.models.incidencia_cuadro import IncidenciaCuadro
-from app.models.posta import Posta
 from app.models.plan_guardia_cuadro import GuardiaCuadro
+from app.models.posta import Posta
 from app.schemas.incidencia import IncidenciaCreate, IncidenciaUpdate
 from app.services.asp_service import get_asp_by_id
 from app.services.posta_service import get_posta_by_id
@@ -32,6 +37,27 @@ def _validar_estado_guardia(guardia: GuardiaCuadro) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Solo se pueden registrar incidencias en guardias activas o finalizadas",
         )
+
+
+def dentro_de_margen_24h(guardia: GuardiaCuadro, ahora: datetime | None = None) -> bool:
+    ahora = ahora or datetime.now()
+    inicio = datetime.combine(guardia.fecha - timedelta(days=1), time.min)
+    fin = datetime.combine(guardia.fecha + timedelta(days=2), time.min)
+    return inicio <= ahora < fin
+
+
+def _validar_permiso_cuadro(guardia: GuardiaCuadro) -> None:
+    if guardia.estado in ESTADOS_PERMITIDOS_INCIDENCIA:
+        return
+    if dentro_de_margen_24h(guardia):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=(
+            "Solo se pueden registrar incidencias en guardias activas o finalizadas "
+            "o dentro de las 24 horas antes o después de la fecha de la guardia"
+        ),
+    )
 
 
 async def _validar_vinculos(db: AsyncSession, datos) -> None:
@@ -63,9 +89,16 @@ async def get_incidencia_by_id(
 
 
 async def crear_incidencia(
-    db: AsyncSession, guardia: GuardiaCuadro, datos: IncidenciaCreate
+    db: AsyncSession,
+    guardia: GuardiaCuadro,
+    datos: IncidenciaCreate,
+    *,
+    para_cuadro: bool = False,
 ) -> IncidenciaCuadro:
-    _validar_estado_guardia(guardia)
+    if para_cuadro:
+        _validar_permiso_cuadro(guardia)
+    else:
+        _validar_estado_guardia(guardia)
     await _validar_vinculos(db, datos)
 
     incidencia = IncidenciaCuadro(
@@ -111,7 +144,9 @@ async def listar_incidencias(
     query = select(IncidenciaCuadro).options(*_RELACIONES)
 
     if cuadro_id is not None:
-        query = query.join(GuardiaCuadro, GuardiaCuadro.id == IncidenciaCuadro.guardia_cuadro_id)
+        query = query.join(
+            GuardiaCuadro, GuardiaCuadro.id == IncidenciaCuadro.guardia_cuadro_id
+        )
         query = query.where(GuardiaCuadro.cuadro_id == cuadro_id)
     if guardia_id is not None:
         query = query.where(IncidenciaCuadro.guardia_cuadro_id == guardia_id)
@@ -124,12 +159,16 @@ async def listar_incidencias(
     if hasta is not None:
         query = query.where(func.date(IncidenciaCuadro.fecha_hora) <= hasta)
     if requiere_seguimiento is not None:
-        query = query.where(IncidenciaCuadro.requiere_seguimiento == requiere_seguimiento)
+        query = query.where(
+            IncidenciaCuadro.requiere_seguimiento == requiere_seguimiento
+        )
 
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(IncidenciaCuadro.fecha_hora.desc(), IncidenciaCuadro.id.desc())
+    query = query.order_by(
+        IncidenciaCuadro.fecha_hora.desc(), IncidenciaCuadro.id.desc()
+    )
     query = query.offset((page - 1) * size).limit(size)
     items = (await db.execute(query)).scalars().all()
 

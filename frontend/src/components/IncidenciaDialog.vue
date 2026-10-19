@@ -25,6 +25,18 @@
           {{ errores._global }}
         </v-alert>
 
+        <v-alert
+          v-if="aviso"
+          role="status"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          icon="mdi-account-alert-outline"
+          class="mb-4"
+        >
+          {{ aviso }}
+        </v-alert>
+
         <v-form @submit.prevent="guardar">
           <v-row dense>
             <v-col cols="12" sm="6">
@@ -156,6 +168,7 @@ const props = defineProps({
   incidencia: { type: Object, default: null },
   modo: { type: String, default: 'cuadro' },
   opciones: { type: Object, default: () => ({ postas: [], asp: [] }) },
+  aviso: { type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
 

@@ -24,3 +24,28 @@ export function severidadLabel(value) {
 export function severidadColor(value) {
   return SEVERIDADES.find((s) => s.value === value)?.color || 'grey'
 }
+
+export const AVISO_FUERA_FECHA =
+  'Fuera de la fecha de la guardia. Debe comunicarse con el administrador.'
+
+// Margen de registro: 24 h antes o después de la fecha de la guardia.
+export function ventanaRegistro(fecha) {
+  if (!fecha) return { dentro: false, despues: false }
+  const [y, m, d] = fecha.split('-').map(Number)
+  const ahora = new Date()
+  const inicio = new Date(y, m - 1, d - 1)
+  const fin = new Date(y, m - 1, d + 2) 
+  const despues = ahora >= new Date(y, m - 1, d + 1)
+  return { dentro: ahora >= inicio && ahora < fin, despues }
+}
+
+export function puedeRegistrarIncidencia(guardia) {
+  if (!guardia) return false
+  if (['activa', 'finalizada'].includes(guardia.estado)) return true
+  return ventanaRegistro(guardia.fecha).dentro
+}
+
+export function requiereAvisoAdministrador(guardia) {
+  if (!guardia || !puedeRegistrarIncidencia(guardia)) return false
+  return ventanaRegistro(guardia.fecha).despues
+}

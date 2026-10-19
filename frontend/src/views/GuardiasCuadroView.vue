@@ -145,6 +145,13 @@
               </div>
               <div class="d-flex justify-end ga-1">
                 <v-btn
+                  icon size="x-small" variant="text"
+                  aria-label="Ver detalle"
+                  @click="abrirDetalle(g)"
+                >
+                  <v-icon icon="mdi-eye-outline" size="16" />
+                </v-btn>
+                <v-btn
                   v-if="g.estado === 'planificada'"
                   icon size="x-small" variant="text" color="success"
                   aria-label="Marcar llegada"
@@ -220,6 +227,13 @@
                   <span v-else class="text-medium-emphasis">—</span>
                 </td>
                 <td class="text-center">
+                  <v-tooltip text="Ver detalle" location="top">
+                    <template #activator="{ props: tipProps }">
+                      <v-btn icon size="small" variant="text" aria-label="Ver detalle" v-bind="tipProps" @click="abrirDetalle(g)">
+                        <v-icon icon="mdi-eye-outline" size="18" />
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
                   <v-tooltip v-if="g.estado === 'planificada'" text="Marcar llegada" location="top">
                     <template #activator="{ props: tipProps }">
                       <v-btn icon size="small" variant="text" color="success" aria-label="Marcar llegada" v-bind="tipProps" @click="abrirLlegada(g)">
@@ -272,6 +286,87 @@
         </v-btn>
       </div>
     </v-card>
+
+    <!-- Dialog detalle guardia -->
+    <v-dialog v-model="dialogDetalle" :max-width="xs ? undefined : 650" :fullscreen="xs">
+      <v-card rounded="lg" v-if="detalleGuardia">
+        <v-card-title class="d-flex align-center justify-space-between pa-6 pb-2">
+          <div class="d-flex align-center ga-3">
+            <v-avatar :color="estadoColor(detalleGuardia.estado)" size="36" rounded="lg">
+              <v-icon :icon="estadoIcon(detalleGuardia.estado)" size="18" color="white" />
+            </v-avatar>
+            <div>
+              <span class="text-h6 font-weight-bold">{{ detalleGuardia.cuadro_nombre }}</span>
+              <div class="text-body-2 text-medium-emphasis">{{ estadoLabel(detalleGuardia.estado) }}</div>
+            </div>
+          </div>
+          <v-chip :color="estadoColor(detalleGuardia.estado)" variant="elevated" size="small" label class="font-weight-bold">
+            {{ estadoLabel(detalleGuardia.estado) }}
+          </v-chip>
+        </v-card-title>
+        <v-card-text class="pa-6 pt-4">
+          <div class="ficha-section mb-5">
+            <div class="ficha-section-title mb-3">Información de la guardia</div>
+            <div class="ficha-grid">
+              <div class="ficha-item">
+                <span class="ficha-label">Cuadro</span>
+                <span class="ficha-value">{{ detalleGuardia.cuadro_nombre }}</span>
+              </div>
+              <div class="ficha-item">
+                <span class="ficha-label">Fecha</span>
+                <span class="ficha-value">{{ formatFecha(detalleGuardia.fecha) }}</span>
+              </div>
+              <div class="ficha-item">
+                <span class="ficha-label">Franja</span>
+                <span class="ficha-value">
+                  {{ detalleGuardia.franja_nombre }}
+                  <span v-if="horarioDe(detalleGuardia)" class="text-medium-emphasis">· {{ horarioDe(detalleGuardia) }}</span>
+                </span>
+              </div>
+              <div class="ficha-item">
+                <span class="ficha-label">Estado</span>
+                <span class="ficha-value font-weight-bold" :class="`text-${estadoColor(detalleGuardia.estado)}`">
+                  {{ estadoLabel(detalleGuardia.estado) }}
+                </span>
+              </div>
+              <div v-if="detalleGuardia.inicio_real" class="ficha-item">
+                <span class="ficha-label">Inicio real</span>
+                <span class="ficha-value">{{ formatDateTime(detalleGuardia.inicio_real) }}</span>
+              </div>
+              <div v-if="detalleGuardia.fin_real" class="ficha-item">
+                <span class="ficha-label">Fin real</span>
+                <span class="ficha-value">{{ formatDateTime(detalleGuardia.fin_real) }}</span>
+              </div>
+              <div v-if="detalleGuardia.justificada !== null && detalleGuardia.justificada !== undefined" class="ficha-item">
+                <span class="ficha-label">Justificada</span>
+                <span class="ficha-value">{{ detalleGuardia.justificada ? 'Sí' : 'No' }}</span>
+              </div>
+              <div v-if="detalleGuardia.motivo_cancelacion" class="ficha-item ficha-full">
+                <span class="ficha-label">Motivo de cancelación</span>
+                <span class="ficha-value">{{ detalleGuardia.motivo_cancelacion }}</span>
+              </div>
+              <div v-if="detalleGuardia.motivo_incumplimiento" class="ficha-item ficha-full">
+                <span class="ficha-label">Motivo de incumplimiento</span>
+                <span class="ficha-value">{{ detalleGuardia.motivo_incumplimiento }}</span>
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer />
+          <v-btn
+            variant="tonal"
+            color="info"
+            prepend-icon="mdi-clipboard-text-outline"
+            class="text-none text-body-1"
+            @click="dialogDetalle = false; verIncidencias(detalleGuardia)"
+          >
+            Ver incidencias
+          </v-btn>
+          <v-btn variant="text" class="text-none text-body-1" @click="dialogDetalle = false">Cerrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Marcar llegada -->
     <v-dialog v-model="dialogLlegada" :max-width="xs ? undefined : 460" :fullscreen="xs" persistent>
@@ -559,6 +654,9 @@ const errorIncumplir = ref(null)
 const dialogCancelar = ref(false)
 const motivoCancelar = ref('')
 const errorCancelar = ref(null)
+
+const dialogDetalle = ref(false)
+const detalleGuardia = ref(null)
 
 const dialogIncidencias = ref(false)
 const guardiaAccion = ref(null)
@@ -877,6 +975,11 @@ async function confirmarCancelar() {
   }
 }
 
+function abrirDetalle(g) {
+  detalleGuardia.value = g
+  dialogDetalle.value = true
+}
+
 function verIncidencias(g) {
   guardiaAccion.value = g
   dialogIncidencias.value = true
@@ -936,6 +1039,42 @@ onMounted(() => {
   background: rgb(var(--v-theme-surface));
 }
 
+.ficha-section-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.ficha-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+
+.ficha-full {
+  grid-column: 1 / -1;
+}
+
+.ficha-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ficha-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.ficha-value {
+  font-size: 0.9375rem;
+  color: rgba(0, 0, 0, 0.87);
+  line-height: 1.4;
+}
+
 .hora-select,
 .minuto-select {
   min-width: 70px;
@@ -949,6 +1088,11 @@ onMounted(() => {
     max-width: 100%;
     width: 100%;
     flex: none;
+  }
+
+  .ficha-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 </style>

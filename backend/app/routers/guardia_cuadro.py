@@ -33,11 +33,12 @@ async def listar_guardias(
     desde: Optional[date] = None,
     hasta: Optional[date] = None,
     buscar: Optional[str] = Query(None, max_length=100),
+    guardia_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
     return await guardia_cuadro_service.listar_guardias(
-        db, page, size, plan_id, cuadro_id, estado, desde, hasta, buscar
+        db, page, size, plan_id, cuadro_id, estado, desde, hasta, buscar, guardia_id
     )
 
 

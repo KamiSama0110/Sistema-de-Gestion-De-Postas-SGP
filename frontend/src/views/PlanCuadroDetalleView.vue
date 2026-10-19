@@ -706,7 +706,10 @@ function abrirSlot(dia, franja) {
 
 function irAGuardiasCuadro() {
   dialogSlot.value = false
-  router.push({ path: '/operativo-cuadro', query: { plan_id: planId } })
+  router.push({
+    path: '/operativo-cuadro',
+    query: { plan_id: planId, guardia_id: slotGuardia.value?.id },
+  })
 }
 
 async function cargarCandidatos() {

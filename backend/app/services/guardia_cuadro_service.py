@@ -607,10 +607,13 @@ async def listar_guardias(
     desde: date | None = None,
     hasta: date | None = None,
     buscar: str | None = None,
+    guardia_id: int | None = None,
 ) -> dict:
     query = select(GuardiaCuadro).options(
         selectinload(GuardiaCuadro.cuadro), selectinload(GuardiaCuadro.franja)
     )
+    if guardia_id is not None:
+        query = query.where(GuardiaCuadro.id == guardia_id)
     if plan_id is not None:
         query = query.where(GuardiaCuadro.plan_id == plan_id)
     if cuadro_id is not None:
@@ -639,7 +642,6 @@ async def listar_guardias(
 
 
 async def generar_calendario(db: AsyncSession, plan: PlanGuardiaCuadro) -> dict:
-    """Calendario mensual: una entrada por día con sus franjas y guardias."""
     dias_por_mes = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     dia_max = dias_por_mes[plan.mes - 1]
     if plan.mes == 2 and (
@@ -742,8 +744,6 @@ async def get_candidatos(
     fecha: date,
     franja_id: int,
 ) -> dict:
-    """Cuadros elegibles y descartados para un slot, con el motivo de descarte."""
-    # Población: todos los activo e inactivo (los inactivos aparecen descartados)
     result = await db.execute(select(Cuadro))
     cuadros = result.scalars().all()
 

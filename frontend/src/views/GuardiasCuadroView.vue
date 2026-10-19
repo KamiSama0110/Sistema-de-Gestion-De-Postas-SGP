@@ -24,6 +24,16 @@
         >
           Plan #{{ planIdFiltro }}
         </v-chip>
+        <v-chip
+          v-if="guardiaIdFiltro"
+          color="info"
+          variant="tonal"
+          closable
+          label
+          @click:close="limpiarGuardia"
+        >
+          Guardia #{{ guardiaIdFiltro }}
+        </v-chip>
         <div class="text-body-2 text-medium-emphasis text-center">
           {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
@@ -566,7 +576,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { guardiaCuadroApi } from '../api/guardiaCuadro'
 import { cuadroApi } from '../api/cuadro'
@@ -578,6 +588,7 @@ import SkeletonList from '../components/SkeletonList.vue'
 import IncidenciasGuardiaDialog from '../components/IncidenciasGuardiaDialog.vue'
 
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 const { mobile, xs } = useDisplay()
 
@@ -603,6 +614,7 @@ const cuadrosList = ref([])
 const buscar = ref('')
 
 const planIdFiltro = ref(route.query.plan_id ? Number(route.query.plan_id) : null)
+const guardiaIdFiltro = ref(route.query.guardia_id ? Number(route.query.guardia_id) : null)
 
 const estadosItems = [
   { title: 'Planificada', value: 'planificada' },
@@ -775,17 +787,25 @@ function setPeriodo(value) {
     desde.value = null
     hasta.value = null
   }
-  reiniciar()
+  return reiniciar()
 }
 
 function limpiarPlan() {
   planIdFiltro.value = null
-  reiniciar()
+  return reiniciar()
+}
+
+function limpiarGuardia() {
+  guardiaIdFiltro.value = null
+  const query = { ...route.query }
+  delete query.guardia_id
+  router.replace({ query })
+  return reiniciar()
 }
 
 function reiniciar() {
   pagina.value = 1
-  cargarGuardias()
+  return cargarGuardias()
 }
 
 function debounce(fn, ms) {
@@ -826,6 +846,7 @@ async function cargarGuardias() {
     if (filtroCuadro.value) params.cuadro_id = filtroCuadro.value
     if (filtroEstado.value) params.estado = filtroEstado.value
     if (planIdFiltro.value) params.plan_id = planIdFiltro.value
+    if (guardiaIdFiltro.value) params.guardia_id = guardiaIdFiltro.value
     if (buscar.value?.trim()) params.buscar = buscar.value.trim()
     const res = await guardiaCuadroApi.listar(params)
     guardias.value = res.data.items || []
@@ -1005,8 +1026,12 @@ async function cargarOpciones() {
   }
 }
 
-onMounted(() => {
-  setPeriodo('todo')
+onMounted(async () => {
+  await setPeriodo('todo')
+  if (guardiaIdFiltro.value) {
+    const objetivo = guardias.value.find((g) => g.id === guardiaIdFiltro.value)
+    if (objetivo) abrirDetalle(objetivo)
+  }
   cargarCuadros()
   cargarOpciones()
 })

@@ -275,11 +275,11 @@
 
     <!-- Marcar llegada -->
     <v-dialog v-model="dialogLlegada" :max-width="xs ? undefined : 460" :fullscreen="xs" persistent>
-      <v-card rounded="lg" class="pa-sm-5 pa-3">
-        <v-card-title class="text-h6 font-weight-bold">
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Marcar llegada
         </v-card-title>
-        <v-card-text class="pt-2">
+        <v-card-text class="pa-5">
           <div class="text-body-2 text-medium-emphasis mb-4">
             {{ guardiaAccion?.cuadro_nombre }} · {{ formatFecha(guardiaAccion?.fecha) }}
           </div>
@@ -325,7 +325,7 @@
             </v-card>
           </v-menu>
         </v-card-text>
-        <v-card-actions class="pt-0">
+        <v-card-actions class="pa-5 pt-0">
           <v-spacer />
           <v-btn variant="text" class="text-none text-body-1" @click="dialogLlegada = false">Cancelar</v-btn>
           <v-btn color="success" :loading="procesando" class="text-none text-body-1" @click="confirmarLlegada">Confirmar</v-btn>
@@ -335,11 +335,11 @@
 
     <!-- Marcar salida -->
     <v-dialog v-model="dialogSalida" :max-width="xs ? undefined : 460" :fullscreen="xs" persistent>
-      <v-card rounded="lg" class="pa-sm-5 pa-3">
-        <v-card-title class="text-h6 font-weight-bold">
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Marcar salida
         </v-card-title>
-        <v-card-text class="pt-2">
+        <v-card-text class="pa-5">
           <div class="text-body-2 text-medium-emphasis mb-4">
             {{ guardiaAccion?.cuadro_nombre }} · {{ formatFecha(guardiaAccion?.fecha) }}
           </div>
@@ -385,7 +385,7 @@
             </v-card>
           </v-menu>
         </v-card-text>
-        <v-card-actions class="pt-0">
+        <v-card-actions class="pa-5 pt-0">
           <v-spacer />
           <v-btn variant="text" class="text-none text-body-1" @click="dialogSalida = false">Cancelar</v-btn>
           <v-btn color="warning" :loading="procesando" class="text-none text-body-1" @click="confirmarSalida">Registrar</v-btn>
@@ -395,11 +395,11 @@
 
     <!-- Marcar incumplida -->
     <v-dialog v-model="dialogIncumplir" :max-width="xs ? undefined : 460" :fullscreen="xs" persistent>
-      <v-card rounded="lg" class="pa-sm-5 pa-3">
-        <v-card-title class="text-h6 font-weight-bold">
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Marcar incumplida
         </v-card-title>
-        <v-card-text class="pt-2">
+        <v-card-text class="pa-5">
           <div class="text-body-2 text-medium-emphasis mb-4">
             {{ guardiaAccion?.cuadro_nombre }} · {{ formatFecha(guardiaAccion?.fecha) }}
           </div>
@@ -419,7 +419,7 @@
           />
           <v-switch v-model="justificada" color="primary" label="Justificada" density="comfortable" hide-details />
         </v-card-text>
-        <v-card-actions class="pt-0">
+        <v-card-actions class="pa-5 pt-0">
           <v-spacer />
           <v-btn variant="text" class="text-none text-body-1" @click="dialogIncumplir = false">Cancelar</v-btn>
           <v-btn color="warning" :loading="procesando" class="text-none text-body-1" @click="confirmarIncumplir">Confirmar</v-btn>
@@ -429,11 +429,11 @@
 
     <!-- Cancelar guardia -->
     <v-dialog v-model="dialogCancelar" :max-width="xs ? undefined : 460" :fullscreen="xs" persistent>
-      <v-card rounded="lg" class="pa-sm-5 pa-3">
-        <v-card-title class="text-h6 font-weight-bold">
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Cancelar guardia
         </v-card-title>
-        <v-card-text class="pt-2">
+        <v-card-text class="pa-5">
           <div class="text-body-2 text-medium-emphasis mb-4">
             {{ guardiaAccion?.cuadro_nombre }} · {{ formatFecha(guardiaAccion?.fecha) }}
           </div>
@@ -451,7 +451,7 @@
             counter
           />
         </v-card-text>
-        <v-card-actions class="pt-0">
+        <v-card-actions class="pa-5 pt-0">
           <v-spacer />
           <v-btn variant="text" class="text-none text-body-1" @click="dialogCancelar = false">Volver</v-btn>
           <v-btn color="error" :loading="procesando" class="text-none text-body-1" @click="confirmarCancelar">Cancelar guardia</v-btn>

@@ -99,7 +99,7 @@
             </div>
             <div class="text-body-1 font-weight-medium">{{ inc.cuadro_nombre }}</div>
             <div class="text-body-2 text-medium-emphasis mb-1">{{ formatFechaHora(inc.fecha_hora) }}</div>
-            <p class="text-body-2 mb-2 pre-wrap">{{ inc.descripcion }}</p>
+            <p><strong>Descripción:</strong> {{ inc.descripcion }}</p>
             <div class="d-flex justify-end ga-1">
               <v-btn icon size="x-small" variant="text" color="primary" aria-label="Ver detalle" @click="abrirDetalle(inc)">
                 <v-icon icon="mdi-eye-outline" size="16" />
@@ -136,7 +136,7 @@
                   {{ severidadLabel(inc.severidad) }}
                 </v-chip>
               </td>
-              <td class="text-body-1 desc-cell">{{ inc.descripcion }}</td>
+              <td class="text-body-1 desc-cell"><strong>Descripción:</strong> {{ inc.descripcion }}</td>
               <td class="text-medium-emphasis text-body-1">{{ inc.posta_nombre || '—' }}</td>
               <td class="text-medium-emphasis text-body-1">{{ inc.asp_nombre || '—' }}</td>
               <td class="text-center">
@@ -190,8 +190,8 @@
             <v-chip size="small" variant="tonal" label>{{ tipoLabel(detalle.tipo) }}</v-chip>
             <v-chip v-if="detalle.requiere_seguimiento" color="warning" variant="tonal" size="small" label>Seguimiento</v-chip>
           </div>
-          <p class="text-body-1 mb-4 pre-wrap">{{ detalle.descripcion }}</p>
           <v-row dense>
+            <v-col cols="12"><div class="detalle-label">Descripción</div><div class="detalle-value pre-wrap">{{ detalle.descripcion }}</div></v-col>
             <v-col cols="12" sm="6"><div class="detalle-label">Cuadro</div><div class="detalle-value">{{ detalle.cuadro_nombre }}</div></v-col>
             <v-col cols="12" sm="6"><div class="detalle-label">Fecha y hora</div><div class="detalle-value">{{ formatFechaHora(detalle.fecha_hora) }}</div></v-col>
             <v-col cols="12" sm="6"><div class="detalle-label">Posta</div><div class="detalle-value">{{ detalle.posta_nombre || '—' }}</div></v-col>
@@ -199,10 +199,9 @@
             <v-col cols="12" sm="6"><div class="detalle-label">Área</div><div class="detalle-value">{{ detalle.area || '—' }}</div></v-col>
             <v-col cols="12" sm="6"><div class="detalle-label">Registrada</div><div class="detalle-value">{{ formatFechaHora(detalle.creado_en) }}</div></v-col>
           </v-row>
-          <div v-if="detalle.acciones_tomadas" class="mt-3">
-            <div class="detalle-label">Acciones tomadas</div>
-            <p class="text-body-2 mb-0 pre-wrap">{{ detalle.acciones_tomadas }}</p>
-          </div>
+          <v-row v-if="detalle.acciones_tomadas" dense>
+            <v-col cols="12"><div class="detalle-label">Acciones tomadas</div><div class="detalle-value pre-wrap">{{ detalle.acciones_tomadas }}</div></v-col>
+          </v-row>
         </v-card-text>
         <v-card-actions class="pa-5 pt-0">
           <v-spacer />

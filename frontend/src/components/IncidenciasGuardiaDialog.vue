@@ -60,7 +60,7 @@
                 <v-icon icon="mdi-pencil-outline" size="18" />
               </v-btn>
             </div>
-            <p class="text-body-2 mb-2 pre-wrap">{{ inc.descripcion }}</p>
+            <p><strong>Descripción:</strong> {{ inc.descripcion }}</p>
             <div class="d-flex flex-wrap ga-x-3 ga-y-1 text-caption text-medium-emphasis">
               <span class="d-flex align-center ga-1">
                 <v-icon icon="mdi-clock-outline" size="14" />{{ formatFechaHora(inc.fecha_hora) }}

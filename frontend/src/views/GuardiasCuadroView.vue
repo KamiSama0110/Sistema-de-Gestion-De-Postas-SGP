@@ -513,7 +513,7 @@
           </v-alert>
           <v-textarea
             v-model="motivoIncumplir"
-            label="Motivo *"
+            :label="justificada ? 'Motivo *' : 'Motivo (opcional)'"
             variant="outlined"
             density="comfortable"
             rows="3"
@@ -949,15 +949,15 @@ function abrirIncumplir(g) {
 }
 
 async function confirmarIncumplir() {
-  if (!motivoIncumplir.value.trim()) {
-    errorIncumplir.value = 'El motivo es obligatorio'
+  if (justificada.value && !motivoIncumplir.value.trim()) {
+    errorIncumplir.value = 'El motivo es obligatorio cuando la guardia está justificada'
     return
   }
   procesando.value = true
   errorIncumplir.value = null
   try {
     await guardiaCuadroApi.incumplir(guardiaAccion.value.id, {
-      motivo: motivoIncumplir.value.trim(),
+      motivo: motivoIncumplir.value.trim() || null,
       justificada: justificada.value,
     })
     toast.success('Guardia marcada como incumplida')

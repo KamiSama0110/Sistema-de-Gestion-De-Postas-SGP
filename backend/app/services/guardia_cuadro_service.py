@@ -577,7 +577,9 @@ async def incumplir_guardia(
 ) -> GuardiaCuadro:
     guardia = await get_guardia_by_id(db, guardia_id)
     await _transicionar_guardia(db, guardia, EstadoGuardiaCuadroEnum.incumplida)
-    guardia.motivo_incumplimiento = datos.motivo
+    guardia.motivo_incumplimiento = (
+        datos.motivo.strip() if datos.motivo and datos.motivo.strip() else None
+    )
     guardia.justificada = datos.justificada
     await db.commit()
     await db.refresh(guardia, ["plan", "cuadro", "franja"])

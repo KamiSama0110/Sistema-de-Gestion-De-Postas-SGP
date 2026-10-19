@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.enums import EstadoPlanGuardiaEnum, EstadoGuardiaCuadroEnum
 from app.schemas.franja import FranjaCuadroListResponse
@@ -88,8 +88,16 @@ class FinalizarGuardiaRequest(BaseModel):
 
 
 class IncumplirGuardiaRequest(BaseModel):
-    motivo: str = Field(..., min_length=1, max_length=300)
+    motivo: Optional[str] = Field(None, max_length=300)
     justificada: bool
+
+    @model_validator(mode="after")
+    def validar_motivo(self):
+        if self.justificada and not (self.motivo and self.motivo.strip()):
+            raise ValueError(
+                "El motivo es obligatorio cuando la guardia está justificada"
+            )
+        return self
 
 
 class CancelarGuardiaCuadroRequest(BaseModel):

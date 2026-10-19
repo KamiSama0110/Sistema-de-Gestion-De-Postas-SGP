@@ -568,6 +568,23 @@ function formatFechaFeriado(value) {
   return `${d}/${m}/${y}`
 }
 
+function avisarGuardiasDesasignadas(guardias) {
+  if (!guardias || guardias.length === 0) return
+  const detalle = guardias
+    .map((g) => {
+      const franja = g.franja_nombre ? ` (${g.franja_nombre})` : ''
+      return `${g.cuadro_nombre || 'Cuadro'}${franja} — ${formatFechaFeriado(g.fecha)}`
+    })
+    .join('; ')
+  const cantidad = guardias.length
+  toast.add({
+    type: 'warning',
+    title: 'Guardias desasignadas',
+    message: `Se quitó ${cantidad === 1 ? '1 guardia' : `${cantidad} guardias`} de planes sin aprobar porque el día quedó marcado como feriado: ${detalle}.`,
+    timeout: 12000,
+  })
+}
+
 async function cargarFeriados() {
   cargandoFeriados.value = true
   try {
@@ -618,13 +635,11 @@ async function guardarFeriado() {
       fecha: formFeriado.value.fecha,
       descripcion: formFeriado.value.descripcion.trim(),
     }
-    if (editandoFeriado.value) {
-      await feriadoApi.actualizar(editandoFeriado.value.id, payload)
-      toast.success('Feriado actualizado correctamente')
-    } else {
-      await feriadoApi.crear(payload)
-      toast.success('Feriado creado correctamente')
-    }
+    const res = editandoFeriado.value
+      ? await feriadoApi.actualizar(editandoFeriado.value.id, payload)
+      : await feriadoApi.crear(payload)
+    toast.success(editandoFeriado.value ? 'Feriado actualizado correctamente' : 'Feriado creado correctamente')
+    avisarGuardiasDesasignadas(res.data?.guardias_desasignadas)
     cerrarDialogFeriado()
     // Si el feriado se guardó en otro año visible, cambiar el filtro; si no, recargar.
     const nuevoAnio = Number(formFeriado.value.fecha.split('-')[0])
@@ -687,6 +702,7 @@ async function cargarSugeridos() {
     const res = await feriadoApi.cargarSugeridos(anio.value)
     const { creados, omitidos } = res.data
     toast.success(`Feriados cargados: ${creados} creados, ${omitidos} omitidos`)
+    avisarGuardiasDesasignadas(res.data.guardias_desasignadas)
     dialogSugeridos.value = false
     await cargarFeriados()
   } catch (e) {

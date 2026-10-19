@@ -93,6 +93,7 @@ from app.schemas.feriado import (
     FeriadoResponse,
     FeriadosSugeridosResponse,
     FeriadosCargarResponse,
+    GuardiaDesasignada,
     PaginatedFeriado,
 )
 from app.schemas.plan import (

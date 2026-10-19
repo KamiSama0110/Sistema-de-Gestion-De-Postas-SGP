@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Annotated, Optional
-from pydantic import BaseModel, StringConstraints, field_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from app.utils.validators import texto_no_vacio, texto_opcional_no_vacio
 
@@ -31,11 +31,23 @@ class FeriadoUpdate(BaseModel):
         return texto_opcional_no_vacio(v, "La descripción del feriado")
 
 
+class GuardiaDesasignada(BaseModel):
+    guardia_id: int
+    plan_id: int
+    anio: int
+    mes: int
+    fecha: date
+    cuadro_id: int
+    cuadro_nombre: str
+    franja_nombre: Optional[str] = None
+
+
 class FeriadoResponse(BaseModel):
     id: int
     fecha: date
     descripcion: str
     creado_en: datetime
+    guardias_desasignadas: list[GuardiaDesasignada] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 
@@ -52,6 +64,7 @@ class FeriadosSugeridosResponse(BaseModel):
 class FeriadosCargarResponse(BaseModel):
     creados: int
     omitidos: int
+    guardias_desasignadas: list[GuardiaDesasignada] = Field(default_factory=list)
 
 
 class PaginatedFeriado(BaseModel):

@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath
 from app.models.usuario import Usuario
 from app.models.enums import SexoEnum
 from app.schemas.cuadro import (
@@ -45,7 +46,7 @@ async def crear_cuadro(
 
 @router.get("/{cuadro_id}", response_model=CuadroResponse)
 async def obtener_cuadro(
-    cuadro_id: int,
+    cuadro_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -54,7 +55,7 @@ async def obtener_cuadro(
 
 @router.patch("/{cuadro_id}", response_model=CuadroResponse)
 async def actualizar_cuadro(
-    cuadro_id: int,
+    cuadro_id: IdPath,
     datos: CuadroUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -64,7 +65,7 @@ async def actualizar_cuadro(
 
 @router.patch("/{cuadro_id}/estado", response_model=CuadroResponse)
 async def cambiar_estado_cuadro(
-    cuadro_id: int,
+    cuadro_id: IdPath,
     datos: CuadroCambiarEstado,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -74,7 +75,7 @@ async def cambiar_estado_cuadro(
 
 @router.get("/{cuadro_id}/cuenta", response_model=CuadroCuentaResponse)
 async def obtener_cuadro_cuenta(
-    cuadro_id: int,
+    cuadro_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -83,7 +84,7 @@ async def obtener_cuadro_cuenta(
 
 @router.post("/{cuadro_id}/cuenta", response_model=CuadroCuentaResponse, status_code=201)
 async def crear_cuadro_cuenta(
-    cuadro_id: int,
+    cuadro_id: IdPath,
     datos: CuadroCuentaCreate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -94,7 +95,7 @@ async def crear_cuadro_cuenta(
 
 @router.patch("/{cuadro_id}/cuenta/password")
 async def cambiar_cuadro_cuenta_password(
-    cuadro_id: int,
+    cuadro_id: IdPath,
     datos: CuadroCuentaPassword,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),

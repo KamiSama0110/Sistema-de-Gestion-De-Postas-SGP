@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
@@ -41,6 +42,27 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+MAX_BODY_BYTES = 2 * 1024 * 1024
+
+
+@app.middleware("http")
+async def limitar_tamano_cuerpo(request, call_next):
+    if request.method in {"POST", "PATCH", "PUT"}:
+        content_length = request.headers.get("content-length")
+        if content_length is not None:
+            try:
+                if int(content_length) > MAX_BODY_BYTES:
+                    return JSONResponse(
+                        status_code=413,
+                        content={
+                            "detail": "El cuerpo de la solicitud supera el tamaño máximo permitido"
+                        },
+                    )
+            except ValueError:
+                pass
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,

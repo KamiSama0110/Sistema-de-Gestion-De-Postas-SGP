@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -101,7 +102,14 @@ async def crear_asp(db: AsyncSession, datos: ASPCreate) -> ASP:
 
     asp = ASP(**datos.model_dump())
     db.add(asp)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe un ASP con el CI {datos.ci}",
+        )
     await db.refresh(asp)
     return asp
 
@@ -110,12 +118,29 @@ async def actualizar_asp(db: AsyncSession, asp_id: int, datos: ASPUpdate) -> ASP
     asp = await get_asp_by_id(db, asp_id)
 
     update_data = datos.model_dump(exclude_unset=True)
+
+    if "ci" in update_data and update_data["ci"] != asp.ci:
+        existente = await get_asp_by_ci(db, update_data["ci"])
+        if existente and existente.id != asp_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe un ASP con el CI {update_data['ci']}",
+            )
+
     for campo, valor in update_data.items():
         setattr(asp, campo, valor)
 
     validar_relacion_fechas_asp(asp.fecha_nacimiento, asp.fecha_ingreso)
 
-    await db.commit()
+    ci_actual = asp.ci
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe un ASP con el CI {ci_actual}",
+        )
     await db.refresh(asp)
     return asp
 

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath, IdQueryReq
 from app.models.usuario import Usuario
 from app.models.enums import EstadoPlanGuardiaEnum
 from app.schemas.plan import (
@@ -30,7 +31,7 @@ router = APIRouter(prefix="/planes-guardia-cuadro", tags=["Planes de Guardia de 
 async def listar_planes(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    anio: Optional[int] = None,
+    anio: Optional[int] = Query(None, ge=2000, le=2100),
     mes: Optional[int] = Query(None, ge=1, le=12),
     estado: Optional[EstadoPlanGuardiaEnum] = None,
     db: AsyncSession = Depends(get_db),
@@ -50,7 +51,7 @@ async def crear_plan(
 
 @router.get("/{plan_id}", response_model=PlanResponse)
 async def obtener_plan(
-    plan_id: int,
+    plan_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -59,7 +60,7 @@ async def obtener_plan(
 
 @router.patch("/{plan_id}", response_model=PlanResponse)
 async def actualizar_plan(
-    plan_id: int,
+    plan_id: IdPath,
     datos: PlanUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -69,7 +70,7 @@ async def actualizar_plan(
 
 @router.delete("/{plan_id}", status_code=204)
 async def eliminar_plan(
-    plan_id: int,
+    plan_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -78,7 +79,7 @@ async def eliminar_plan(
 
 @router.post("/{plan_id}/enviar", response_model=PlanResponse)
 async def enviar_plan(
-    plan_id: int,
+    plan_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -87,7 +88,7 @@ async def enviar_plan(
 
 @router.post("/{plan_id}/aprobar", response_model=PlanResponse)
 async def aprobar_plan(
-    plan_id: int,
+    plan_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -96,7 +97,7 @@ async def aprobar_plan(
 
 @router.post("/{plan_id}/rechazar", response_model=PlanResponse)
 async def rechazar_plan(
-    plan_id: int,
+    plan_id: IdPath,
     datos: PlanRechazar,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -106,7 +107,7 @@ async def rechazar_plan(
 
 @router.post("/{plan_id}/reabrir", response_model=PlanResponse)
 async def reabrir_plan(
-    plan_id: int,
+    plan_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -115,7 +116,7 @@ async def reabrir_plan(
 
 @router.post("/{plan_id}/guardias", response_model=GuardiaCuadroResponse, status_code=201)
 async def asignar_guardia(
-    plan_id: int,
+    plan_id: IdPath,
     datos: GuardiaCuadroCreate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -126,7 +127,7 @@ async def asignar_guardia(
 
 @router.get("/{plan_id}/calendario", response_model=CalendarioResponse)
 async def obtener_calendario(
-    plan_id: int,
+    plan_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -136,9 +137,9 @@ async def obtener_calendario(
 
 @router.get("/{plan_id}/candidatos", response_model=CandidatosResponse)
 async def obtener_candidatos(
-    plan_id: int,
+    plan_id: IdPath,
+    franja_id: IdQueryReq,
     fecha: date = Query(...),
-    franja_id: int = Query(...),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -148,7 +149,7 @@ async def obtener_candidatos(
 
 @router.post("/{plan_id}/generar", response_model=GenerarPlanResponse)
 async def generar_plan(
-    plan_id: int,
+    plan_id: IdPath,
     datos: GenerarPlanRequest,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),

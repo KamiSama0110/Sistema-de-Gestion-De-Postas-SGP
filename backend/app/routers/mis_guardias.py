@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_cuadro
+from app.core.types import IdPath
 from app.models.enums import EstadoGuardiaCuadroEnum
 from app.models.usuario import Usuario
 from app.schemas.incidencia import (
@@ -38,8 +39,8 @@ async def cuadro_id_actual(usuario: Usuario = Depends(require_cuadro)) -> int:
 async def listar_mis_guardias(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    anio: int | None = None,
-    mes: int | None = None,
+    anio: int | None = Query(None, ge=2000, le=2100),
+    mes: int | None = Query(None, ge=1, le=12),
     estado: EstadoGuardiaCuadroEnum | None = None,
     cuadro_id: int = Depends(cuadro_id_actual),
     db: AsyncSession = Depends(get_db),
@@ -72,7 +73,7 @@ async def mi_planificacion(
 
 @router.get("/mis-guardias/{guardia_id}", response_model=GuardiaCuadroResponse)
 async def obtener_mi_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     cuadro_id: int = Depends(cuadro_id_actual),
     db: AsyncSession = Depends(get_db),
 ):
@@ -83,7 +84,7 @@ async def obtener_mi_guardia(
     "/mis-guardias/{guardia_id}/incidencias", response_model=PaginatedIncidencia
 )
 async def listar_mis_incidencias(
-    guardia_id: int,
+    guardia_id: IdPath,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     cuadro_id: int = Depends(cuadro_id_actual),
@@ -101,7 +102,7 @@ async def listar_mis_incidencias(
     status_code=201,
 )
 async def crear_mi_incidencia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: IncidenciaCreate,
     cuadro_id: int = Depends(cuadro_id_actual),
     db: AsyncSession = Depends(get_db),
@@ -114,7 +115,7 @@ async def crear_mi_incidencia(
 
 @router.patch("/mis-incidencias/{incidencia_id}", response_model=IncidenciaResponse)
 async def actualizar_mi_incidencia(
-    incidencia_id: int,
+    incidencia_id: IdPath,
     datos: IncidenciaUpdate,
     cuadro_id: int = Depends(cuadro_id_actual),
     db: AsyncSession = Depends(get_db),

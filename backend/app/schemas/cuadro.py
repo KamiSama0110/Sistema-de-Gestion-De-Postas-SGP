@@ -15,7 +15,7 @@ CI = Annotated[str, StringConstraints(strip_whitespace=True, max_length=20)]
 Nombre = Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)]
 Apellidos = Annotated[str, StringConstraints(strip_whitespace=True, max_length=150)]
 Telefono = Annotated[str, StringConstraints(strip_whitespace=True, max_length=20)]
-Observaciones = Annotated[str, StringConstraints(strip_whitespace=True)]
+Observaciones = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)]
 
 
 class CuadroBase(BaseModel):

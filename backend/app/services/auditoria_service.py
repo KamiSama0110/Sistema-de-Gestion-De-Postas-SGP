@@ -17,6 +17,8 @@ current_user_var: ContextVar[str] = ContextVar("current_user", default="admin")
 
 _tablas_excluidas: set[str] = {"novedad", "refresh_token"}
 
+_columnas_sensibles: set[str] = {"hashed_password", "token_hash"}
+
 _objetos_nuevos_pendientes: list[Any] = []
 
 
@@ -38,6 +40,8 @@ def _serializar_objeto(obj: Any) -> str:
     mapper = inspect(obj).mapper
     datos: dict[str, Any] = {}
     for col in mapper.column_attrs:
+        if col.key in _columnas_sensibles:
+            continue
         valor = getattr(obj, col.key)
         datos[col.key] = _serializar_valor(valor)
     return json.dumps(datos, default=_serializar_valor)
@@ -62,6 +66,8 @@ def _before_flush(session, flush_context, instances):
         old: dict[str, Any] = {}
         new: dict[str, Any] = {}
         for attr in state.attrs:
+            if attr.key in _columnas_sensibles:
+                continue
             hist = attr.history
             if not hist.has_changes():
                 continue

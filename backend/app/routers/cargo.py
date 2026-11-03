@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath
 from app.models.usuario import Usuario
 from app.schemas.cargo import CargoCreate, CargoUpdate, CargoCambiarEstado, CargoResponse, PaginatedCargo
 from app.services import cargo_service
@@ -33,7 +34,7 @@ async def crear_cargo(
 
 @router.get("/{cargo_id}", response_model=CargoResponse)
 async def obtener_cargo(
-    cargo_id: int,
+    cargo_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -42,7 +43,7 @@ async def obtener_cargo(
 
 @router.patch("/{cargo_id}", response_model=CargoResponse)
 async def actualizar_cargo(
-    cargo_id: int,
+    cargo_id: IdPath,
     datos: CargoUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -52,7 +53,7 @@ async def actualizar_cargo(
 
 @router.patch("/{cargo_id}/estado", response_model=CargoResponse)
 async def cambiar_estado(
-    cargo_id: int,
+    cargo_id: IdPath,
     datos: CargoCambiarEstado,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),

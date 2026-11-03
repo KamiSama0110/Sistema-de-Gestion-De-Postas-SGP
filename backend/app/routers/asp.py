@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath
 from app.models.usuario import Usuario
 from app.models.enums import EstadoASPEnum
 from app.schemas.asp import (
@@ -40,7 +41,7 @@ async def crear_asp(
 
 @router.get("/{asp_id}", response_model=ASPResponse)
 async def obtener_asp(
-    asp_id: int,
+    asp_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -49,7 +50,7 @@ async def obtener_asp(
 
 @router.patch("/{asp_id}", response_model=ASPResponse)
 async def actualizar_asp(
-    asp_id: int,
+    asp_id: IdPath,
     datos: ASPUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -59,7 +60,7 @@ async def actualizar_asp(
 
 @router.patch("/{asp_id}/estado", response_model=ASPResponse)
 async def cambiar_estado(
-    asp_id: int,
+    asp_id: IdPath,
     datos: ASPCambiarEstado,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),

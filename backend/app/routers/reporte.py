@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import date
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdQuery
 from app.models.usuario import Usuario
 from app.models.enums import SeveridadEnum
 from app.schemas.reporte import (
@@ -62,7 +63,7 @@ async def reporte_horas(
 async def reporte_incidencias(
     periodo: PeriodoRequest = Depends(get_periodo),
     severidad: Optional[SeveridadEnum] = None,
-    posta_id: Optional[int] = None,
+    posta_id: IdQuery = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -74,7 +75,7 @@ async def reporte_incidencias(
 @router.get("/tardanzas", response_model=ReporteTardanzasResponse)
 async def reporte_tardanzas(
     periodo: PeriodoRequest = Depends(get_periodo),
-    asp_id: Optional[int] = None,
+    asp_id: IdQuery = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):

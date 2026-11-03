@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, ForeignKey
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -7,6 +7,14 @@ from app.core.database import Base
 
 class Usuario(Base):
     __tablename__ = "usuario"
+
+    __table_args__ = (
+        CheckConstraint(
+            "(rol = 'cuadro' AND cuadro_id IS NOT NULL) OR "
+            "(rol = 'admin' AND cuadro_id IS NULL)",
+            name="ck_usuario_rol_cuadro",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)

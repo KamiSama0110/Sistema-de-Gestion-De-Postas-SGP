@@ -224,6 +224,10 @@ async def crear_guardia(db: AsyncSession, datos: GuardiaCreate) -> Guardia:
             detail="La posta asociada no está activa",
         )
 
+    await db.execute(
+        select(TurnoPosta).where(TurnoPosta.id == turno.id).with_for_update()
+    )
+
     count_q = select(func.count()).where(
         Guardia.turno_posta_id == turno.id,
         Guardia.fecha == datos.fecha,

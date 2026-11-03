@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath
 from app.models.usuario import Usuario
 from app.models.auditoria import AuditLog
 from app.schemas.auditoria import (
@@ -55,7 +56,7 @@ async def listar_auditoria(
 
 @router.get("/{log_id}/diff", response_model=AuditDiffResponse)
 async def obtener_diff(
-    log_id: int,
+    log_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):

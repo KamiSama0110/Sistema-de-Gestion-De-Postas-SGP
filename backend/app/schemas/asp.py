@@ -1,6 +1,7 @@
 from datetime import date, datetime
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
+from app.core.types import Id, IdOpcional
 from app.models.enums import (
     SexoEnum,
     EscolaridadEnum,
@@ -17,17 +18,17 @@ from app.utils.validators import (
 
 
 class ASPBase(BaseModel):
-    ci: str
-    nombre: str
-    apellidos: str
+    ci: str = Field(..., max_length=20)
+    nombre: str = Field(..., max_length=100)
+    apellidos: str = Field(..., max_length=100)
     fecha_nacimiento: date
     sexo: SexoEnum
     nivel_escolaridad: EscolaridadEnum
-    telefono: Optional[str] = None
-    direccion: Optional[str] = None
+    telefono: Optional[str] = Field(None, max_length=20)
+    direccion: Optional[str] = Field(None, max_length=255)
     fecha_ingreso: date
-    cargo_id: int
-    observaciones: Optional[str] = None
+    cargo_id: Id
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
     @field_validator("nombre", "apellidos", "direccion", "observaciones")
     @classmethod
@@ -77,17 +78,17 @@ class ASPCreate(ASPBase):
 
 
 class ASPUpdate(BaseModel):
-    ci: Optional[str] = None
-    nombre: Optional[str] = None
-    apellidos: Optional[str] = None
+    ci: Optional[str] = Field(None, max_length=20)
+    nombre: Optional[str] = Field(None, max_length=100)
+    apellidos: Optional[str] = Field(None, max_length=100)
     fecha_nacimiento: Optional[date] = None
     sexo: Optional[SexoEnum] = None
     nivel_escolaridad: Optional[EscolaridadEnum] = None
-    telefono: Optional[str] = None
-    direccion: Optional[str] = None
+    telefono: Optional[str] = Field(None, max_length=20)
+    direccion: Optional[str] = Field(None, max_length=255)
     fecha_ingreso: Optional[date] = None
-    cargo_id: Optional[int] = None
-    observaciones: Optional[str] = None
+    cargo_id: IdOpcional = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
     @field_validator("ci")
     @classmethod
@@ -146,7 +147,7 @@ class ASPUpdate(BaseModel):
 
 class ASPCambiarEstado(BaseModel):
     estado: EstadoASPEnum
-    observacion: Optional[str] = None
+    observacion: Optional[str] = Field(None, max_length=500)
 
 
 class ASPResponse(BaseModel):

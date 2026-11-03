@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath, IdQuery
 from app.models.enums import SeveridadEnum, TipoNovedadEnum
 from app.models.usuario import Usuario
 from app.schemas.incidencia import (
@@ -21,8 +22,8 @@ router = APIRouter(prefix="/incidencias-cuadro", tags=["Incidencias de Cuadro"])
 async def listar_incidencias(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    guardia_id: int | None = None,
-    cuadro_id: int | None = None,
+    guardia_id: IdQuery = None,
+    cuadro_id: IdQuery = None,
     severidad: SeveridadEnum | None = None,
     tipo: TipoNovedadEnum | None = None,
     desde: date | None = None,
@@ -47,7 +48,7 @@ async def listar_incidencias(
 
 @router.get("/{incidencia_id}", response_model=IncidenciaResponse)
 async def obtener_incidencia(
-    incidencia_id: int,
+    incidencia_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -56,7 +57,7 @@ async def obtener_incidencia(
 
 @router.patch("/{incidencia_id}", response_model=IncidenciaResponse)
 async def actualizar_incidencia(
-    incidencia_id: int,
+    incidencia_id: IdPath,
     datos: IncidenciaUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),

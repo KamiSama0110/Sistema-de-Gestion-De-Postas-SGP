@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath, IdQuery
 from app.models.usuario import Usuario
 from app.models.enums import EstadoGuardiaCuadroEnum
 from app.schemas.incidencia import IncidenciaCreate, IncidenciaResponse
@@ -27,13 +28,13 @@ router = APIRouter(prefix="/guardias-cuadro", tags=["Guardias de Cuadro"])
 async def listar_guardias(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    plan_id: Optional[int] = None,
-    cuadro_id: Optional[int] = None,
+    plan_id: IdQuery = None,
+    cuadro_id: IdQuery = None,
     estado: Optional[EstadoGuardiaCuadroEnum] = None,
     desde: Optional[date] = None,
     hasta: Optional[date] = None,
     buscar: Optional[str] = Query(None, max_length=100),
-    guardia_id: Optional[int] = None,
+    guardia_id: IdQuery = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -44,7 +45,7 @@ async def listar_guardias(
 
 @router.post("/{guardia_id}/iniciar", response_model=GuardiaCuadroResponse)
 async def iniciar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: IniciarGuardiaRequest | None = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -54,7 +55,7 @@ async def iniciar_guardia(
 
 @router.post("/{guardia_id}/finalizar", response_model=GuardiaCuadroResponse)
 async def finalizar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: FinalizarGuardiaRequest | None = None,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -64,7 +65,7 @@ async def finalizar_guardia(
 
 @router.post("/{guardia_id}/incumplir", response_model=GuardiaCuadroResponse)
 async def incumplir_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: IncumplirGuardiaRequest,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -74,7 +75,7 @@ async def incumplir_guardia(
 
 @router.post("/{guardia_id}/cancelar", response_model=GuardiaCuadroResponse)
 async def cancelar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: CancelarGuardiaCuadroRequest,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -88,7 +89,7 @@ async def cancelar_guardia(
     status_code=201,
 )
 async def crear_incidencia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: IncidenciaCreate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -99,7 +100,7 @@ async def crear_incidencia(
 
 @router.patch("/{guardia_id}", response_model=GuardiaCuadroResponse)
 async def actualizar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: GuardiaCuadroUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -109,7 +110,7 @@ async def actualizar_guardia(
 
 @router.delete("/{guardia_id}", status_code=204)
 async def eliminar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):

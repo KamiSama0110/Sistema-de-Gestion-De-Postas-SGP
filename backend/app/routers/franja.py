@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath
 from app.models.usuario import Usuario
 from app.schemas.franja import FranjaCuadroUpdate, FranjaCuadroResponse, FranjaCuadroListResponse
 from app.services import franja_service
@@ -19,7 +20,7 @@ async def listar_franjas(
 
 @router.patch("/{franja_id}", response_model=FranjaCuadroResponse)
 async def actualizar_franja(
-    franja_id: int,
+    franja_id: IdPath,
     datos: FranjaCuadroUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),

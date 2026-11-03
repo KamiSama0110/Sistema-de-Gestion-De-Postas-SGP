@@ -3,6 +3,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.core.types import Id, IdOpcional
 from app.models.enums import EstadoPlanGuardiaEnum, EstadoGuardiaCuadroEnum
 from app.schemas.franja import FranjaCuadroListResponse
 from app.utils.validators import texto_opcional_no_vacio
@@ -11,7 +12,7 @@ from app.utils.validators import texto_opcional_no_vacio
 class PlanCreate(BaseModel):
     anio: int = Field(..., ge=2000, le=2100)
     mes: int = Field(..., ge=1, le=12)
-    observaciones: Optional[str] = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
     @field_validator("observaciones")
     @classmethod
@@ -20,7 +21,7 @@ class PlanCreate(BaseModel):
 
 
 class PlanUpdate(BaseModel):
-    observaciones: Optional[str] = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
     @field_validator("observaciones")
     @classmethod
@@ -29,7 +30,7 @@ class PlanUpdate(BaseModel):
 
 
 class PlanRechazar(BaseModel):
-    motivo: Optional[str] = None
+    motivo: Optional[str] = Field(None, max_length=500)
 
     @field_validator("motivo")
     @classmethod
@@ -68,14 +69,14 @@ class PaginatedPlan(BaseModel):
 
 
 class GuardiaCuadroCreate(BaseModel):
-    cuadro_id: int
-    franja_id: int
+    cuadro_id: Id
+    franja_id: Id
     fecha: date
 
 
 class GuardiaCuadroUpdate(BaseModel):
-    cuadro_id: Optional[int] = None
-    franja_id: Optional[int] = None
+    cuadro_id: IdOpcional = None
+    franja_id: IdOpcional = None
     fecha: Optional[date] = None
 
 

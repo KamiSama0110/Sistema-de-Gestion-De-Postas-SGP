@@ -246,6 +246,11 @@ async def actualizar_turno(
         nombre = update_data.get("nombre", turno.nombre)
         hora_inicio = update_data.get("hora_inicio", turno.hora_inicio)
         hora_fin = update_data.get("hora_fin", turno.hora_fin)
+        if hora_inicio == hora_fin:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="La hora de inicio y la hora de fin no pueden ser iguales",
+            )
         existente = await db.execute(
             select(TurnoPosta).where(
                 TurnoPosta.posta_id == turno.posta_id,

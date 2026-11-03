@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.types import IdOpcional
 from app.models.enums import SeveridadEnum, TipoNovedadEnum
 from app.utils.validators import texto_opcional_no_vacio
 
@@ -18,10 +19,10 @@ class IncidenciaCreate(BaseModel):
     severidad: SeveridadEnum = SeveridadEnum.baja
     descripcion: str = Field(..., min_length=1, max_length=1000)
     fecha_hora: Optional[datetime] = None
-    posta_id: Optional[int] = None
-    asp_id: Optional[int] = None
+    posta_id: IdOpcional = None
+    asp_id: IdOpcional = None
     area: Optional[str] = Field(None, max_length=120)
-    acciones_tomadas: Optional[str] = None
+    acciones_tomadas: Optional[str] = Field(None, max_length=2000)
     requiere_seguimiento: bool = False
 
     @field_validator("descripcion", "acciones_tomadas")
@@ -48,7 +49,7 @@ class IncidenciaUpdate(BaseModel):
     severidad: Optional[SeveridadEnum] = None
     tipo: Optional[TipoNovedadEnum] = None
     area: Optional[str] = Field(None, max_length=120)
-    acciones_tomadas: Optional[str] = None
+    acciones_tomadas: Optional[str] = Field(None, max_length=2000)
     requiere_seguimiento: Optional[bool] = None
 
     @field_validator("descripcion", "acciones_tomadas")

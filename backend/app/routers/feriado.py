@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.types import IdPath
 from app.models.usuario import Usuario
 from app.schemas.feriado import (
     FeriadoCreate,
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/feriados", tags=["Feriados"])
 async def listar_feriados(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    anio: Optional[int] = None,
+    anio: Optional[int] = Query(None, ge=2000, le=2100),
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):
@@ -58,7 +59,7 @@ async def cargar_feriados_sugeridos(
 
 @router.patch("/{feriado_id}", response_model=FeriadoResponse)
 async def actualizar_feriado(
-    feriado_id: int,
+    feriado_id: IdPath,
     datos: FeriadoUpdate,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
@@ -68,7 +69,7 @@ async def actualizar_feriado(
 
 @router.delete("/{feriado_id}", status_code=204)
 async def eliminar_feriado(
-    feriado_id: int,
+    feriado_id: IdPath,
     db: AsyncSession = Depends(get_db),
     _: Usuario = Depends(require_admin),
 ):

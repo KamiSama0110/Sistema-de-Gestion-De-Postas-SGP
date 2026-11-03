@@ -1,12 +1,12 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 from app.utils.validators import texto_no_vacio, texto_opcional_no_vacio
 
 
 class CargoBase(BaseModel):
-    nombre: str
-    descripcion: Optional[str] = None
+    nombre: str = Field(..., min_length=1, max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=1000)
 
     @field_validator('nombre')
     @classmethod
@@ -24,8 +24,8 @@ class CargoCreate(CargoBase):
 
 
 class CargoUpdate(BaseModel):
-    nombre: Optional[str] = None
-    descripcion: Optional[str] = None
+    nombre: Optional[str] = Field(None, min_length=1, max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=1000)
 
     @field_validator('nombre')
     @classmethod

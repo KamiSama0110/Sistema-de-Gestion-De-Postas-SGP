@@ -60,6 +60,23 @@ async def listar_feriados(
     return {"total": total, "page": page, "size": size, "items": items}
 
 
+def _serializar_guardia(guardia: GuardiaCuadro) -> dict:
+    return {
+        "guardia_id": guardia.id,
+        "plan_id": guardia.plan_id,
+        "anio": guardia.plan.anio,
+        "mes": guardia.plan.mes,
+        "fecha": guardia.fecha,
+        "cuadro_id": guardia.cuadro_id,
+        "cuadro_nombre": (
+            f"{guardia.cuadro.nombre} {guardia.cuadro.apellidos}"
+            if guardia.cuadro
+            else ""
+        ),
+        "franja_nombre": guardia.franja.nombre if guardia.franja else None,
+    }
+
+
 async def _desasignar_guardias_no_aprobadas(
     db: AsyncSession, fecha: date
 ) -> list[dict]:
@@ -81,25 +98,29 @@ async def _desasignar_guardias_no_aprobadas(
 
     desasignadas = []
     for guardia in result.scalars().all():
-        desasignadas.append(
-            {
-                "guardia_id": guardia.id,
-                "plan_id": guardia.plan_id,
-                "anio": guardia.plan.anio,
-                "mes": guardia.plan.mes,
-                "fecha": guardia.fecha,
-                "cuadro_id": guardia.cuadro_id,
-                "cuadro_nombre": (
-                    f"{guardia.cuadro.nombre} {guardia.cuadro.apellidos}"
-                    if guardia.cuadro
-                    else ""
-                ),
-                "franja_nombre": guardia.franja.nombre if guardia.franja else None,
-            }
-        )
+        desasignadas.append(_serializar_guardia(guardia))
         await db.delete(guardia)
 
     return desasignadas
+
+
+async def _listar_guardias_aprobadas(db: AsyncSession, fecha: date) -> list[dict]:
+    result = await db.execute(
+        select(GuardiaCuadro)
+        .join(PlanGuardiaCuadro, PlanGuardiaCuadro.id == GuardiaCuadro.plan_id)
+        .options(
+            selectinload(GuardiaCuadro.plan),
+            selectinload(GuardiaCuadro.cuadro),
+            selectinload(GuardiaCuadro.franja),
+        )
+        .where(
+            GuardiaCuadro.fecha == fecha,
+            GuardiaCuadro.estado == EstadoGuardiaCuadroEnum.planificada,
+            PlanGuardiaCuadro.estado == EstadoPlanGuardiaEnum.aprobado,
+        )
+        .order_by(GuardiaCuadro.id)
+    )
+    return [_serializar_guardia(guardia) for guardia in result.scalars().all()]
 
 
 async def crear_feriado(db: AsyncSession, datos: FeriadoCreate) -> Feriado:
@@ -115,10 +136,12 @@ async def crear_feriado(db: AsyncSession, datos: FeriadoCreate) -> Feriado:
         descripcion=datos.descripcion,
     )
     db.add(feriado)
+    aprobadas = await _listar_guardias_aprobadas(db, datos.fecha)
     desasignadas = await _desasignar_guardias_no_aprobadas(db, datos.fecha)
     await db.commit()
     await db.refresh(feriado)
     feriado.guardias_desasignadas = desasignadas
+    feriado.guardias_aprobadas_afectadas = aprobadas
     return feriado
 
 
@@ -144,6 +167,11 @@ async def actualizar_feriado(
     for field, value in update_data.items():
         setattr(feriado, field, value)
 
+    aprobadas = (
+        await _listar_guardias_aprobadas(db, fecha_afectada)
+        if fecha_afectada is not None
+        else []
+    )
     desasignadas = (
         await _desasignar_guardias_no_aprobadas(db, fecha_afectada)
         if fecha_afectada is not None
@@ -153,6 +181,7 @@ async def actualizar_feriado(
     await db.commit()
     await db.refresh(feriado)
     feriado.guardias_desasignadas = desasignadas
+    feriado.guardias_aprobadas_afectadas = aprobadas
     return feriado
 
 
@@ -175,6 +204,7 @@ async def cargar_feriados_sugeridos(db: AsyncSession, anio: int) -> dict:
     creados = 0
     omitidos = 0
     desasignadas: list[dict] = []
+    aprobadas: list[dict] = []
 
     for s in sugeridos:
         existing = await get_feriado_by_fecha(db, s["fecha"])
@@ -186,6 +216,7 @@ async def cargar_feriados_sugeridos(db: AsyncSession, anio: int) -> dict:
                 descripcion=s["descripcion"],
             )
             db.add(feriado)
+            aprobadas.extend(await _listar_guardias_aprobadas(db, s["fecha"]))
             desasignadas.extend(
                 await _desasignar_guardias_no_aprobadas(db, s["fecha"])
             )
@@ -196,4 +227,5 @@ async def cargar_feriados_sugeridos(db: AsyncSession, anio: int) -> dict:
         "creados": creados,
         "omitidos": omitidos,
         "guardias_desasignadas": desasignadas,
+        "guardias_aprobadas_afectadas": aprobadas,
     }

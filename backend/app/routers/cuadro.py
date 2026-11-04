@@ -11,6 +11,7 @@ from app.schemas.cuadro import (
     CuadroUpdate,
     CuadroCambiarEstado,
     CuadroResponse,
+    CuadroCambioResponse,
     PaginatedCuadro,
     CuadroCuentaResponse,
     CuadroCuentaCreate,
@@ -53,7 +54,7 @@ async def obtener_cuadro(
     return await cuadro_service.get_cuadro_by_id(db, cuadro_id)
 
 
-@router.patch("/{cuadro_id}", response_model=CuadroResponse)
+@router.patch("/{cuadro_id}", response_model=CuadroCambioResponse)
 async def actualizar_cuadro(
     cuadro_id: IdPath,
     datos: CuadroUpdate,
@@ -63,7 +64,7 @@ async def actualizar_cuadro(
     return await cuadro_service.actualizar_cuadro(db, cuadro_id, datos)
 
 
-@router.patch("/{cuadro_id}/estado", response_model=CuadroResponse)
+@router.patch("/{cuadro_id}/estado", response_model=CuadroCambioResponse)
 async def cambiar_estado_cuadro(
     cuadro_id: IdPath,
     datos: CuadroCambiarEstado,

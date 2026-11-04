@@ -586,6 +586,23 @@ function avisarGuardiasDesasignadas(guardias) {
   })
 }
 
+function avisarGuardiasAprobadasAfectadas(guardias) {
+  if (!guardias || guardias.length === 0) return
+  const detalle = guardias
+    .map((g) => {
+      const franja = g.franja_nombre ? ` (${g.franja_nombre})` : ''
+      return `${g.cuadro_nombre || 'Cuadro'}${franja} — ${formatFechaFeriado(g.fecha)}`
+    })
+    .join('; ')
+  const cantidad = guardias.length
+  toast.add({
+    type: 'info',
+    title: 'Guardias en planes aprobados',
+    message: `El feriado coincide con ${cantidad === 1 ? '1 guardia' : `${cantidad} guardias`} de planes aprobados. No se modificaron: ${detalle}.`,
+    timeout: 12000,
+  })
+}
+
 async function cargarFeriados() {
   const primeraCarga = feriados.value.length === 0
   if (primeraCarga) cargandoFeriados.value = true
@@ -642,6 +659,7 @@ async function guardarFeriado() {
       : await feriadoApi.crear(payload)
     toast.success(editandoFeriado.value ? 'Feriado actualizado correctamente' : 'Feriado creado correctamente')
     avisarGuardiasDesasignadas(res.data?.guardias_desasignadas)
+    avisarGuardiasAprobadasAfectadas(res.data?.guardias_aprobadas_afectadas)
     cerrarDialogFeriado()
     // Si el feriado se guardó en otro año visible, cambiar el filtro; si no, recargar.
     const nuevoAnio = Number(formFeriado.value.fecha.split('-')[0])
@@ -705,6 +723,7 @@ async function cargarSugeridos() {
     const { creados, omitidos } = res.data
     toast.success(`Feriados cargados: ${creados} creados, ${omitidos} omitidos`)
     avisarGuardiasDesasignadas(res.data.guardias_desasignadas)
+    avisarGuardiasAprobadasAfectadas(res.data.guardias_aprobadas_afectadas)
     dialogSugeridos.value = false
     await cargarFeriados()
   } catch (e) {

@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,7 +7,8 @@ from sqlalchemy.orm import selectinload
 
 from app.core.security import get_password_hash
 from app.models.cuadro import Cuadro
-from app.models.enums import SexoEnum
+from app.models.enums import EstadoGuardiaCuadroEnum, EstadoPlanGuardiaEnum, SexoEnum
+from app.models.plan_guardia_cuadro import GuardiaCuadro
 from app.models.usuario import Usuario
 from app.schemas.cuadro import (
     CuadroCambiarEstado,
@@ -110,6 +113,86 @@ async def crear_cuadro(db: AsyncSession, datos: CuadroCreate) -> Cuadro:
     return cuadro
 
 
+async def _guardias_futuras_planificadas(
+    db: AsyncSession, cuadro_id: int
+) -> list[GuardiaCuadro]:
+    result = await db.execute(
+        select(GuardiaCuadro)
+        .options(
+            selectinload(GuardiaCuadro.plan),
+            selectinload(GuardiaCuadro.cuadro),
+            selectinload(GuardiaCuadro.franja),
+        )
+        .where(
+            GuardiaCuadro.cuadro_id == cuadro_id,
+            GuardiaCuadro.estado == EstadoGuardiaCuadroEnum.planificada,
+            GuardiaCuadro.fecha >= date.today(),
+        )
+        .order_by(GuardiaCuadro.fecha, GuardiaCuadro.id)
+    )
+    return list(result.scalars().all())
+
+
+def _es_franja_nocturna(guardia: GuardiaCuadro) -> bool:
+    return bool(guardia.franja) and guardia.franja.nombre.strip().lower() == "nocturna"
+
+
+def _serializar_guardia_desasignada(guardia: GuardiaCuadro) -> dict:
+    return {
+        "guardia_id": guardia.id,
+        "plan_id": guardia.plan_id,
+        "anio": guardia.plan.anio,
+        "mes": guardia.plan.mes,
+        "fecha": guardia.fecha,
+        "cuadro_id": guardia.cuadro_id,
+        "cuadro_nombre": (
+            f"{guardia.cuadro.nombre} {guardia.cuadro.apellidos}"
+            if guardia.cuadro
+            else ""
+        ),
+        "franja_nombre": guardia.franja.nombre if guardia.franja else None,
+    }
+
+
+def _bloquear_si_hay_aprobadas(
+    guardias: list[GuardiaCuadro], accion: str
+) -> None:
+    aprobadas = [
+        guardia
+        for guardia in guardias
+        if guardia.plan and guardia.plan.estado == EstadoPlanGuardiaEnum.aprobado
+    ]
+    if not aprobadas:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "message": (
+                f"No se puede {accion}: hay guardias en planes aprobados. "
+                "Revierte o ajusta esos planes antes de continuar."
+            ),
+            "guardias": [
+                {
+                    **_serializar_guardia_desasignada(guardia),
+                    "fecha": guardia.fecha.isoformat(),
+                }
+                for guardia in aprobadas
+            ],
+        },
+    )
+
+
+async def _desasignar_guardias(
+    db: AsyncSession, guardias: list[GuardiaCuadro]
+) -> list[dict]:
+    desasignadas = [
+        _serializar_guardia_desasignada(guardia) for guardia in guardias
+    ]
+    for guardia in guardias:
+        await db.delete(guardia)
+    return desasignadas
+
+
 async def actualizar_cuadro(
     db: AsyncSession, cuadro_id: int, datos: CuadroUpdate
 ) -> Cuadro:
@@ -124,11 +207,41 @@ async def actualizar_cuadro(
                 status_code=status.HTTP_409_CONFLICT, detail="El CI ya está registrado"
             )
 
+    cambio_sexo = (
+        update_data.get("sexo") is not None
+        and update_data["sexo"] != cuadro.sexo
+    )
+    marcar_vie_dom = (
+        update_data.get("sin_guardia_vie_dom") is True
+        and not cuadro.sin_guardia_vie_dom
+    )
+
+    desasignadas: list[dict] = []
+    if cambio_sexo or marcar_vie_dom:
+        guardias = await _guardias_futuras_planificadas(db, cuadro_id)
+        afectadas = [
+            guardia
+            for guardia in guardias
+            if (
+                cambio_sexo
+                and guardia.franja is not None
+                and guardia.franja.sexo_permitido != update_data["sexo"]
+            )
+            or (
+                marcar_vie_dom
+                and _es_franja_nocturna(guardia)
+                and guardia.fecha.weekday() >= 4
+            )
+        ]
+        _bloquear_si_hay_aprobadas(afectadas, "cambiar el cuadro")
+        desasignadas = await _desasignar_guardias(db, afectadas)
+
     for field, value in update_data.items():
         setattr(cuadro, field, value)
 
     await db.commit()
     await db.refresh(cuadro)
+    cuadro.guardias_desasignadas = desasignadas
     return cuadro
 
 
@@ -136,6 +249,13 @@ async def cambiar_estado_cuadro(
     db: AsyncSession, cuadro_id: int, datos: CuadroCambiarEstado
 ) -> Cuadro:
     cuadro = await get_cuadro_by_id_with_usuario(db, cuadro_id)
+
+    desasignadas: list[dict] = []
+    if datos.activo is False and cuadro.activo:
+        guardias = await _guardias_futuras_planificadas(db, cuadro_id)
+        _bloquear_si_hay_aprobadas(guardias, "desactivar el cuadro")
+        desasignadas = await _desasignar_guardias(db, guardias)
+
     cuadro.activo = datos.activo
 
     if cuadro.usuario:
@@ -143,6 +263,7 @@ async def cambiar_estado_cuadro(
 
     await db.commit()
     await db.refresh(cuadro)
+    cuadro.guardias_desasignadas = desasignadas
     return cuadro
 
 

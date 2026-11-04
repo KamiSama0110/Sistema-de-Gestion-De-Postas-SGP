@@ -62,6 +62,54 @@
         </v-btn>
       </div>
 
+      <v-alert
+        v-if="avisoDesasignadas"
+        id="aviso-desasignadas"
+        type="info"
+        variant="tonal"
+        closable
+        class="mb-4 text-body-2"
+        @click:close="avisoDesasignadas = null"
+      >
+        <div class="font-weight-medium mb-1">
+          {{ avisoDesasignadas.nombre }}:
+          {{
+            avisoDesasignadas.guardias.length === 1
+              ? 'se desasignó 1 guardia futura por quedar incoherente con el cambio'
+              : `se desasignaron ${avisoDesasignadas.guardias.length} guardias futuras por quedar incoherentes con el cambio`
+          }}.
+        </div>
+        <ul class="pl-4 mb-0">
+          <li v-for="g in avisoDesasignadas.guardias.slice(0, 5)" :key="g.guardia_id">
+            {{ fechaCorta(g.fecha) }} · {{ g.franja_nombre }}
+          </li>
+        </ul>
+        <div v-if="avisoDesasignadas.guardias.length > 5" class="mt-1">
+          y {{ avisoDesasignadas.guardias.length - 5 }} más…
+        </div>
+      </v-alert>
+
+      <v-alert
+        v-if="avisoBloqueo"
+        id="aviso-bloqueo"
+        role="alert"
+        type="warning"
+        variant="tonal"
+        closable
+        class="mb-4 text-body-2"
+        @click:close="avisoBloqueo = null"
+      >
+        <div class="font-weight-medium mb-1">{{ avisoBloqueo.mensaje }}</div>
+        <ul class="pl-4 mb-0">
+          <li v-for="g in avisoBloqueo.guardias.slice(0, 5)" :key="g.guardia_id">
+            {{ fechaCorta(g.fecha) }} · {{ g.franja_nombre }}
+          </li>
+        </ul>
+        <div v-if="avisoBloqueo.guardias.length > 5" class="mt-1">
+          y {{ avisoBloqueo.guardias.length - 5 }} más…
+        </div>
+      </v-alert>
+
       <div aria-live="polite">
         <SkeletonList v-if="cargando" :filas="6" />
 
@@ -482,7 +530,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { cuadroApi } from '../api/cuadro'
 import { extractFieldErrors, normalizeApiError } from '../utils/error'
@@ -523,6 +571,8 @@ const editando = ref(null)
 const guardando = ref(false)
 const form = ref(emptyForm())
 const errores = ref({})
+const avisoDesasignadas = ref(null)
+const avisoBloqueo = ref(null)
 
 const dialogCuenta = ref(false)
 const cuentaCuadro = ref(null)
@@ -693,16 +743,37 @@ async function guardar() {
     if (form.value.telefono.trim()) payload.telefono = form.value.telefono.trim()
     if (form.value.observaciones.trim()) payload.observaciones = form.value.observaciones.trim()
 
+    let desasignadas = []
     if (editando.value) {
-      await cuadroApi.actualizar(editando.value.id, payload)
-      toast.success('Cuadro actualizado correctamente')
+      const { data } = await cuadroApi.actualizar(editando.value.id, payload)
+      desasignadas = data?.guardias_desasignadas ?? []
+      avisoBloqueo.value = null
+      if (desasignadas.length) {
+        avisoDesasignadas.value = {
+          nombre: `${data.nombre} ${data.apellidos}`.trim(),
+          guardias: desasignadas,
+        }
+      } else {
+        toast.success('Cuadro actualizado correctamente')
+      }
     } else {
       await cuadroApi.crear(payload)
       toast.success('Cuadro creado correctamente')
     }
     cerrarForm()
     await cargarCuadros()
+    if (desasignadas.length) {
+      await nextTick()
+      document
+        .getElementById('aviso-desasignadas')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
   } catch (e) {
+    const bloqueo = capturarBloqueo(e)
+    if (bloqueo) {
+      errores.value = { ...errores.value, _global: textoBloqueo(bloqueo) }
+      return
+    }
     const fieldErrors = extractFieldErrors(e)
     const hasFields = Object.keys(fieldErrors).some((k) => k !== '_global')
     if (hasFields) {
@@ -715,13 +786,63 @@ async function guardar() {
   }
 }
 
+function fechaCorta(fecha) {
+  if (!fecha) return ''
+  const [anio, mes, dia] = String(fecha).split('-')
+  return `${dia}/${mes}/${anio}`
+}
+
+function capturarBloqueo(e) {
+  const detail = e?.response?.data?.detail
+  if (!detail || typeof detail !== 'object' || !Array.isArray(detail.guardias)) {
+    return null
+  }
+  const bloqueo = {
+    mensaje: detail.message || normalizeApiError(e, 'No se pudo completar el cambio'),
+    guardias: detail.guardias,
+  }
+  avisoDesasignadas.value = null
+  avisoBloqueo.value = bloqueo
+  return bloqueo
+}
+
+function textoBloqueo(bloqueo) {
+  const lista = bloqueo.guardias
+    .slice(0, 5)
+    .map((g) => `${fechaCorta(g.fecha)} (${g.franja_nombre || 'sin franja'})`)
+    .join(', ')
+  const extra = bloqueo.guardias.length > 5 ? ` y ${bloqueo.guardias.length - 5} más` : ''
+  return `${bloqueo.mensaje} Guardias: ${lista}${extra}.`
+}
+
 async function toggleEstado(cuadro) {
   try {
-    await cuadroApi.cambiarEstado(cuadro.id, !cuadro.activo)
-    toast.success(cuadro.activo ? 'Cuadro desactivado' : 'Cuadro activado')
+    const { data } = await cuadroApi.cambiarEstado(cuadro.id, !cuadro.activo)
+    const desasignadas = data?.guardias_desasignadas ?? []
+    avisoBloqueo.value = null
+    if (desasignadas.length) {
+      avisoDesasignadas.value = {
+        nombre: `${cuadro.nombre} ${cuadro.apellidos}`.trim(),
+        guardias: desasignadas,
+      }
+      await nextTick()
+      document
+        .getElementById('aviso-desasignadas')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    } else {
+      toast.success(cuadro.activo ? 'Cuadro desactivado' : 'Cuadro activado')
+    }
     await cargarCuadros()
   } catch (e) {
-    toast.error(normalizeApiError(e, 'Error al cambiar estado'))
+    const bloqueo = capturarBloqueo(e)
+    if (bloqueo) {
+      await nextTick()
+      document
+        .getElementById('aviso-bloqueo')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    } else {
+      toast.error(normalizeApiError(e, 'Error al cambiar estado'))
+    }
   }
 }
 

@@ -78,6 +78,7 @@ from app.schemas.cuadro import (
     CuadroUpdate,
     CuadroCambiarEstado,
     CuadroResponse,
+    CuadroCambioResponse,
     CuadroListResponse,
     PaginatedCuadro,
     CuadroCuentaResponse,

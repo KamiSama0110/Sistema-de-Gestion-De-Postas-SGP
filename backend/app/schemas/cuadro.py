@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator, StringConstraints
 
 from app.models.enums import SexoEnum
+from app.schemas.feriado import GuardiaDesasignada
 from app.utils.validators import (
     texto_opcional_no_vacio,
     normalizar_telefono,
@@ -109,6 +110,10 @@ class CuadroResponse(BaseModel):
     creado_en: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CuadroCambioResponse(CuadroResponse):
+    guardias_desasignadas: list[GuardiaDesasignada] = Field(default_factory=list)
 
 
 class CuadroListResponse(BaseModel):

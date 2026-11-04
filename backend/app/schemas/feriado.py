@@ -48,6 +48,7 @@ class FeriadoResponse(BaseModel):
     descripcion: str
     creado_en: datetime
     guardias_desasignadas: list[GuardiaDesasignada] = Field(default_factory=list)
+    guardias_aprobadas_afectadas: list[GuardiaDesasignada] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 
@@ -65,6 +66,7 @@ class FeriadosCargarResponse(BaseModel):
     creados: int
     omitidos: int
     guardias_desasignadas: list[GuardiaDesasignada] = Field(default_factory=list)
+    guardias_aprobadas_afectadas: list[GuardiaDesasignada] = Field(default_factory=list)
 
 
 class PaginatedFeriado(BaseModel):

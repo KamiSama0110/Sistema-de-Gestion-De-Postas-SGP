@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -5,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.asp import ASP
-from app.models.enums import EstadoASPEnum
+from app.models.enums import EstadoASPEnum, EstadoGuardiaEnum
+from app.models.guardia import Guardia
+from app.models.posta import Posta, TurnoPosta
 from app.schemas.asp import ASPCambiarEstado, ASPCreate, ASPUpdate
 from app.utils.sql import _escape_like
 
@@ -157,6 +161,38 @@ async def cambiar_estado_asp(
             detail=f"No se puede transicionar de '{asp.estado.value}' a '{datos.estado.value}'",
         )
 
+    guardias_afectadas: list[dict] = []
+    if datos.estado in (
+        EstadoASPEnum.suspendido,
+        EstadoASPEnum.baja_temporal,
+        EstadoASPEnum.baja_definitiva,
+    ):
+        resultado = await db.execute(
+            select(
+                Guardia.id,
+                Guardia.fecha,
+                TurnoPosta.nombre,
+                Posta.nombre,
+            )
+            .join(TurnoPosta, Guardia.turno_posta_id == TurnoPosta.id)
+            .join(Posta, TurnoPosta.posta_id == Posta.id)
+            .where(
+                Guardia.asp_id == asp.id,
+                Guardia.estado == EstadoGuardiaEnum.planificada,
+                Guardia.fecha >= date.today(),
+            )
+            .order_by(Guardia.fecha, TurnoPosta.nombre)
+        )
+        guardias_afectadas = [
+            {
+                "guardia_id": fila[0],
+                "fecha": fila[1],
+                "turno_nombre": fila[2],
+                "posta_nombre": fila[3],
+            }
+            for fila in resultado.all()
+        ]
+
     asp.estado = datos.estado
     if datos.observacion:
         asp.observaciones = (
@@ -166,4 +202,5 @@ async def cambiar_estado_asp(
         )
     await db.commit()
     await db.refresh(asp)
+    asp.guardias_afectadas = guardias_afectadas
     return asp

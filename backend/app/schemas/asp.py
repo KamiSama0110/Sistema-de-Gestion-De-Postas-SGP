@@ -170,6 +170,17 @@ class ASPResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class GuardiaAfectada(BaseModel):
+    guardia_id: int
+    fecha: date
+    turno_nombre: str
+    posta_nombre: str
+
+
+class ASPCambiarEstadoResponse(ASPResponse):
+    guardias_afectadas: list[GuardiaAfectada] = Field(default_factory=list)
+
+
 class ASPListResponse(BaseModel):
     id: int
     ci: str

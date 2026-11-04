@@ -57,6 +57,33 @@
         </v-btn>
       </div>
 
+      <v-alert
+        v-if="avisoGuardias"
+        id="aviso-guardias"
+        type="warning"
+        variant="tonal"
+        closable
+        class="mb-4 text-body-2"
+        @click:close="avisoGuardias = null"
+      >
+        <div class="font-weight-medium mb-1">
+          {{ avisoGuardias.nombre }} pasó a {{ avisoGuardias.estado }}.
+          {{
+            avisoGuardias.guardias.length === 1
+              ? '1 guardia futura sigue planificada'
+              : `${avisoGuardias.guardias.length} guardias futuras siguen planificadas`
+          }}.
+        </div>
+        <ul class="pl-4 mb-0">
+          <li v-for="g in avisoGuardias.guardias.slice(0, 5)" :key="g.guardia_id">
+            {{ displayFecha(g.fecha) }} · {{ g.turno_nombre }} · {{ g.posta_nombre }}
+          </li>
+        </ul>
+        <div v-if="avisoGuardias.guardias.length > 5" class="mt-1">
+          y {{ avisoGuardias.guardias.length - 5 }} más…
+        </div>
+      </v-alert>
+
       <div aria-live="polite">
         <SkeletonList v-if="cargando" :filas="6" />
 
@@ -508,7 +535,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { aspApi } from '../api/asp'
 import { cargoApi } from '../api/cargo'
@@ -574,6 +601,7 @@ const fichaAsp = ref(null)
 
 const dialogEstado = ref(false)
 const aspEstado = ref(null)
+const avisoGuardias = ref(null)
 const guardandoEstado = ref(false)
 const estadoForm = ref({ estado: null, observacion: '' })
 const erroresEstado = ref({})
@@ -979,9 +1007,24 @@ async function confirmarEstado() {
   try {
     const payload = { estado: estadoForm.value.estado }
     if (estadoForm.value.observacion.trim()) payload.observacion = estadoForm.value.observacion.trim()
-    await aspApi.cambiarEstado(aspEstado.value.id, payload)
-    toast.success('Estado actualizado correctamente')
-    cerrarEstado()
+    const { data } = await aspApi.cambiarEstado(aspEstado.value.id, payload)
+    const guardias = data?.guardias_afectadas ?? []
+    if (guardias.length > 0) {
+      avisoGuardias.value = {
+        nombre: `${aspEstado.value.nombre} ${aspEstado.value.apellidos}`.trim(),
+        estado: estadoLabel(payload.estado),
+        guardias,
+      }
+      cerrarEstado()
+      await nextTick()
+      document
+        .getElementById('aviso-guardias')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    } else {
+      avisoGuardias.value = null
+      toast.success('Estado actualizado correctamente')
+      cerrarEstado()
+    }
     await cargarAsps()
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cambiar estado'))
@@ -991,6 +1034,7 @@ async function confirmarEstado() {
 }
 
 watch(filtroEstado, () => {
+  avisoGuardias.value = null
   pagina.value = 1
   cargarAsps()
 })

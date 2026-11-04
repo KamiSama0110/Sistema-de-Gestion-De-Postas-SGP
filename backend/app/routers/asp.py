@@ -10,6 +10,7 @@ from app.schemas.asp import (
     ASPCreate,
     ASPUpdate,
     ASPCambiarEstado,
+    ASPCambiarEstadoResponse,
     ASPResponse,
     PaginatedASP,
 )
@@ -58,7 +59,7 @@ async def actualizar_asp(
     return await asp_service.actualizar_asp(db, asp_id, datos)
 
 
-@router.patch("/{asp_id}/estado", response_model=ASPResponse)
+@router.patch("/{asp_id}/estado", response_model=ASPCambiarEstadoResponse)
 async def cambiar_estado(
     asp_id: IdPath,
     datos: ASPCambiarEstado,

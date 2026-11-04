@@ -10,6 +10,8 @@ from app.schemas.asp import (
     ASPCreate,
     ASPUpdate,
     ASPCambiarEstado,
+    ASPCambiarEstadoResponse,
+    GuardiaAfectada,
     ASPResponse,
     ASPListResponse,
     PaginatedASP,

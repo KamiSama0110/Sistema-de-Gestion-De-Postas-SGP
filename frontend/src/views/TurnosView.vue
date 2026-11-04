@@ -437,7 +437,8 @@ async function cargarPostasList() {
 }
 
 async function cargarTurnos() {
-  cargando.value = true
+  const primeraCarga = turnos.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroPostaId.value) params.posta_id = filtroPostaId.value
@@ -449,7 +450,7 @@ async function cargarTurnos() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar turnos'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

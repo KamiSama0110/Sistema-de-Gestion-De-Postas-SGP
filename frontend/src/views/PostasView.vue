@@ -667,7 +667,8 @@ function debounce(fn, ms) {
 const onBuscar = debounce(() => { pagina.value = 1; cargarPostas() }, 300)
 
 async function cargarPostas() {
-  cargando.value = true
+  const primeraCarga = postas.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroTipo.value !== 'todos') params.tipo = filtroTipo.value
@@ -679,7 +680,7 @@ async function cargarPostas() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar postas'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

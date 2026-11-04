@@ -289,7 +289,8 @@ const proximaGuardia = computed(() => {
 })
 
 async function cargarMes() {
-  cargando.value = true
+  const primeraCarga = guardiasMes.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const res = await miGuardiaApi.planificacion({ anio: anio.value, mes: mes.value })
     planId.value = res.data.plan_id
@@ -297,7 +298,7 @@ async function cargarMes() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar sus guardias'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

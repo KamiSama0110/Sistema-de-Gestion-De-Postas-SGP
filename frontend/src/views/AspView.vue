@@ -782,7 +782,8 @@ async function cargarCargos() {
 }
 
 async function cargarAsps() {
-  cargando.value = true
+  const primeraCarga = asps.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroEstado.value !== 'todos') params.estado = filtroEstado.value
@@ -793,7 +794,7 @@ async function cargarAsps() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar ASP'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

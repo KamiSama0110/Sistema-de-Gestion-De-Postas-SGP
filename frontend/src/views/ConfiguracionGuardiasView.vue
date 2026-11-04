@@ -462,7 +462,8 @@ const franjas = ref([])
 const cargandoFranjas = ref(true)
 
 async function cargarFranjas() {
-  cargandoFranjas.value = true
+  const primeraCarga = franjas.value.length === 0
+  if (primeraCarga) cargandoFranjas.value = true
   try {
     const res = await franjaApi.listar()
     franjas.value = (res.data || []).map((f) => ({
@@ -478,7 +479,7 @@ async function cargarFranjas() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar franjas'))
   } finally {
-    cargandoFranjas.value = false
+    if (primeraCarga) cargandoFranjas.value = false
   }
 }
 
@@ -586,14 +587,15 @@ function avisarGuardiasDesasignadas(guardias) {
 }
 
 async function cargarFeriados() {
-  cargandoFeriados.value = true
+  const primeraCarga = feriados.value.length === 0
+  if (primeraCarga) cargandoFeriados.value = true
   try {
     const res = await feriadoApi.listar({ anio: anio.value, page: 1, size: 100 })
     feriados.value = res.data.items || []
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar feriados'))
   } finally {
-    cargandoFeriados.value = false
+    if (primeraCarga) cargandoFeriados.value = false
   }
 }
 

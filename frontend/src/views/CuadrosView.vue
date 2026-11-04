@@ -580,7 +580,8 @@ const onBuscar = debounce(() => {
 }, 300)
 
 async function cargarCuadros() {
-  cargando.value = true
+  const primeraCarga = cuadros.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (buscar.value && buscar.value.trim()) params.q = buscar.value.trim()
@@ -594,7 +595,7 @@ async function cargarCuadros() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar cuadros'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

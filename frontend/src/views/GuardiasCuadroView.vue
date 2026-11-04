@@ -838,7 +838,8 @@ async function cargarCuadros() {
 }
 
 async function cargarGuardias() {
-  cargando.value = true
+  const primeraCarga = guardias.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (desde.value) params.desde = desde.value
@@ -854,7 +855,7 @@ async function cargarGuardias() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar las guardias'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

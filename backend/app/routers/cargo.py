@@ -5,7 +5,14 @@ from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.types import IdPath
 from app.models.usuario import Usuario
-from app.schemas.cargo import CargoCreate, CargoUpdate, CargoCambiarEstado, CargoResponse, PaginatedCargo
+from app.schemas.cargo import (
+    CargoCambiarEstado,
+    CargoCambiarEstadoResponse,
+    CargoCreate,
+    CargoUpdate,
+    CargoResponse,
+    PaginatedCargo,
+)
 from app.services import cargo_service
 
 router = APIRouter(prefix="/cargos", tags=["Cargos"])
@@ -51,7 +58,7 @@ async def actualizar_cargo(
     return await cargo_service.actualizar_cargo(db, cargo_id, datos)
 
 
-@router.patch("/{cargo_id}/estado", response_model=CargoResponse)
+@router.patch("/{cargo_id}/estado", response_model=CargoCambiarEstadoResponse)
 async def cambiar_estado(
     cargo_id: IdPath,
     datos: CargoCambiarEstado,

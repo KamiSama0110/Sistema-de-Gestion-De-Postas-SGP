@@ -272,7 +272,8 @@ const opciones = ref({ postas: [], asp: [] })
 const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamanoPagina.value)))
 
 async function cargarIncidencias() {
-  cargando.value = true
+  const primeraCarga = incidencias.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtros.value.desde) params.desde = filtros.value.desde
@@ -289,7 +290,7 @@ async function cargarIncidencias() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar las incidencias'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

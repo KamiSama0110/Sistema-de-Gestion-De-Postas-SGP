@@ -46,6 +46,24 @@
         </v-btn>
       </div>
 
+      <v-alert
+        v-if="avisoAfectados"
+        id="aviso-afectados"
+        type="warning"
+        variant="tonal"
+        closable
+        class="mb-4 text-body-2"
+        @click:close="avisoAfectados = null"
+      >
+        Se desactivó «{{ avisoAfectados.nombre }}».
+        {{
+          avisoAfectados.cantidad === 1
+            ? '1 ASP activo sigue asignado'
+            : `${avisoAfectados.cantidad} ASP activos siguen asignados`
+        }}
+        a este cargo.
+      </v-alert>
+
       <div aria-live="polite">
         <SkeletonList v-if="cargando" :filas="6" />
 
@@ -81,6 +99,7 @@
                 size="x-small"
                 variant="text"
                 :color="cargo.activo ? 'error' : 'success'"
+                :loading="estadoEnCurso.has(cargo.id)"
                 aria-label="Cambiar estado"
                 @click="toggleEstado(cargo)"
               >
@@ -138,6 +157,7 @@
                       size="small"
                       variant="text"
                       :color="cargo.activo ? 'error' : 'success'"
+                      :loading="estadoEnCurso.has(cargo.id)"
                       aria-label="Cambiar estado"
                       v-bind="props"
                       @click="toggleEstado(cargo)"
@@ -248,7 +268,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { cargoApi } from '../api/cargo'
 import { normalizeApiError } from '../utils/error'
@@ -265,6 +285,8 @@ const pagina = ref(1)
 const tamanoPagina = computed(() => mobile.value ? 10 : 20)
 const filtroActivos = ref('todos')
 const buscar = ref('')
+const avisoAfectados = ref(null)
+const estadoEnCurso = ref(new Set())
 
 const dialogAbierto = ref(false)
 const editando = ref(null)
@@ -279,8 +301,8 @@ const formValido = computed(() => {
   return n.length > 0 && n.length <= 100
 })
 
-async function cargarCargos() {
-  cargando.value = true
+async function cargarCargos({ silencioso = false } = {}) {
+  if (!silencioso) cargando.value = true
   try {
     const soloActivos = filtroActivos.value === 'activos'
     const res = await cargoApi.listar(soloActivos, pagina.value, tamanoPagina.value, buscar.value || null)
@@ -289,7 +311,7 @@ async function cargarCargos() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar cargos'))
   } finally {
-    cargando.value = false
+    if (!silencioso) cargando.value = false
   }
 }
 
@@ -346,7 +368,7 @@ async function guardar() {
       toast.success('Cargo creado correctamente')
     }
     cerrarDialog()
-    await cargarCargos()
+    await cargarCargos({ silencioso: true })
   } catch (e) {
     const detail = e?.response?.data?.detail
     if (typeof detail === 'string' && detail.toLowerCase().includes('nombre')) {
@@ -375,16 +397,34 @@ async function guardar() {
 }
 
 async function toggleEstado(cargo) {
+  if (estadoEnCurso.value.has(cargo.id)) return
+  estadoEnCurso.value.add(cargo.id)
+  const estabaActivo = cargo.activo
+  cargo.activo = !estabaActivo
   try {
-    await cargoApi.cambiarEstado(cargo.id, !cargo.activo)
-    toast.success(cargo.activo ? 'Cargo desactivado' : 'Cargo activado')
-    await cargarCargos()
+    const { data } = await cargoApi.cambiarEstado(cargo.id, !estabaActivo)
+    const afectados = data?.asp_activos_afectados ?? 0
+    if (estabaActivo && afectados > 0) {
+      avisoAfectados.value = { nombre: cargo.nombre, cantidad: afectados }
+      await nextTick()
+      document
+        .getElementById('aviso-afectados')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    } else {
+      avisoAfectados.value = null
+      toast.success(estabaActivo ? 'Cargo desactivado' : 'Cargo activado')
+    }
+    await cargarCargos({ silencioso: true })
   } catch (e) {
+    cargo.activo = estabaActivo
     toast.error(normalizeApiError(e, 'Error al cambiar estado'))
+  } finally {
+    estadoEnCurso.value.delete(cargo.id)
   }
 }
 
 watch(filtroActivos, () => {
+  avisoAfectados.value = null
   pagina.value = 1
   cargarCargos()
 })

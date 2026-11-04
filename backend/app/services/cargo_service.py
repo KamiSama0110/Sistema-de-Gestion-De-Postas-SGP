@@ -2,9 +2,15 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.asp import ASP
 from app.models.cargo import Cargo
+from app.models.enums import EstadoASPEnum
 from app.schemas.cargo import CargoCreate, CargoUpdate
 from app.utils.sql import _escape_like
+
+
+def _nombre_normalizado(nombre: str) -> str:
+    return nombre.strip().lower()
 
 
 async def get_cargo_by_id(db: AsyncSession, cargo_id: int) -> Cargo:
@@ -45,7 +51,11 @@ async def listar_cargos(
 
 
 async def crear_cargo(db: AsyncSession, datos: CargoCreate) -> Cargo:
-    existente = await db.execute(select(Cargo).where(Cargo.nombre == datos.nombre))
+    existente = await db.execute(
+        select(Cargo).where(
+            func.lower(func.trim(Cargo.nombre)) == _nombre_normalizado(datos.nombre)
+        )
+    )
     if existente.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -67,7 +77,8 @@ async def actualizar_cargo(
     if "nombre" in update_data:
         existente = await db.execute(
             select(Cargo).where(
-                Cargo.nombre == update_data["nombre"],
+                func.lower(func.trim(Cargo.nombre))
+                == _nombre_normalizado(update_data["nombre"]),
                 Cargo.id != cargo_id,
             )
         )
@@ -87,6 +98,21 @@ async def actualizar_cargo(
 async def cambiar_estado_cargo(db: AsyncSession, cargo_id: int, activo: bool) -> Cargo:
     cargo = await get_cargo_by_id(db, cargo_id)
     cargo.activo = activo
+
+    asp_activos_afectados = 0
+    if not activo:
+        asp_activos_afectados = (
+            await db.execute(
+                select(func.count())
+                .select_from(ASP)
+                .where(
+                    ASP.cargo_id == cargo.id,
+                    ASP.estado == EstadoASPEnum.activo,
+                )
+            )
+        ).scalar() or 0
+
     await db.commit()
     await db.refresh(cargo)
+    cargo.asp_activos_afectados = asp_activos_afectados
     return cargo

@@ -290,7 +290,8 @@ function planEstadoLabel(estado) {
 }
 
 async function cargarPlanes() {
-  cargando.value = true
+  const primeraCarga = planes.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroAnio.value) params.anio = filtroAnio.value
@@ -301,7 +302,7 @@ async function cargarPlanes() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar planes'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

@@ -49,6 +49,10 @@ class CargoResponse(CargoBase):
     model_config = {"from_attributes": True}
 
 
+class CargoCambiarEstadoResponse(CargoResponse):
+    asp_activos_afectados: int = 0
+
+
 class PaginatedCargo(BaseModel):
     total: int
     page: int

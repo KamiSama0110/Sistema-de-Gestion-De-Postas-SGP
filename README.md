@@ -90,7 +90,7 @@ El rol se lee de la base de datos en cada peticion (no del token).
 | `DEBUG` | `false` | Modo debug |
 | `DB_HOST` / `DB_PORT` / `DB_NAME` | `localhost` / `5432` / `sgp_db` | Conexion PostgreSQL |
 | `DB_USER` / `DB_PASSWORD` | `sgp_user` / `sgp_password` | Credenciales PostgreSQL |
-| `DATABASE_URL` | (vacio) | URL completa; si se define, tiene prioridad sobre `DB_*` |
+| `DATABASE_URL` | (vacio) | URL completa; si se define, tiene prioridad sobre `DB_*`. Formato: `postgresql://usuario:clave@host:5432/base`. Admite prefijo `postgres://` y convierte `sslmode=` a `ssl=` |
 | `SECRET_KEY` | (min 32) | Clave para firmar JWT |
 | `ALGORITHM` | `HS256` | Algoritmo JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Duracion del access token |
@@ -232,3 +232,9 @@ yarn format       # prettier
 - `alembic.ini` tiene una URL fija que se sobreescribe en tiempo de ejecucion desde `settings.DATABASE_URL_RESOLVED` (ver `alembic/env.py`).
 - Fechas sin zona horaria (`Date` / `DateTime`); los turnos que cruzan medianoche se calculan con helpers compartidos.
 - La auditoria de cambios se registra automaticamente via listener de SQLAlchemy (solo `novedad` esta excluida).
+
+## Limitaciones conocidas
+
+- La lista negra de tokens de acceso cerrados y el contador de intentos de login viven en memoria y se pierden al reiniciar el servidor. El token de acceso dura 30 minutos y los refresh tokens sí están en la base de datos.
+- Cambiar `ADMIN_PASSWORD` despues del primer arranque no actualiza la contraseña ya guardada: el admin inicial solo se crea si no existe.
+- Una guardia de cuadro cancelada sigue ocupando su slot y no se puede reasignar ni cuenta como cubierta; se retomara en una version posterior.

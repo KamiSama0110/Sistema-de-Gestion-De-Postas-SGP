@@ -25,9 +25,11 @@ class Settings(BaseSettings):
     def DATABASE_URL_RESOLVED(self) -> str:
         if self.DATABASE_URL:
             url = self.DATABASE_URL
-            if url.startswith("postgresql://"):
-                url = "postgresql+asyncpg://" + url[len("postgresql://") :]
-            return url
+            for prefijo in ("postgres://", "postgresql://"):
+                if url.startswith(prefijo):
+                    url = "postgresql+asyncpg://" + url[len(prefijo) :]
+                    break
+            return url.replace("sslmode=", "ssl=")
         user = quote_plus(self.DB_USER)
         password = quote_plus(self.DB_PASSWORD)
         return f"postgresql+asyncpg://{user}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"

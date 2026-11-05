@@ -274,6 +274,11 @@ async def actualizar_plan(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El plan está aprobado y no se puede modificar",
         )
+    if plan.estado == EstadoPlanGuardiaEnum.rechazado:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El plan está rechazado y no se puede modificar",
+        )
     if datos.observaciones is not None:
         plan.observaciones = datos.observaciones
     await db.commit()

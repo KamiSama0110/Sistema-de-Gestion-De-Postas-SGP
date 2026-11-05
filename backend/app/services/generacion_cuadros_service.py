@@ -64,9 +64,10 @@ def generar_asignaciones(
     slots: list[dict],
     historial: dict[int, date | None],
     semilla: int | None = None,
-) -> list[dict]:
+) -> tuple[list[dict], list[str]]:
     
     asignaciones: list[dict] = []
+    advertencias: list[str] = []
     for franja_id in sorted({s["franja_id"] for s in slots}):
         slots_franja = sorted(
             (s for s in slots if s["franja_id"] == franja_id),
@@ -76,9 +77,15 @@ def generar_asignaciones(
             continue
 
         sexo = slots_franja[0]["sexo_permitido"]
+        franja_nombre = slots_franja[0]["franja_nombre"]
         candidatos = _ordenar_candidatos(
             [c for c in cuadros if c["sexo"] == sexo], historial, semilla
         )
+        if not candidatos:
+            advertencias.append(
+                f"No hay cuadros activos de sexo {sexo.value} disponibles para la franja {franja_nombre}"
+            )
+            continue
         seleccionados = _seleccionar_slots(slots_franja, len(candidatos))
 
         # Viernes a domingo primero (solo sin marca); después lunes a
@@ -104,7 +111,7 @@ def generar_asignaciones(
                     "cuadro_id": candidato["cuadro_id"],
                 }
             )
-    return asignaciones
+    return asignaciones, advertencias
 
 
 async def generar_plan(
@@ -197,7 +204,9 @@ async def generar_plan(
         ).all()
     }
 
-    asignaciones = generar_asignaciones(cuadros, slots_libres, historial, datos.semilla)
+    asignaciones, advertencias_asignaciones = generar_asignaciones(
+        cuadros, slots_libres, historial, datos.semilla
+    )
 
     asignadas: set[tuple[date, int]] = set()
     creadas = 0
@@ -264,6 +273,7 @@ async def generar_plan(
         advertencias.append(
             f"{descartadas} asignaciones se descartaron por no superar la validación"
         )
+    advertencias.extend(advertencias_asignaciones)
 
     return {
         "plan_id": plan.id,

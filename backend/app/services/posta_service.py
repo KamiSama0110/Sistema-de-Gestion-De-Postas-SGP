@@ -197,7 +197,12 @@ async def listar_turnos(
 async def agregar_turno(
     db: AsyncSession, posta_id: int, datos: TurnoPostaCreate
 ) -> TurnoPosta:
-    await get_posta_by_id(db, posta_id)
+    posta = await get_posta_by_id(db, posta_id)
+    if not posta.activa:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La posta está inactiva",
+        )
     existente = await db.execute(
         select(TurnoPosta).where(
             TurnoPosta.posta_id == posta_id,

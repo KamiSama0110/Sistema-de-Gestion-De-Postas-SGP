@@ -208,6 +208,12 @@ async def crear_guardia(db: AsyncSession, datos: GuardiaCreate) -> Guardia:
             detail="El ASP no está activo",
         )
 
+    if datos.fecha > date.today() + timedelta(days=366):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La fecha de la guardia no puede superar un año desde hoy",
+        )
+
     turno = await get_turno_by_id(db, datos.turno_posta_id)
     if not turno.activo:
         raise HTTPException(
@@ -339,7 +345,7 @@ async def finalizar_guardia(
     )
     if not tiene_entrega:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Debe registrar la novedad de entrega-recepción antes de finalizar la guardia",
         )
 

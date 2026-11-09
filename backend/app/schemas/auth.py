@@ -1,26 +1,35 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
+
+from app.utils.validators import validar_password
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=1, max_length=100)
 
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(..., max_length=4096)
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str | None = Field(None, max_length=4096)
+
+
 class CambiarPasswordRequest(BaseModel):
-    password_actual: str
-    password_nueva: str
+    password_actual: str = Field(..., max_length=100)
+    password_nueva: str = Field(..., max_length=100)
 
     @field_validator("password_nueva")
     @classmethod
     def validar_password_nueva(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("La contraseña nueva debe tener al menos 8 caracteres")
-        return v
+        return validar_password(v)
 
 
 class MensajeResponse(BaseModel):

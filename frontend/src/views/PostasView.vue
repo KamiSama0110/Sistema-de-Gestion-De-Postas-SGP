@@ -20,53 +20,51 @@
           class="postas-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              :variant="filtroTipo === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroTipo === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroTipo = 'todos'"
-            >
-              Todos
-            </v-btn>
-            <v-btn
-              v-for="t in tipoItems"
-              :key="t.value"
-              :variant="filtroTipo === t.value ? 'flat' : 'outlined'"
-              :color="filtroTipo === t.value ? t.color : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroTipo = t.value"
-            >
-              {{ t.label }}
-            </v-btn>
-          </div>
-          <div class="d-flex ga-2 justify-center">
-            <v-btn
-              :variant="filtroActiva === 'activas' ? 'flat' : 'outlined'"
-              :color="filtroActiva === 'activas' ? 'success' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActiva = 'activas'"
-            >
-              Activas
-            </v-btn>
-            <v-btn
-              :variant="filtroActiva === 'todas' ? 'flat' : 'outlined'"
-              :color="filtroActiva === 'todas' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActiva = 'todas'"
-            >
-              Todas
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-btn
+          :variant="filtroTipo === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroTipo === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroTipo = 'todos'"
+        >
+          Todos
+        </v-btn>
+        <v-btn
+          v-for="t in tipoItems"
+          :key="t.value"
+          :variant="filtroTipo === t.value ? 'flat' : 'outlined'"
+          :color="filtroTipo === t.value ? t.color : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroTipo = t.value"
+        >
+          {{ t.label }}
+        </v-btn>
+        <v-divider vertical class="mx-1" />
+        <v-btn
+          :variant="filtroActiva === 'activas' ? 'flat' : 'outlined'"
+          :color="filtroActiva === 'activas' ? 'success' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActiva = 'activas'"
+        >
+          Activas
+        </v-btn>
+        <v-btn
+          :variant="filtroActiva === 'todas' ? 'flat' : 'outlined'"
+          :color="filtroActiva === 'todas' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActiva = 'todas'"
+        >
+          Todas
+        </v-btn>
       </div>
 
       <div aria-live="polite">
@@ -98,22 +96,27 @@
             <div class="d-flex align-center justify-space-between">
               <span class="text-body-2 text-medium-emphasis">{{ posta.total_turnos }} turno{{ posta.total_turnos !== 1 ? 's' : '' }}</span>
               <div class="d-flex ga-1">
-                <v-btn icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirFicha(posta)">
-                  <v-icon icon="mdi-eye-outline" size="16" />
-                </v-btn>
-                <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar posta" @click="abrirEditar(posta)">
-                  <v-icon icon="mdi-pencil-outline" size="16" />
-                </v-btn>
-                <v-btn
-                  icon
-                  size="x-small"
-                  variant="text"
-                  :color="posta.activa ? 'error' : 'success'"
-                  aria-label="Cambiar estado"
-                  @click="toggleActiva(posta)"
-                >
-                  <v-icon :icon="posta.activa ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
-                </v-btn>
+                <v-tooltip text="Ver detalle" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirFicha(posta)">
+                      <v-icon icon="mdi-eye-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Editar posta" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar posta" @click="abrirEditar(posta)">
+                      <v-icon icon="mdi-pencil-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip :text="posta.activa ? 'Desactivar posta' : 'Activar posta'" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" :color="posta.activa ? 'error' : 'success'" aria-label="Cambiar estado" @click="toggleActiva(posta)">
+                      <v-icon :icon="posta.activa ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
               </div>
             </div>
           </div>
@@ -199,7 +202,7 @@
     </v-card>
 
     <!-- Dialog ficha / detalle posta -->
-    <v-dialog v-model="dialogFicha" :max-width="mobile ? undefined : 700" :fullscreen="mobile">
+    <v-dialog v-model="dialogFicha" :max-width="xs ? undefined : 700" :fullscreen="xs">
       <v-card rounded="lg" v-if="fichaPosta">
         <v-card-title class="d-flex align-center justify-space-between pa-6 pb-2">
           <div class="d-flex align-center ga-3">
@@ -312,7 +315,7 @@
     </v-dialog>
 
     <!-- Dialog crear/editar posta -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 560" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 560" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editando ? 'Editar Posta' : 'Nueva Posta' }}
@@ -413,7 +416,7 @@
     </v-dialog>
 
     <!-- Dialog crear/editar turno -->
-    <v-dialog v-model="dialogTurno" :max-width="mobile ? undefined : 480" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogTurno" :max-width="xs ? undefined : 480" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editandoTurno ? 'Editar Turno' : 'Nuevo Turno' }}
@@ -573,7 +576,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const postas = ref([])
 const cargando = ref(true)
@@ -669,7 +672,8 @@ function debounce(fn, ms) {
 const onBuscar = debounce(() => { pagina.value = 1; cargarPostas() }, 300)
 
 async function cargarPostas() {
-  cargando.value = true
+  const primeraCarga = postas.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroTipo.value !== 'todos') params.tipo = filtroTipo.value
@@ -681,7 +685,7 @@ async function cargarPostas() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar postas'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

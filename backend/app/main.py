@@ -2,13 +2,14 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.core.limiter import limiter
 from app.services.auth_service import crear_admin_inicial
-from app.routers import auth, asp, cargo, posta, guardia, reporte, auditoria
+from app.routers import auth, asp, cargo, posta, guardia, reporte, reporte_cuadro, auditoria, cuadro, franja, feriado, plan, guardia_cuadro, incidencias_cuadro, mis_guardias
 import app.services.auditoria_service
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,27 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+MAX_BODY_BYTES = 2 * 1024 * 1024
+
+
+@app.middleware("http")
+async def limitar_tamano_cuerpo(request, call_next):
+    if request.method in {"POST", "PATCH", "PUT"}:
+        content_length = request.headers.get("content-length")
+        if content_length is not None:
+            try:
+                if int(content_length) > MAX_BODY_BYTES:
+                    return JSONResponse(
+                        status_code=413,
+                        content={
+                            "detail": "El cuerpo de la solicitud supera el tamaño máximo permitido"
+                        },
+                    )
+            except ValueError:
+                pass
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
@@ -57,7 +79,15 @@ app.include_router(cargo.router, prefix="/api/v1")
 app.include_router(posta.router, prefix="/api/v1")
 app.include_router(guardia.router, prefix="/api/v1")
 app.include_router(reporte.router, prefix="/api/v1")
+app.include_router(reporte_cuadro.router, prefix="/api/v1")
 app.include_router(auditoria.router, prefix="/api/v1")
+app.include_router(cuadro.router, prefix="/api/v1")
+app.include_router(franja.router, prefix="/api/v1")
+app.include_router(feriado.router, prefix="/api/v1")
+app.include_router(plan.router, prefix="/api/v1")
+app.include_router(guardia_cuadro.router, prefix="/api/v1")
+app.include_router(incidencias_cuadro.router, prefix="/api/v1")
+app.include_router(mis_guardias.router, prefix="/api/v1")
 
 
 @app.get("/")

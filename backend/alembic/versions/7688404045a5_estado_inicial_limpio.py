@@ -136,3 +136,14 @@ def downgrade() -> None:
     op.drop_table('posta')
     op.drop_table('cargo')
     # ### end Alembic commands ###
+
+    # Dropear tipos ENUM creados (para dejar la base limpia tras downgrade)
+    op.execute("DROP TYPE IF EXISTS novedad_severidad")
+    op.execute("DROP TYPE IF EXISTS novedad_tipo")
+    op.execute("DROP TYPE IF EXISTS estadoguardiaenum")
+    op.execute("DROP TYPE IF EXISTS severidadenum")
+    op.execute("DROP TYPE IF EXISTS tiponovedadenum")
+    op.execute("DROP TYPE IF EXISTS estadoaspenum")
+    op.execute("DROP TYPE IF EXISTS escolaridadenum")
+    op.execute("DROP TYPE IF EXISTS sexoenum")
+    op.execute("DROP TYPE IF EXISTS tipopostaenum")

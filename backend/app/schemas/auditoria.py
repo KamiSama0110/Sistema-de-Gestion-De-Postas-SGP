@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -10,15 +10,15 @@ class AuditLogResponse(BaseModel):
     entidad: str
     entidad_id: int
     accion: str
-    datos_anteriores: Optional[str] = None
-    datos_nuevos: Optional[str] = None
+    datos_anteriores: str | None = None
+    datos_nuevos: str | None = None
     model_config = {"from_attributes": True}
 
 
 class AuditDiffCampo(BaseModel):
     campo: str
-    antes: Optional[str] = None
-    despues: Optional[str] = None
+    antes: str | None = None
+    despues: str | None = None
 
 
 class AuditDiffResponse(BaseModel):

@@ -2,13 +2,15 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
+from app.core.types import IdPath
 from app.models.usuario import Usuario
 from app.models.enums import EstadoASPEnum
 from app.schemas.asp import (
     ASPCreate,
     ASPUpdate,
     ASPCambiarEstado,
+    ASPCambiarEstadoResponse,
     ASPResponse,
     PaginatedASP,
 )
@@ -24,7 +26,7 @@ async def listar_asp(
     estado: Optional[EstadoASPEnum] = None,
     buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await asp_service.listar_asp(db, page, size, estado, buscar)
 
@@ -33,35 +35,35 @@ async def listar_asp(
 async def crear_asp(
     datos: ASPCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await asp_service.crear_asp(db, datos)
 
 
 @router.get("/{asp_id}", response_model=ASPResponse)
 async def obtener_asp(
-    asp_id: int,
+    asp_id: IdPath,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await asp_service.get_asp_by_id(db, asp_id)
 
 
 @router.patch("/{asp_id}", response_model=ASPResponse)
 async def actualizar_asp(
-    asp_id: int,
+    asp_id: IdPath,
     datos: ASPUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await asp_service.actualizar_asp(db, asp_id, datos)
 
 
-@router.patch("/{asp_id}/estado", response_model=ASPResponse)
+@router.patch("/{asp_id}/estado", response_model=ASPCambiarEstadoResponse)
 async def cambiar_estado(
-    asp_id: int,
+    asp_id: IdPath,
     datos: ASPCambiarEstado,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await asp_service.cambiar_estado_asp(db, asp_id, datos)

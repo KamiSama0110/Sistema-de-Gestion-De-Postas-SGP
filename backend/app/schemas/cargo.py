@@ -1,30 +1,22 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
-
-def _validar_nombre_cargo(v):
-    if v is not None and isinstance(v, str) and not v.strip():
-        raise ValueError("El nombre del cargo no puede estar vacío")
-    return v
-
-
-def _validar_descripcion_cargo(v):
-    if v is not None and isinstance(v, str) and not v.strip():
-        raise ValueError("La descripción del cargo no puede estar vacía")
-    return v
+from app.utils.validators import texto_no_vacio, texto_opcional_no_vacio
 
 
 class CargoBase(BaseModel):
-    nombre: str
-    descripcion: Optional[str] = None
+    nombre: str = Field(..., min_length=1, max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=1000)
 
     @field_validator('nombre')
+    @classmethod
     def validar_nombre(cls, v):
-        return _validar_nombre_cargo(v)
+        return texto_no_vacio(v, "El nombre del cargo")
 
     @field_validator('descripcion')
+    @classmethod
     def validar_descripcion(cls, v):
-        return _validar_descripcion_cargo(v)
+        return texto_opcional_no_vacio(v, "La descripción del cargo")
 
 
 class CargoCreate(CargoBase):
@@ -32,16 +24,18 @@ class CargoCreate(CargoBase):
 
 
 class CargoUpdate(BaseModel):
-    nombre: Optional[str] = None
-    descripcion: Optional[str] = None
+    nombre: Optional[str] = Field(None, min_length=1, max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=1000)
 
     @field_validator('nombre')
+    @classmethod
     def validar_nombre(cls, v):
-        return _validar_nombre_cargo(v)
+        return texto_opcional_no_vacio(v, "El nombre del cargo")
 
     @field_validator('descripcion')
+    @classmethod
     def validar_descripcion(cls, v):
-        return _validar_descripcion_cargo(v)
+        return texto_opcional_no_vacio(v, "La descripción del cargo")
 
 
 class CargoCambiarEstado(BaseModel):
@@ -53,6 +47,10 @@ class CargoResponse(CargoBase):
     activo: bool
 
     model_config = {"from_attributes": True}
+
+
+class CargoCambiarEstadoResponse(CargoResponse):
+    asp_activos_afectados: int = 0
 
 
 class PaginatedCargo(BaseModel):

@@ -25,9 +25,9 @@
           prepend-icon="mdi-home"
           block
           :elevation="0"
-          :to="auth.isAuthenticated ? { name: 'dashboard' } : { name: 'login' }"
+          :to="auth.isAuthenticated() ? { name: 'dashboard' } : { name: 'login' }"
         >
-          {{ auth.isAuthenticated ? 'Ir al dashboard' : 'Ir al login' }}
+          {{ auth.isAuthenticated() ? 'Ir al dashboard' : 'Ir al login' }}
         </v-btn>
         <v-btn
           variant="outlined"
@@ -51,7 +51,7 @@ const router = useRouter()
 const auth = useAuthStore()
 
 function destino() {
-  return auth.isAuthenticated ? { name: 'dashboard' } : { name: 'login' }
+  return auth.isAuthenticated() ? { name: 'dashboard' } : { name: 'login' }
 }
 
 function volver() {

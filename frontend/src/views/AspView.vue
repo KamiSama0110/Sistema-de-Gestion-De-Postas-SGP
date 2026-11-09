@@ -20,43 +20,69 @@
           class="asp-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              :variant="filtroEstado === 'activo' ? 'flat' : 'outlined'"
-              :color="filtroEstado === 'activo' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="cambiarFiltro('activo')"
-            >
-              Activos
-            </v-btn>
-            <v-btn
-              v-for="est in estadosDisponibles"
-              :key="est.value"
-              :variant="filtroEstado === est.value ? 'flat' : 'outlined'"
-              :color="filtroEstado === est.value ? est.color : 'default'"
-              size="small"
-              class="text-none"
-              @click="cambiarFiltro(est.value)"
-            >
-              {{ est.label }}
-            </v-btn>
-            <v-btn
-              :variant="filtroEstado === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroEstado === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="cambiarFiltro('todos')"
-            >
-              Todos
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
       </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-btn
+          :variant="filtroEstado === 'activo' ? 'flat' : 'outlined'"
+          :color="filtroEstado === 'activo' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="cambiarFiltro('activo')"
+        >
+          Activos
+        </v-btn>
+        <v-btn
+          v-for="est in estadosDisponibles"
+          :key="est.value"
+          :variant="filtroEstado === est.value ? 'flat' : 'outlined'"
+          :color="filtroEstado === est.value ? est.color : 'default'"
+          size="small"
+          class="text-none"
+          @click="cambiarFiltro(est.value)"
+        >
+          {{ est.label }}
+        </v-btn>
+        <v-btn
+          :variant="filtroEstado === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroEstado === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="cambiarFiltro('todos')"
+        >
+          Todos
+        </v-btn>
+      </div>
+
+      <v-alert
+        v-if="avisoGuardias"
+        id="aviso-guardias"
+        type="warning"
+        variant="tonal"
+        closable
+        class="mb-4 text-body-2"
+        @click:close="avisoGuardias = null"
+      >
+        <div class="font-weight-medium mb-1">
+          {{ avisoGuardias.nombre }} pasó a {{ avisoGuardias.estado }}.
+          {{
+            avisoGuardias.guardias.length === 1
+              ? '1 guardia futura sigue planificada'
+              : `${avisoGuardias.guardias.length} guardias futuras siguen planificadas`
+          }}.
+        </div>
+        <ul class="pl-4 mb-0">
+          <li v-for="g in avisoGuardias.guardias.slice(0, 5)" :key="g.guardia_id">
+            {{ displayFecha(g.fecha) }} · {{ g.turno_nombre }} · {{ g.posta_nombre }}
+          </li>
+        </ul>
+        <div v-if="avisoGuardias.guardias.length > 5" class="mt-1">
+          y {{ avisoGuardias.guardias.length - 5 }} más…
+        </div>
+      </v-alert>
 
       <div aria-live="polite">
         <SkeletonList v-if="cargando" :filas="6" />
@@ -87,15 +113,27 @@
             <div class="d-flex align-center justify-space-between">
               <span class="text-body-2 text-medium-emphasis">{{ cargoMap[asp.cargo_id] || '—' }}</span>
               <div class="d-flex ga-1">
-                <v-btn icon size="x-small" variant="text" aria-label="Ver ficha" @click="abrirFicha(asp)">
-                  <v-icon icon="mdi-eye-outline" size="16" />
-                </v-btn>
-                <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar ASP" @click="abrirEditar(asp)">
-                  <v-icon icon="mdi-pencil-outline" size="16" />
-                </v-btn>
-                <v-btn icon size="x-small" variant="text" color="warning" aria-label="Cambiar estado" @click="abrirEstado(asp)">
-                  <v-icon icon="mdi-swap-horizontal" size="16" />
-                </v-btn>
+                <v-tooltip text="Ver ficha" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Ver ficha" @click="abrirFicha(asp)">
+                      <v-icon icon="mdi-eye-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Editar ASP" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar ASP" @click="abrirEditar(asp)">
+                      <v-icon icon="mdi-pencil-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Cambiar estado" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="warning" aria-label="Cambiar estado" @click="abrirEstado(asp)">
+                      <v-icon icon="mdi-swap-horizontal" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
               </div>
             </div>
           </div>
@@ -171,7 +209,7 @@
     </v-card>
 
     <!-- Dialog ficha ASP -->
-    <v-dialog v-model="dialogFicha" :max-width="mobile ? undefined : 600" :fullscreen="mobile">
+    <v-dialog v-model="dialogFicha" :max-width="xs ? undefined : 600" :fullscreen="xs">
       <v-card rounded="lg" v-if="fichaAsp">
         <v-card-title class="d-flex align-center justify-space-between pa-6 pb-2">
           <span class="text-h6 font-weight-bold">{{ fichaAsp.nombre }} {{ fichaAsp.apellidos }}</span>
@@ -253,7 +291,7 @@
     </v-dialog>
 
     <!-- Dialog crear/editar -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 640" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 640" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ tituloForm }}
@@ -275,7 +313,7 @@
             <v-row dense>
               <v-col cols="12" sm="6">
                 <v-text-field
-                  v-model="form.ci"
+                  :model-value="form.ci"
                   label="CI *"
                   placeholder="00000000000"
                   variant="outlined"
@@ -283,7 +321,11 @@
                   :error-messages="errores.ci"
                   maxlength="11"
                   counter="11"
+                  inputmode="numeric"
                   class="mb-1"
+                  @update:model-value="onCIInput"
+                  @keydown="bloquearTeclaCI"
+                  @paste="bloquearPasteCI"
                 />
               </v-col>
               <v-col cols="12" sm="6">
@@ -447,7 +489,7 @@
     </v-dialog>
 
     <!-- Dialog cambiar estado -->
-    <v-dialog v-model="dialogEstado" :max-width="mobile ? undefined : 420" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogEstado" :max-width="xs ? undefined : 420" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           Cambiar estado
@@ -505,16 +547,17 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { aspApi } from '../api/asp'
 import { cargoApi } from '../api/cargo'
 import { normalizeApiError } from '../utils/error'
+import { soloDigitos } from '../utils/formatters'
 import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const asps = ref([])
 const cargando = ref(true)
@@ -570,6 +613,7 @@ const fichaAsp = ref(null)
 
 const dialogEstado = ref(false)
 const aspEstado = ref(null)
+const avisoGuardias = ref(null)
 const guardandoEstado = ref(false)
 const estadoForm = ref({ estado: null, observacion: '' })
 const erroresEstado = ref({})
@@ -728,6 +772,27 @@ function inferFieldFromMessage(msg) {
   return null
 }
 
+function onCIInput(valor) {
+  form.value.ci = soloDigitos(valor, 11)
+}
+
+function bloquearTeclaCI(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  if (e.key.length === 1 && !/\d/.test(e.key)) e.preventDefault()
+}
+
+function bloquearPasteCI(e) {
+  const texto = e.clipboardData?.getData('text') ?? ''
+  if (/^\d*$/.test(texto)) return
+  e.preventDefault()
+  const digitos = soloDigitos(texto, 11)
+  if (!digitos) return
+  const el = e.target
+  const inicio = el.selectionStart ?? el.value.length
+  const fin = el.selectionEnd ?? inicio
+  form.value.ci = soloDigitos(el.value.slice(0, inicio) + digitos + el.value.slice(fin), 11)
+}
+
 function debounce(fn, ms) {
   let timer
   return (...args) => {
@@ -757,7 +822,8 @@ async function cargarCargos() {
 }
 
 async function cargarAsps() {
-  cargando.value = true
+  const primeraCarga = asps.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroEstado.value !== 'todos') params.estado = filtroEstado.value
@@ -768,7 +834,7 @@ async function cargarAsps() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar ASP'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 
@@ -953,9 +1019,24 @@ async function confirmarEstado() {
   try {
     const payload = { estado: estadoForm.value.estado }
     if (estadoForm.value.observacion.trim()) payload.observacion = estadoForm.value.observacion.trim()
-    await aspApi.cambiarEstado(aspEstado.value.id, payload)
-    toast.success('Estado actualizado correctamente')
-    cerrarEstado()
+    const { data } = await aspApi.cambiarEstado(aspEstado.value.id, payload)
+    const guardias = data?.guardias_afectadas ?? []
+    if (guardias.length > 0) {
+      avisoGuardias.value = {
+        nombre: `${aspEstado.value.nombre} ${aspEstado.value.apellidos}`.trim(),
+        estado: estadoLabel(payload.estado),
+        guardias,
+      }
+      cerrarEstado()
+      await nextTick()
+      document
+        .getElementById('aviso-guardias')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    } else {
+      avisoGuardias.value = null
+      toast.success('Estado actualizado correctamente')
+      cerrarEstado()
+    }
     await cargarAsps()
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cambiar estado'))
@@ -965,6 +1046,7 @@ async function confirmarEstado() {
 }
 
 watch(filtroEstado, () => {
+  avisoGuardias.value = null
   pagina.value = 1
   cargarAsps()
 })

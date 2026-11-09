@@ -1,13 +1,13 @@
 import json
 import logging
 from contextvars import ContextVar
-from datetime import date, time, datetime
+from datetime import date, datetime, time
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import inspect, event
-from sqlalchemy.orm import Session
+from sqlalchemy import event, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.models.auditoria import AuditLog
 
@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 current_user_var: ContextVar[str] = ContextVar("current_user", default="admin")
 
-_tablas_excluidas: set[str] = {"novedad"}
+_tablas_excluidas: set[str] = {"novedad", "refresh_token"}
+
+_columnas_sensibles: set[str] = {"hashed_password", "token_hash"}
 
 _objetos_nuevos_pendientes: list[Any] = []
 
@@ -38,6 +40,8 @@ def _serializar_objeto(obj: Any) -> str:
     mapper = inspect(obj).mapper
     datos: dict[str, Any] = {}
     for col in mapper.column_attrs:
+        if col.key in _columnas_sensibles:
+            continue
         valor = getattr(obj, col.key)
         datos[col.key] = _serializar_valor(valor)
     return json.dumps(datos, default=_serializar_valor)
@@ -62,10 +66,18 @@ def _before_flush(session, flush_context, instances):
         old: dict[str, Any] = {}
         new: dict[str, Any] = {}
         for attr in state.attrs:
+            if attr.key in _columnas_sensibles:
+                continue
             hist = attr.history
             if not hist.has_changes():
                 continue
-            old_value = hist.deleted[0] if hist.deleted else hist.unchanged[0] if hist.unchanged else None
+            old_value = (
+                hist.deleted[0]
+                if hist.deleted
+                else hist.unchanged[0]
+                if hist.unchanged
+                else None
+            )
             new_value = hist.added[0] if hist.added else getattr(obj, attr.key)
             old[attr.key] = _serializar_valor(old_value)
             new[attr.key] = _serializar_valor(new_value)

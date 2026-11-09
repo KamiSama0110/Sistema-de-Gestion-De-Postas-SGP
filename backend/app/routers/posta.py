@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
+from app.core.types import IdPath, IdQuery
 from app.models.usuario import Usuario
 from app.models.enums import TipoPostaEnum
 from app.schemas.posta import (
@@ -28,7 +29,7 @@ async def listar_postas(
     tipo: Optional[TipoPostaEnum] = None,
     buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.listar_postas(db, activa, tipo, buscar, page, size)
 
@@ -37,7 +38,7 @@ async def listar_postas(
 async def crear_posta(
     datos: PostaCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.crear_posta(db, datos)
 
@@ -46,69 +47,69 @@ async def crear_posta(
 async def listar_turnos(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
-    posta_id: Optional[int] = None,
+    posta_id: IdQuery = None,
     activo: Optional[bool] = None,
     buscar: Optional[str] = Query(None, max_length=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.listar_turnos(db, page, size, posta_id, activo, buscar)
 
 
 @router.get("/{posta_id}", response_model=PostaResponse)
 async def obtener_posta(
-    posta_id: int,
+    posta_id: IdPath,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.get_posta_by_id(db, posta_id)
 
 
 @router.patch("/{posta_id}", response_model=PostaResponse)
 async def actualizar_posta(
-    posta_id: int,
+    posta_id: IdPath,
     datos: PostaUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.actualizar_posta(db, posta_id, datos)
 
 
 @router.patch("/{posta_id}/estado", response_model=PostaResponse)
 async def cambiar_estado_posta(
-    posta_id: int,
+    posta_id: IdPath,
     activa: bool = Query(...),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.cambiar_estado_posta(db, posta_id, activa)
 
 
 @router.post("/{posta_id}/turnos", response_model=TurnoPostaResponse, status_code=201)
 async def agregar_turno(
-    posta_id: int,
+    posta_id: IdPath,
     datos: TurnoPostaCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.agregar_turno(db, posta_id, datos)
 
 
 @router.patch("/turnos/{turno_id}", response_model=TurnoPostaResponse)
 async def actualizar_turno(
-    turno_id: int,
+    turno_id: IdPath,
     datos: TurnoPostaUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.actualizar_turno(db, turno_id, datos)
 
 
 @router.patch("/turnos/{turno_id}/estado", response_model=TurnoPostaResponse)
 async def cambiar_estado_turno(
-    turno_id: int,
+    turno_id: IdPath,
     activo: bool = Query(...),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await posta_service.cambiar_estado_turno(db, turno_id, activo)

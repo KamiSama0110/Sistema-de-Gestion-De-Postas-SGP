@@ -1,5 +1,6 @@
 <template>
-  <a href="#main-content" class="sgp-skip-link">Saltar al contenido</a>
+  <div class="sgp-app-layout">
+    <a href="#main-content" class="sgp-skip-link">Saltar al contenido</a>
 
   <v-navigation-drawer
     v-model="drawer"
@@ -24,36 +25,47 @@
     <v-divider v-if="!isRail" class="mx-3 mb-2" />
 
     <!-- Rail mode: icon buttons -->
-    <div v-if="isRail" class="d-flex flex-column align-center ga-1 py-2">
-      <v-tooltip v-for="item in navItems" :key="item.to" :text="item.label" location="end">
-        <template #activator="{ props: tipProps }">
-          <v-btn
-            v-bind="tipProps"
-            :to="item.to"
-            icon
-            size="small"
-            variant="text"
-            :color="isActive(item.to) ? 'primary' : undefined"
-            :class="{ 'sgp-nav-active-rail': isActive(item.to) }"
-            :aria-label="item.label"
-          >
-            <v-icon :icon="item.icon" size="20" />
-          </v-btn>
-        </template>
-      </v-tooltip>
+    <div v-if="isRail" class="d-flex flex-column align-center py-2">
+      <template v-for="(group, gi) in navGroupsVisibles" :key="group.label">
+        <v-divider v-if="gi > 0 && group.mostrarCabecera" class="my-2" style="width: 32px" />
+        <div class="d-flex flex-column align-center ga-1">
+          <v-tooltip v-for="item in group.items" :key="item.to" :text="item.label" location="end">
+            <template #activator="{ props: tipProps }">
+              <v-btn
+                v-bind="tipProps"
+                :to="item.to"
+                icon
+                size="small"
+                variant="text"
+                :color="isActive(item.to) ? 'primary' : undefined"
+                :class="{ 'sgp-nav-active-rail': isActive(item.to) }"
+                :aria-label="item.label"
+              >
+                <v-icon :icon="item.icon" size="20" />
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </div>
+      </template>
     </div>
 
     <!-- Expanded mode: standard list -->
     <v-list v-else nav density="comfortable" class="px-2" active-class="sgp-nav-active" aria-label="Navegación principal">
-      <v-list-item
-        v-for="item in navItems"
-        :key="item.to"
-        :to="item.to"
-        :prepend-icon="item.icon"
-        :title="item.label"
-        rounded="lg"
-        :active="isActive(item.to)"
-      />
+      <template v-for="(group, gi) in navGroupsVisibles" :key="group.label">
+        <v-divider v-if="gi > 0 && group.mostrarCabecera" class="mx-3 mb-1" />
+        <v-list-subheader v-if="group.mostrarCabecera" class="sgp-nav-header">
+          {{ group.label }}
+        </v-list-subheader>
+        <v-list-item
+          v-for="item in group.items"
+          :key="item.to"
+          :to="item.to"
+          :prepend-icon="item.icon"
+          :title="item.label"
+          rounded="lg"
+          :active="isActive(item.to)"
+        />
+      </template>
     </v-list>
 
     <template #append>
@@ -116,6 +128,19 @@
         <v-icon size="16" icon="mdi-calendar-clock-outline" />
         <span>{{ now }}</span>
       </div>
+      <div class="d-flex align-center ga-2 mr-2">
+        <span class="text-body-2 font-weight-medium d-none d-sm-inline text-truncate">{{
+          auth.nombreMostrado
+        }}</span>
+        <v-chip
+          size="small"
+          variant="tonal"
+          :color="auth.esAdmin ? 'primary' : 'secondary'"
+          :prepend-icon="auth.esAdmin ? 'mdi-shield-account-outline' : 'mdi-account-outline'"
+        >
+          {{ auth.esAdmin ? 'Administrador' : 'Cuadro' }}
+        </v-chip>
+      </div>
     </v-app-bar>
 
     <v-container fluid id="main-content" tabindex="-1" class="pa-4 pa-sm-6">
@@ -125,7 +150,25 @@
         </Transition>
       </RouterView>
     </v-container>
-  </v-main>
+    </v-main>
+
+    <v-dialog v-model="logoutDialog" max-width="400">
+      <v-card class="pa-sm-5 pa-3">
+        <v-card-title class="d-flex align-center ga-2 text-subtitle-1 font-weight-bold">
+          <v-icon color="error">mdi-logout</v-icon>
+          Cerrar sesión
+        </v-card-title>
+        <v-card-text class="text-body-2 text-medium-emphasis">
+          ¿Seguro que deseas cerrar la sesión? Deberás iniciar sesión nuevamente.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="logoutDialog = false">Cancelar</v-btn>
+          <v-btn color="error" :loading="logoutLoading" @click="confirmLogout">Sí, salir</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script setup>
@@ -162,24 +205,58 @@ onUnmounted(() => {
 
 const isRail = computed(() => !mobile.value && rail.value)
 
-const navItems = [
-  { to: '/', icon: 'mdi-view-dashboard-outline', label: 'Dashboard' },
-  { to: '/asp', icon: 'mdi-account-group-outline', label: 'ASP' },
-  { to: '/cargos', icon: 'mdi-card-account-details-outline', label: 'Cargos' },
-  { to: '/turnos', icon: 'mdi-clock-outline', label: 'Turnos' },
-  { to: '/postas', icon: 'mdi-office-building-outline', label: 'Postas' },
-  { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias' },
-  { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes' },
+const navGroups = [
+  {
+    label: 'General',
+    items: [{ to: '/', icon: 'mdi-view-dashboard-outline', label: 'Dashboard', roles: ['admin'] }],
+  },
+  {
+    label: 'Operación ASP',
+    items: [
+      { to: '/cargos', icon: 'mdi-card-account-details-outline', label: 'Cargos', roles: ['admin'] },
+      { to: '/postas', icon: 'mdi-office-building-outline', label: 'Postas', roles: ['admin'] },
+      { to: '/turnos', icon: 'mdi-clock-outline', label: 'Turnos', roles: ['admin'] },
+      { to: '/asp', icon: 'mdi-account-group-outline', label: 'ASP', roles: ['admin'] },
+      { to: '/guardias', icon: 'mdi-shield-check-outline', label: 'Guardias', roles: ['admin'] },
+      { to: '/reportes', icon: 'mdi-chart-box-outline', label: 'Reportes', roles: ['admin'] },
+    ],
+  },
+  {
+    label: 'Cuadros',
+    items: [
+      { to: '/cuadros', icon: 'mdi-account-tie-outline', label: 'Cuadros', roles: ['admin'] },
+      { to: '/configuracion-guardias', icon: 'mdi-tune-variant', label: 'Config. de guardias', roles: ['admin'] },
+      { to: '/planes-cuadro', icon: 'mdi-calendar-month-outline', label: 'Planificación de cuadros', roles: ['admin'] },
+      { to: '/operativo-cuadro', icon: 'mdi-clipboard-clock-outline', label: 'Guardias de cuadro', roles: ['admin'] },
+      { to: '/incidencias-cuadro', icon: 'mdi-clipboard-alert-outline', label: 'Incidencias de cuadros', roles: ['admin'] },
+      { to: '/reportes-cuadros', icon: 'mdi-file-chart-outline', label: 'Reportes de cuadros', roles: ['admin'] },
+    ],
+  },
+  {
+    label: 'Mis guardias',
+    items: [{ to: '/mis-guardias', icon: 'mdi-shield-account-outline', label: 'Mis guardias', roles: ['cuadro'] }],
+  },
 ]
 
+const navGroupsVisibles = computed(() =>
+  navGroups
+    .map((g) => {
+      const items = g.items.filter((i) => i.roles.includes(auth.rol))
+      return { label: g.label, items, mostrarCabecera: items.length > 1 }
+    })
+    .filter((g) => g.items.length > 0),
+)
+
+const navFiltrados = computed(() => navGroupsVisibles.value.flatMap((g) => g.items))
+
 const sectionLabel = computed(() => {
-  const item = navItems.find((n) => n.to === route.path)
+  const item = navFiltrados.value.find((n) => isActive(n.to))
   return item?.label || 'Panel'
 })
 
 function isActive(to) {
   if (to === '/') return route.path === '/'
-  return route.path.startsWith(to)
+  return route.path === to || route.path.startsWith(`${to}/`)
 }
 
 function toggleRail() {
@@ -199,18 +276,34 @@ watch(() => route.fullPath, () => {
   if (mobile.value) drawer.value = false
 })
 
-async function handleLogout() {
+const logoutDialog = ref(false)
+const logoutLoading = ref(false)
+
+function handleLogout() {
+  logoutDialog.value = true
+}
+
+async function confirmLogout() {
+  logoutLoading.value = true
   try {
     await auth.logout()
   } catch {
     // logout falló pero limpiamos estado local
   } finally {
+    logoutLoading.value = false
+    logoutDialog.value = false
     router.push({ name: 'login' })
   }
 }
 </script>
 
 <style>
+.sgp-app-layout {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .sgp-sidebar {
   border-right: 1px solid rgb(var(--v-border-color)) !important;
 }
@@ -218,6 +311,16 @@ async function handleLogout() {
 .sgp-nav-active {
   background-color: rgba(21, 101, 192, 0.08) !important;
   color: rgb(var(--v-theme-primary)) !important;
+}
+
+.sgp-nav-header {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.45);
+  height: 32px;
+  min-height: 32px;
 }
 
 .sgp-nav-active-rail {

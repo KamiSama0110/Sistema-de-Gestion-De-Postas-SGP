@@ -1,6 +1,7 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
 from urllib.parse import quote_plus
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -24,9 +25,11 @@ class Settings(BaseSettings):
     def DATABASE_URL_RESOLVED(self) -> str:
         if self.DATABASE_URL:
             url = self.DATABASE_URL
-            if url.startswith("postgresql://"):
-                url = "postgresql+asyncpg://" + url[len("postgresql://"):]
-            return url
+            for prefijo in ("postgres://", "postgresql://"):
+                if url.startswith(prefijo):
+                    url = "postgresql+asyncpg://" + url[len(prefijo) :]
+                    break
+            return url.replace("sslmode=", "ssl=")
         user = quote_plus(self.DB_USER)
         password = quote_plus(self.DB_PASSWORD)
         return f"postgresql+asyncpg://{user}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
@@ -34,7 +37,8 @@ class Settings(BaseSettings):
     # Seguridad
     SECRET_KEY: str = Field(..., min_length=32)
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_HOURS: int = 8
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     ADMIN_USERNAME: str
     ADMIN_PASSWORD: str = Field(..., min_length=8)
@@ -44,6 +48,9 @@ class Settings(BaseSettings):
 
     # Seed (para despliegues demo en Render)
     SEED_DB: bool = False
+
+    # Panel del cuadro
+    MAX_GUARDIAS_CUADRO_POR_MES: int = 1
 
 
 settings = Settings()

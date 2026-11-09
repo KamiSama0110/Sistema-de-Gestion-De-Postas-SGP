@@ -20,47 +20,44 @@
           class="turnos-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-select
-              v-model="filtroPostaId"
-              :items="postasList"
-              item-title="nombre"
-              item-value="id"
-              label="Posta"
-              variant="solo-filled"
-              density="compact"
-              hide-details
-              clearable
-              bg-color="grey-lighten-4"
-              class="turnos-posta-select"
-              @update:model-value="pagina = 1; cargarTurnos()"
-            />
-          </div>
-          <div class="d-flex ga-2 justify-center">
-            <v-btn
-              :variant="filtroActivo === 'activos' ? 'flat' : 'outlined'"
-              :color="filtroActivo === 'activos' ? 'success' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivo = 'activos'"
-            >
-              Activos
-            </v-btn>
-            <v-btn
-              :variant="filtroActivo === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroActivo === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivo = 'todos'"
-            >
-              Todos
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-select
+          v-model="filtroPostaId"
+          :items="postasList"
+          item-title="nombre"
+          item-value="id"
+          label="Posta"
+          variant="solo-filled"
+          density="compact"
+          hide-details
+          clearable
+          bg-color="grey-lighten-4"
+          class="turnos-posta-select"
+          @update:model-value="pagina = 1; cargarTurnos()"
+        />
+        <v-btn
+          :variant="filtroActivo === 'activos' ? 'flat' : 'outlined'"
+          :color="filtroActivo === 'activos' ? 'success' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivo = 'activos'"
+        >
+          Activos
+        </v-btn>
+        <v-btn
+          :variant="filtroActivo === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroActivo === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivo = 'todos'"
+        >
+          Todos
+        </v-btn>
       </div>
 
       <div aria-live="polite">
@@ -95,19 +92,20 @@
               <span class="ms-2">{{ turno.asp_requeridos }} ASP{{ turno.asp_requeridos > 1 ? 's' : '' }}</span>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar turno" @click="abrirEditar(turno)">
-                <v-icon icon="mdi-pencil-outline" size="16" />
-              </v-btn>
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                :color="turno.activo ? 'error' : 'success'"
-                aria-label="Cambiar estado"
-                @click="toggleActivo(turno)"
-              >
-                <v-icon :icon="turno.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
-              </v-btn>
+              <v-tooltip text="Editar turno" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar turno" @click="abrirEditar(turno)">
+                    <v-icon icon="mdi-pencil-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="turno.activo ? 'Desactivar turno' : 'Activar turno'" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" :color="turno.activo ? 'error' : 'success'" aria-label="Cambiar estado" @click="toggleActivo(turno)">
+                    <v-icon :icon="turno.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
             </div>
           </div>
         </div>
@@ -186,7 +184,7 @@
     </v-card>
 
     <!-- Dialog crear/editar turno -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 480" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 480" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editando ? 'Editar Turno' : 'Nuevo Turno' }}
@@ -358,7 +356,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const turnos = ref([])
 const cargando = ref(true)
@@ -440,7 +438,8 @@ async function cargarPostasList() {
 }
 
 async function cargarTurnos() {
-  cargando.value = true
+  const primeraCarga = turnos.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroPostaId.value) params.posta_id = filtroPostaId.value
@@ -452,7 +451,7 @@ async function cargarTurnos() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar turnos'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

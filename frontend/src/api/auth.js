@@ -4,6 +4,9 @@ export const authApi = {
   login(credentials) {
     return api.post('/auth/login', credentials)
   },
+  me() {
+    return api.get('/auth/me')
+  },
   logout(refreshToken) {
     return api.post('/auth/logout', refreshToken ? { refresh_token: refreshToken } : undefined)
   },

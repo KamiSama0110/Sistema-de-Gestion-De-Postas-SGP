@@ -3,14 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import date
 from app.core.database import get_db
-from app.routers.auth import get_current_user
+from app.core.security import require_admin
+from app.core.types import IdPath, IdQuery
 from app.models.usuario import Usuario
 from app.models.enums import EstadoGuardiaEnum
 from app.schemas.guardia import (
     GuardiaCreate,
     GuardiaUpdate,
     GuardiaResponse,
-    GuardiaListResponse,
     PaginatedGuardia,
     PaginatedNovedad,
     ConfirmarLlegadaRequest,
@@ -31,10 +31,10 @@ async def listar_guardias(
     size: int = Query(10, ge=1, le=100),
     fecha: Optional[date] = None,
     estado: Optional[EstadoGuardiaEnum] = None,
-    asp_id: Optional[int] = None,
-    posta_id: Optional[int] = None,
+    asp_id: IdQuery = None,
+    posta_id: IdQuery = None,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.listar_guardias(
         db, page, size, fecha, estado, asp_id, posta_id
@@ -45,36 +45,36 @@ async def listar_guardias(
 async def crear_guardia(
     datos: GuardiaCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.crear_guardia(db, datos)
 
 
 @router.get("/{guardia_id}", response_model=GuardiaResponse)
 async def obtener_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
 
 
 @router.patch("/{guardia_id}", response_model=GuardiaResponse)
 async def actualizar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: GuardiaUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.actualizar_guardia(db, guardia_id, datos)
 
 
 @router.patch("/{guardia_id}/confirmar-llegada", response_model=GuardiaResponse)
 async def confirmar_llegada(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: ConfirmarLlegadaRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.confirmar_llegada(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -82,10 +82,10 @@ async def confirmar_llegada(
 
 @router.patch("/{guardia_id}/finalizar", response_model=GuardiaResponse)
 async def finalizar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: FinalizarGuardiaRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.finalizar_guardia(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -93,10 +93,10 @@ async def finalizar_guardia(
 
 @router.patch("/{guardia_id}/ausente", response_model=GuardiaResponse)
 async def marcar_ausente(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: MarcarAusenteRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.marcar_ausente(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -104,10 +104,10 @@ async def marcar_ausente(
 
 @router.patch("/{guardia_id}/cancelar", response_model=GuardiaResponse)
 async def cancelar_guardia(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: CancelarGuardiaRequest,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     await guardia_service.cancelar_guardia(db, guardia_id, datos)
     return await guardia_service.get_guardia_con_tardanza(db, guardia_id)
@@ -115,20 +115,20 @@ async def cancelar_guardia(
 
 @router.post("/{guardia_id}/novedades", response_model=NovedadResponse, status_code=201)
 async def registrar_novedad(
-    guardia_id: int,
+    guardia_id: IdPath,
     datos: NovedadCreate,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.registrar_novedad(db, guardia_id, datos)
 
 
 @router.get("/{guardia_id}/novedades", response_model=PaginatedNovedad)
 async def listar_novedades(
-    guardia_id: int,
+    guardia_id: IdPath,
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(require_admin),
 ):
     return await guardia_service.listar_novedades(db, guardia_id, page, size)

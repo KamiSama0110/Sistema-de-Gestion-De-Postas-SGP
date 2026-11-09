@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { authApi } from '../api/auth'
 import { renovarSesion } from '../api/index'
 import {
@@ -14,7 +14,34 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(getAccessToken())
   const usuario = ref(null)
 
-  const isAuthenticated = computed(() => !!getAccessToken() || !!getRefreshToken())
+  const rol = computed(() => usuario.value?.rol || null)
+  const esAdmin = computed(() => rol.value === 'admin')
+  const esCuadro = computed(() => rol.value === 'cuadro')
+  const nombreMostrado = computed(() => {
+    const u = usuario.value
+    if (!u) return ''
+    if (u.cuadro) return `${u.cuadro.nombre} ${u.cuadro.apellidos}`.trim()
+    return u.username || ''
+  })
+
+  function isAuthenticated() {
+    return !!getAccessToken() || !!getRefreshToken()
+  }
+
+  async function cargarUsuario() {
+    try {
+      const { data } = await authApi.me()
+      usuario.value = data
+      return true
+    } catch (err) {
+      usuario.value = null
+      if (err?.response?.status === 401) {
+        token.value = null
+        clearTokens()
+      }
+      return false
+    }
+  }
 
   async function login(username, password) {
     const response = await authApi.login({ username, password })
@@ -24,6 +51,13 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = accessToken
     setAccessToken(accessToken)
     setRefreshToken(refreshToken)
+    const cargado = await cargarUsuario()
+    if (!cargado) {
+      token.value = null
+      usuario.value = null
+      clearTokens()
+      throw new Error('No se pudo obtener el perfil del usuario')
+    }
   }
 
   async function logout() {
@@ -53,5 +87,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { token, usuario, isAuthenticated, login, logout, refrescarSesion }
+  return {
+    token,
+    usuario,
+    rol,
+    esAdmin,
+    esCuadro,
+    nombreMostrado,
+    isAuthenticated,
+    cargarUsuario,
+    login,
+    logout,
+    refrescarSesion,
+  }
 })

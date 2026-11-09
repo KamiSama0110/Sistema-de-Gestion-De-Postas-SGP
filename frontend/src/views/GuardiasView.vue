@@ -20,49 +20,46 @@
           class="guardias-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-menu location="bottom start">
-              <template #activator="{ props: menuProps }">
-                <v-text-field
-                  :model-value="filtroFecha || ''"
-                  label="Fecha"
-                  readonly
-                  append-inner-icon="mdi-calendar"
-                  variant="solo-filled"
-                  density="compact"
-                  hide-details
-                  clearable
-                  bg-color="grey-lighten-4"
-                  class="guardias-fecha"
-                  v-bind="menuProps"
-                  @click:clear="filtroFecha = null; pagina = 1; cargarGuardias()"
-                />
-              </template>
-              <v-date-picker
-                v-model="fechaPicker"
-                color="primary"
-                @update:model-value="onFechaSelect"
-              />
-            </v-menu>
-          </div>
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              v-for="e in estadosItems"
-              :key="e.value"
-              :variant="filtroEstado === e.value ? 'flat' : 'outlined'"
-              :color="filtroEstado === e.value ? e.color : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroEstado = filtroEstado === e.value ? null : e.value"
-            >
-              {{ e.label }}
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-menu location="bottom start">
+          <template #activator="{ props: menuProps }">
+            <v-text-field
+              :model-value="filtroFecha || ''"
+              label="Fecha"
+              readonly
+              append-inner-icon="mdi-calendar"
+              variant="solo-filled"
+              density="compact"
+              hide-details
+              clearable
+              bg-color="grey-lighten-4"
+              class="guardias-fecha"
+              v-bind="menuProps"
+              @click:clear="filtroFecha = null; pagina = 1; cargarGuardias()"
+            />
+          </template>
+          <v-date-picker
+            v-model="fechaPicker"
+            color="primary"
+          />
+        </v-menu>
+        <v-divider vertical class="mx-1" />
+        <v-btn
+          v-for="e in estadosItems"
+          :key="e.value"
+          :variant="filtroEstado === e.value ? 'flat' : 'outlined'"
+          :color="filtroEstado === e.value ? e.color : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroEstado = filtroEstado === e.value ? null : e.value"
+        >
+          {{ e.label }}
+        </v-btn>
       </div>
 
       <div aria-live="polite">
@@ -99,9 +96,13 @@
               <span v-if="g.tardanza_minutos > 0" class="text-error font-weight-medium">+{{ g.tardanza_minutos }} min</span>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirDetalle(g)">
-                <v-icon icon="mdi-eye-outline" size="16" />
-              </v-btn>
+              <v-tooltip text="Ver detalle" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirDetalle(g)">
+                    <v-icon icon="mdi-eye-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
               <v-btn
                 v-if="g.estado === 'planificada'"
                 icon size="x-small" variant="text" color="primary"
@@ -254,7 +255,7 @@
     </v-card>
 
     <!-- Dialog detalle guardia -->
-    <v-dialog v-model="dialogDetalle" :max-width="mobile ? undefined : 650" :fullscreen="mobile">
+    <v-dialog v-model="dialogDetalle" :max-width="xs ? undefined : 650" :fullscreen="xs">
       <v-card rounded="lg" v-if="detalleGuardia">
         <v-card-title class="d-flex align-center justify-space-between pa-6 pb-2">
           <div class="d-flex align-center ga-3">
@@ -358,7 +359,7 @@
     </v-dialog>
 
     <!-- Dialog crear guardia -->
-    <v-dialog v-model="dialogForm" :max-width="mobile ? undefined : 520" :fullscreen="mobile" persistent scrollable>
+    <v-dialog v-model="dialogForm" :max-width="xs ? undefined : 520" :fullscreen="xs" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ editando ? 'Editar Guardia' : 'Nueva Guardia' }}
@@ -453,7 +454,7 @@
     </v-dialog>
 
     <!-- Dialog confirmar llegada -->
-    <v-dialog v-model="dialogConfirmar" :max-width="mobile ? undefined : 400" persistent>
+    <v-dialog v-model="dialogConfirmar" :max-width="xs ? undefined : 400" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Confirmar Llegada</v-card-title>
         <v-card-text class="pa-5">
@@ -513,7 +514,7 @@
     </v-dialog>
 
     <!-- Dialog finalizar guardia -->
-    <v-dialog v-model="dialogFinalizar" :max-width="mobile ? undefined : 480" persistent scrollable>
+    <v-dialog v-model="dialogFinalizar" :max-width="xs ? undefined : 480" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Finalizar Guardia</v-card-title>
         <v-card-text class="pa-5">
@@ -582,7 +583,7 @@
     </v-dialog>
 
     <!-- Dialog marcar ausente -->
-    <v-dialog v-model="dialogAusente" :max-width="mobile ? undefined : 480" persistent scrollable>
+    <v-dialog v-model="dialogAusente" :max-width="xs ? undefined : 480" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Marcar como Ausente</v-card-title>
         <v-card-text class="pa-5">
@@ -660,7 +661,7 @@
     </v-dialog>
 
     <!-- Dialog cancelar guardia -->
-    <v-dialog v-model="dialogCancelar" :max-width="mobile ? undefined : 480" persistent scrollable>
+    <v-dialog v-model="dialogCancelar" :max-width="xs ? undefined : 480" persistent scrollable>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Cancelar Guardia</v-card-title>
         <v-card-text class="pa-5">
@@ -716,7 +717,7 @@
     </v-dialog>
 
     <!-- Dialog registrar novedad -->
-    <v-dialog v-model="dialogNovedad" :max-width="mobile ? undefined : 480" persistent>
+    <v-dialog v-model="dialogNovedad" :max-width="xs ? undefined : 480" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">Registrar Novedad</v-card-title>
         <v-card-text class="pa-5">
@@ -795,7 +796,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 const route = useRoute()
 
 const guardias = ref([])
@@ -1041,7 +1042,8 @@ async function cargarListas() {
 }
 
 async function cargarGuardias() {
-  cargando.value = true
+  const primeraCarga = guardias.value.length === 0
+  if (primeraCarga) cargando.value = true
   try {
     const params = { page: pagina.value, size: tamanoPagina.value }
     if (filtroFecha.value) params.fecha = filtroFecha.value
@@ -1060,7 +1062,7 @@ async function cargarGuardias() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar guardias'))
   } finally {
-    cargando.value = false
+    if (primeraCarga) cargando.value = false
   }
 }
 

@@ -1,8 +1,9 @@
 function toLocalDate(value) {
   if (value instanceof Date) return value
-  let s = String(value)
-  if (typeof s === 'string' && !s.endsWith('Z') && !s.includes('+') && !s.endsWith('Z')) {
-    s += 'Z'
+  const s = String(value)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [year, month, day] = s.split('-').map(Number)
+    return new Date(year, month - 1, day)
   }
   return new Date(s)
 }
@@ -32,6 +33,10 @@ export function formatFechaHora(value) {
   const hours = String(d.getHours()).padStart(2, '0')
   const minutes = String(d.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+export function soloDigitos(value, maxLength = 11) {
+  return String(value ?? '').replace(/\D/g, '').slice(0, maxLength)
 }
 
 export function parseDateOnly(value) {

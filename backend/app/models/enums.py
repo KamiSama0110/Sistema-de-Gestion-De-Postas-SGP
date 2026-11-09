@@ -49,3 +49,23 @@ class SeveridadEnum(str, enum.Enum):
     media = "media"
     alta = "alta"
     critica = "critica"
+
+
+class RolEnum(str, enum.Enum):
+    admin = "admin"
+    cuadro = "cuadro"
+
+
+class EstadoPlanGuardiaEnum(str, enum.Enum):
+    borrador = "borrador"
+    pendiente_aprobacion = "pendiente_aprobacion"
+    aprobado = "aprobado"
+    rechazado = "rechazado"
+
+
+class EstadoGuardiaCuadroEnum(str, enum.Enum):
+    planificada = "planificada"
+    activa = "activa"
+    finalizada = "finalizada"
+    incumplida = "incumplida"
+    cancelada = "cancelada"

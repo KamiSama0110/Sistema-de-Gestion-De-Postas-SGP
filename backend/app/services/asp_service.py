@@ -1,12 +1,17 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
-from typing import Optional
-from app.models.asp import ASP
-from app.models.enums import EstadoASPEnum
-from app.schemas.asp import ASPCreate, ASPUpdate, ASPCambiarEstado
-from app.utils.sql import _escape_like
+from datetime import date
+
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.asp import ASP
+from app.models.enums import EstadoASPEnum, EstadoGuardiaEnum
+from app.models.guardia import Guardia
+from app.models.posta import Posta, TurnoPosta
+from app.schemas.asp import ASPCambiarEstado, ASPCreate, ASPUpdate
+from app.utils.sql import _escape_like
 
 TRANSICIONES_ASP = {
     "activo": {"baja_temporal", "baja_definitiva", "suspendido"},
@@ -35,9 +40,7 @@ def validar_relacion_fechas_asp(fecha_nacimiento, fecha_ingreso) -> None:
 
 async def get_asp_by_id(db: AsyncSession, asp_id: int) -> ASP:
     result = await db.execute(
-        select(ASP)
-        .options(selectinload(ASP.cargo))
-        .where(ASP.id == asp_id)
+        select(ASP).options(selectinload(ASP.cargo)).where(ASP.id == asp_id)
     )
     asp = result.scalar_one_or_none()
     if not asp:
@@ -48,7 +51,7 @@ async def get_asp_by_id(db: AsyncSession, asp_id: int) -> ASP:
     return asp
 
 
-async def get_asp_by_ci(db: AsyncSession, ci: str) -> Optional[ASP]:
+async def get_asp_by_ci(db: AsyncSession, ci: str) -> ASP | None:
     result = await db.execute(select(ASP).where(ASP.ci == ci))
     return result.scalar_one_or_none()
 
@@ -57,8 +60,8 @@ async def listar_asp(
     db: AsyncSession,
     page: int = 1,
     size: int = 20,
-    estado: Optional[EstadoASPEnum] = None,
-    buscar: Optional[str] = None,
+    estado: EstadoASPEnum | None = None,
+    buscar: str | None = None,
 ) -> dict:
     query = select(ASP)
 
@@ -91,6 +94,7 @@ async def crear_asp(db: AsyncSession, datos: ASPCreate) -> ASP:
         )
 
     from app.models.cargo import Cargo
+
     cargo_result = await db.execute(
         select(Cargo).where(Cargo.id == datos.cargo_id, Cargo.activo == True)
     )
@@ -102,7 +106,14 @@ async def crear_asp(db: AsyncSession, datos: ASPCreate) -> ASP:
 
     asp = ASP(**datos.model_dump())
     db.add(asp)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe un ASP con el CI {datos.ci}",
+        )
     await db.refresh(asp)
     return asp
 
@@ -111,12 +122,29 @@ async def actualizar_asp(db: AsyncSession, asp_id: int, datos: ASPUpdate) -> ASP
     asp = await get_asp_by_id(db, asp_id)
 
     update_data = datos.model_dump(exclude_unset=True)
+
+    if "ci" in update_data and update_data["ci"] != asp.ci:
+        existente = await get_asp_by_ci(db, update_data["ci"])
+        if existente and existente.id != asp_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe un ASP con el CI {update_data['ci']}",
+            )
+
     for campo, valor in update_data.items():
         setattr(asp, campo, valor)
 
     validar_relacion_fechas_asp(asp.fecha_nacimiento, asp.fecha_ingreso)
 
-    await db.commit()
+    ci_actual = asp.ci
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe un ASP con el CI {ci_actual}",
+        )
     await db.refresh(asp)
     return asp
 
@@ -133,6 +161,38 @@ async def cambiar_estado_asp(
             detail=f"No se puede transicionar de '{asp.estado.value}' a '{datos.estado.value}'",
         )
 
+    guardias_afectadas: list[dict] = []
+    if datos.estado in (
+        EstadoASPEnum.suspendido,
+        EstadoASPEnum.baja_temporal,
+        EstadoASPEnum.baja_definitiva,
+    ):
+        resultado = await db.execute(
+            select(
+                Guardia.id,
+                Guardia.fecha,
+                TurnoPosta.nombre,
+                Posta.nombre,
+            )
+            .join(TurnoPosta, Guardia.turno_posta_id == TurnoPosta.id)
+            .join(Posta, TurnoPosta.posta_id == Posta.id)
+            .where(
+                Guardia.asp_id == asp.id,
+                Guardia.estado == EstadoGuardiaEnum.planificada,
+                Guardia.fecha >= date.today(),
+            )
+            .order_by(Guardia.fecha, TurnoPosta.nombre)
+        )
+        guardias_afectadas = [
+            {
+                "guardia_id": fila[0],
+                "fecha": fila[1],
+                "turno_nombre": fila[2],
+                "posta_nombre": fila[3],
+            }
+            for fila in resultado.all()
+        ]
+
     asp.estado = datos.estado
     if datos.observacion:
         asp.observaciones = (
@@ -142,4 +202,5 @@ async def cambiar_estado_asp(
         )
     await db.commit()
     await db.refresh(asp)
+    asp.guardias_afectadas = guardias_afectadas
     return asp

@@ -1,21 +1,18 @@
 from datetime import time
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from app.models.enums import TipoPostaEnum
 
 
 class TurnoPostaBase(BaseModel):
-    nombre: str
+    nombre: str = Field(..., min_length=1, max_length=50)
     hora_inicio: time
     hora_fin: time
     asp_requeridos: int = 1
 
-    @field_validator("asp_requeridos")
-    @classmethod
-    def validar_asp_requeridos(cls, v: int) -> int:
-        if v < 1:
-            raise ValueError("El turno debe requerir al menos un ASP")
-        return v
+
+class TurnoPostaCreate(TurnoPostaBase):
+    asp_requeridos: int = Field(1, ge=1, le=100)
 
     @model_validator(mode="after")
     def validar_horas(self):
@@ -24,22 +21,11 @@ class TurnoPostaBase(BaseModel):
         return self
 
 
-class TurnoPostaCreate(TurnoPostaBase):
-    pass
-
-
 class TurnoPostaUpdate(BaseModel):
-    nombre: Optional[str] = None
+    nombre: Optional[str] = Field(None, min_length=1, max_length=50)
     hora_inicio: Optional[time] = None
     hora_fin: Optional[time] = None
-    asp_requeridos: Optional[int] = None
-
-    @field_validator("asp_requeridos")
-    @classmethod
-    def validar_asp_requeridos(cls, v):
-        if v is not None and v < 1:
-            raise ValueError("El turno debe requerir al menos un ASP")
-        return v
+    asp_requeridos: Optional[int] = Field(None, ge=1, le=100)
 
     @model_validator(mode="after")
     def validar_horas(self):
@@ -60,12 +46,12 @@ class TurnoPostaResponse(TurnoPostaBase):
 
 
 class PostaBase(BaseModel):
-    nombre: str
-    descripcion: Optional[str] = None
-    ubicacion: Optional[str] = None
+    nombre: str = Field(..., min_length=1, max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=2000)
+    ubicacion: Optional[str] = Field(None, max_length=255)
     tipo: TipoPostaEnum
-    observaciones: Optional[str] = None
-    
+    observaciones: Optional[str] = Field(None, max_length=2000)
+
     @field_validator("nombre")
     @classmethod
     def nombre_no_vacio(cls, v: str):
@@ -79,11 +65,11 @@ class PostaCreate(PostaBase):
 
 
 class PostaUpdate(BaseModel):
-    nombre: Optional[str] = None
-    descripcion: Optional[str] = None
-    ubicacion: Optional[str] = None
+    nombre: Optional[str] = Field(None, min_length=1, max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=2000)
+    ubicacion: Optional[str] = Field(None, max_length=255)
     tipo: Optional[TipoPostaEnum] = None
-    observaciones: Optional[str] = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
     @model_validator(mode="after")
     def validar_nombre_no_vacio(self):

@@ -1,20 +1,21 @@
 from datetime import date, datetime
 from pydantic import BaseModel, Field
 from typing import Optional
+from app.core.types import Id, IdOpcional
 from app.models.enums import EstadoGuardiaEnum, TipoNovedadEnum, SeveridadEnum
 
 
 class GuardiaCreate(BaseModel):
-    asp_id: int
-    turno_posta_id: int
+    asp_id: Id
+    turno_posta_id: Id
     fecha: date
-    observaciones: Optional[str] = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
 
 class GuardiaUpdate(BaseModel):
-    asp_id: Optional[int] = None
-    motivo_ausencia: Optional[str] = None
-    observaciones: Optional[str] = None
+    asp_id: IdOpcional = None
+    motivo_ausencia: Optional[str] = Field(None, max_length=200)
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
 
 class ConfirmarLlegadaRequest(BaseModel):
@@ -23,17 +24,17 @@ class ConfirmarLlegadaRequest(BaseModel):
 
 class FinalizarGuardiaRequest(BaseModel):
     hora_fin_real: datetime
-    observaciones: Optional[str] = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
 
 class MarcarAusenteRequest(BaseModel):
     motivo_ausencia: Optional[str] = Field(None, min_length=1, max_length=200)
-    observaciones: Optional[str] = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
 
 class CancelarGuardiaRequest(BaseModel):
     motivo: Optional[str] = Field(None, max_length=200)
-    observaciones: Optional[str] = None
+    observaciones: Optional[str] = Field(None, max_length=2000)
 
 
 class NovedadCreate(BaseModel):

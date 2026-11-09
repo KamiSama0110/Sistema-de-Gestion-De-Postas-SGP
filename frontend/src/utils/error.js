@@ -31,14 +31,31 @@ export function normalizeApiError(error, fallback = 'Ocurrio un error') {
   return fallback
 }
 
+function inferFieldFromMessage(msg) {
+  const lower = msg.toLowerCase()
+  if (/\bci\b/.test(lower) || lower.includes('cédula') || lower.includes('cedula') || lower.includes('dígito') || lower.includes('digito')) {
+    return 'ci'
+  }
+  if (lower.includes('contraseña') || lower.includes('contrasena') || lower.includes('password')) return 'password'
+  if (lower.includes('usuario') || lower.includes('username')) return 'username'
+  if (lower.includes('apellido')) return 'apellidos'
+  if (lower.includes('nombre')) return 'nombre'
+  if (lower.includes('cargo')) return 'cargo'
+  if (lower.includes('área') || /\barea\b/.test(lower)) return 'area'
+  if (lower.includes('teléfono') || lower.includes('telefono')) return 'telefono'
+  if (lower.includes('sexo')) return 'sexo'
+  if (lower.includes('observacion') || lower.includes('observación')) return 'observaciones'
+  if (lower.includes('fecha')) return 'fecha'
+  if (lower.includes('descripcion') || lower.includes('descripción')) return 'descripcion'
+  return null
+}
+
 export function extractFieldErrors(error) {
   const detail = error?.response?.data?.detail
   if (typeof detail === 'string') {
-    const lower = detail.toLowerCase()
-    if (lower.includes('ci') && (lower.includes('existe') || lower.includes('dígito'))) {
-      return { ci: detail }
-    }
-    return { _global: detail }
+    const msg = detail.replace(/^Value error,\s*/i, '')
+    const field = inferFieldFromMessage(msg)
+    return field ? { [field]: msg } : { _global: msg }
   }
   if (Array.isArray(detail)) {
     const fields = {}

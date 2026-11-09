@@ -30,6 +30,7 @@ class TurnoPosta(Base):
 
     __table_args__ = (
         CheckConstraint("asp_requeridos >= 1", name="ck_turno_asp_requeridos"),
+        CheckConstraint("hora_inicio <> hora_fin", name="ck_turno_horas_distintas"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -20,32 +20,49 @@
           class="cargos-search"
           @update:model-value="onBuscar"
         />
-        <div class="d-flex flex-column flex-sm-row align-sm-center ga-3">
-          <div class="d-flex flex-wrap ga-2 justify-center">
-            <v-btn
-              :variant="filtroActivos === 'activos' ? 'flat' : 'outlined'"
-              :color="filtroActivos === 'activos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivos = 'activos'"
-            >
-              Activos
-            </v-btn>
-            <v-btn
-              :variant="filtroActivos === 'todos' ? 'flat' : 'outlined'"
-              :color="filtroActivos === 'todos' ? 'primary' : 'default'"
-              size="small"
-              class="text-none"
-              @click="filtroActivos = 'todos'"
-            >
-              Todos
-            </v-btn>
-          </div>
-          <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
-            {{ total }} resultado{{ total !== 1 ? 's' : '' }}
-          </div>
+        <div v-if="total > 0" class="text-body-2 text-medium-emphasis text-center">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
         </div>
       </div>
+
+      <div class="d-flex flex-wrap align-center justify-center ga-2 mb-4">
+        <v-btn
+          :variant="filtroActivos === 'activos' ? 'flat' : 'outlined'"
+          :color="filtroActivos === 'activos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivos = 'activos'"
+        >
+          Activos
+        </v-btn>
+        <v-btn
+          :variant="filtroActivos === 'todos' ? 'flat' : 'outlined'"
+          :color="filtroActivos === 'todos' ? 'primary' : 'default'"
+          size="small"
+          class="text-none"
+          @click="filtroActivos = 'todos'"
+        >
+          Todos
+        </v-btn>
+      </div>
+
+      <v-alert
+        v-if="avisoAfectados"
+        id="aviso-afectados"
+        type="warning"
+        variant="tonal"
+        closable
+        class="mb-4 text-body-2"
+        @click:close="avisoAfectados = null"
+      >
+        Se desactivó «{{ avisoAfectados.nombre }}».
+        {{
+          avisoAfectados.cantidad === 1
+            ? '1 ASP activo sigue asignado'
+            : `${avisoAfectados.cantidad} ASP activos siguen asignados`
+        }}
+        a este cargo.
+      </v-alert>
 
       <div aria-live="polite">
         <SkeletonList v-if="cargando" :filas="6" />
@@ -74,19 +91,20 @@
               </v-chip>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar cargo" @click="abrirEditar(cargo)">
-                <v-icon icon="mdi-pencil-outline" size="16" />
-              </v-btn>
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                :color="cargo.activo ? 'error' : 'success'"
-                aria-label="Cambiar estado"
-                @click="toggleEstado(cargo)"
-              >
-                <v-icon :icon="cargo.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
-              </v-btn>
+              <v-tooltip text="Editar cargo" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar cargo" @click="abrirEditar(cargo)">
+                    <v-icon icon="mdi-pencil-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="cargo.activo ? 'Desactivar cargo' : 'Activar cargo'" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" :color="cargo.activo ? 'error' : 'success'" :loading="estadoEnCurso.has(cargo.id)" aria-label="Cambiar estado" @click="toggleEstado(cargo)">
+                    <v-icon :icon="cargo.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
             </div>
           </div>
         </div>
@@ -139,6 +157,7 @@
                       size="small"
                       variant="text"
                       :color="cargo.activo ? 'error' : 'success'"
+                      :loading="estadoEnCurso.has(cargo.id)"
                       aria-label="Cambiar estado"
                       v-bind="props"
                       @click="toggleEstado(cargo)"
@@ -179,7 +198,7 @@
       </div>
     </v-card>
 
-    <v-dialog v-model="dialogAbierto" :max-width="mobile ? undefined : 480" :fullscreen="mobile" persistent>
+    <v-dialog v-model="dialogAbierto" :max-width="xs ? undefined : 480" :fullscreen="xs" persistent>
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-5 pb-0">
           {{ tituloDialog }}
@@ -249,7 +268,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { cargoApi } from '../api/cargo'
 import { normalizeApiError } from '../utils/error'
@@ -257,7 +276,7 @@ import { useToast } from '../composables/useToast'
 import SkeletonList from '../components/SkeletonList.vue'
 
 const toast = useToast()
-const { mobile } = useDisplay()
+const { mobile, xs } = useDisplay()
 
 const cargos = ref([])
 const cargando = ref(true)
@@ -266,6 +285,8 @@ const pagina = ref(1)
 const tamanoPagina = computed(() => mobile.value ? 10 : 20)
 const filtroActivos = ref('todos')
 const buscar = ref('')
+const avisoAfectados = ref(null)
+const estadoEnCurso = ref(new Set())
 
 const dialogAbierto = ref(false)
 const editando = ref(null)
@@ -280,8 +301,8 @@ const formValido = computed(() => {
   return n.length > 0 && n.length <= 100
 })
 
-async function cargarCargos() {
-  cargando.value = true
+async function cargarCargos({ silencioso = false } = {}) {
+  if (!silencioso) cargando.value = true
   try {
     const soloActivos = filtroActivos.value === 'activos'
     const res = await cargoApi.listar(soloActivos, pagina.value, tamanoPagina.value, buscar.value || null)
@@ -290,7 +311,7 @@ async function cargarCargos() {
   } catch (e) {
     toast.error(normalizeApiError(e, 'Error al cargar cargos'))
   } finally {
-    cargando.value = false
+    if (!silencioso) cargando.value = false
   }
 }
 
@@ -347,7 +368,7 @@ async function guardar() {
       toast.success('Cargo creado correctamente')
     }
     cerrarDialog()
-    await cargarCargos()
+    await cargarCargos({ silencioso: true })
   } catch (e) {
     const detail = e?.response?.data?.detail
     if (typeof detail === 'string' && detail.toLowerCase().includes('nombre')) {
@@ -376,16 +397,34 @@ async function guardar() {
 }
 
 async function toggleEstado(cargo) {
+  if (estadoEnCurso.value.has(cargo.id)) return
+  estadoEnCurso.value.add(cargo.id)
+  const estabaActivo = cargo.activo
+  cargo.activo = !estabaActivo
   try {
-    await cargoApi.cambiarEstado(cargo.id, !cargo.activo)
-    toast.success(cargo.activo ? 'Cargo desactivado' : 'Cargo activado')
-    await cargarCargos()
+    const { data } = await cargoApi.cambiarEstado(cargo.id, !estabaActivo)
+    const afectados = data?.asp_activos_afectados ?? 0
+    if (estabaActivo && afectados > 0) {
+      avisoAfectados.value = { nombre: cargo.nombre, cantidad: afectados }
+      await nextTick()
+      document
+        .getElementById('aviso-afectados')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    } else {
+      avisoAfectados.value = null
+      toast.success(estabaActivo ? 'Cargo desactivado' : 'Cargo activado')
+    }
+    await cargarCargos({ silencioso: true })
   } catch (e) {
+    cargo.activo = estabaActivo
     toast.error(normalizeApiError(e, 'Error al cambiar estado'))
+  } finally {
+    estadoEnCurso.value.delete(cargo.id)
   }
 }
 
 watch(filtroActivos, () => {
+  avisoAfectados.value = null
   pagina.value = 1
   cargarCargos()
 })

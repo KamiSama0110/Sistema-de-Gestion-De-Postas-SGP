@@ -79,7 +79,7 @@
               :color="s.color"
               label
             >
-              {{ s.count }} {{ s.estado }}
+              {{ s.count }} {{ estadoLabel(s.estado) }}
             </v-chip>
           </div>
 
@@ -100,8 +100,8 @@
                 <td class="text-medium-emphasis">{{ g.posta_nombre }}</td>
                 <td class="text-medium-emphasis mono">{{ g.horario }}</td>
                 <td>
-                  <v-chip :color="estadoColor(g.estado)" size="x-small" variant="tonal" label>
-                    {{ g.estado }}
+                  <v-chip :color="estadoColor(g.estado)" size="x-small" variant="elevated" label class="font-weight-bold">
+                    {{ estadoLabel(g.estado) }}
                   </v-chip>
                 </td>
                 <td class="text-right">
@@ -134,8 +134,8 @@
                     <div class="text-caption text-medium-emphasis">{{ g.posta_nombre }}</div>
                   </div>
                 </div>
-                <v-chip :color="estadoColor(g.estado)" size="x-small" variant="tonal" label>
-                  {{ g.estado }}
+                <v-chip :color="estadoColor(g.estado)" size="x-small" variant="elevated" label class="font-weight-bold">
+                  {{ estadoLabel(g.estado) }}
                 </v-chip>
               </div>
               <div class="d-flex align-center justify-space-between mt-2">
@@ -270,14 +270,22 @@ const estadoSummary = computed(() => {
   }))
 })
 
+const ESTADOS = [
+  { valor: 'planificada', label: 'Planificada', color: 'blue' },
+  { valor: 'activa', label: 'Activa', color: 'success' },
+  { valor: 'finalizada', label: 'Finalizada', color: 'grey' },
+  { valor: 'ausente', label: 'Ausente', color: 'warning' },
+  { valor: 'cancelada', label: 'Cancelada', color: 'error' },
+]
+
+const ESTADO_POR_VALOR = Object.fromEntries(ESTADOS.map((e) => [e.valor, e]))
+
+function estadoLabel(estado) {
+  return ESTADO_POR_VALOR[estado]?.label || estado
+}
+
 function estadoColor(estado) {
-  const map = {
-    programada: 'grey',
-    activa: 'primary',
-    finalizada: 'success',
-    ausente: 'error',
-  }
-  return map[estado] || 'grey'
+  return ESTADO_POR_VALOR[estado]?.color || 'grey'
 }
 
 function buildPostaTurnoMap(turnos) {

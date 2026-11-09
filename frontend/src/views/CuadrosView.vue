@@ -151,22 +151,27 @@
                   </v-chip>
                 </div>
                 <div class="d-flex ga-1">
-                  <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar cuadro" @click="abrirEditar(cuadro)">
-                    <v-icon icon="mdi-pencil-outline" size="16" />
-                  </v-btn>
-                  <v-btn icon size="x-small" variant="text" aria-label="Cuenta de acceso" @click="abrirCuenta(cuadro)">
-                    <v-icon icon="mdi-account-key-outline" size="16" />
-                  </v-btn>
-                  <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    :color="cuadro.activo ? 'error' : 'success'"
-                    aria-label="Cambiar estado"
-                    @click="toggleEstado(cuadro)"
-                  >
-                    <v-icon :icon="cuadro.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
-                  </v-btn>
+                  <v-tooltip text="Editar cuadro" location="top">
+                    <template #activator="{ props: tipProps }">
+                      <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar cuadro" @click="abrirEditar(cuadro)">
+                        <v-icon icon="mdi-pencil-outline" size="16" />
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip text="Cuenta de acceso" location="top">
+                    <template #activator="{ props: tipProps }">
+                      <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Cuenta de acceso" @click="abrirCuenta(cuadro)">
+                        <v-icon icon="mdi-account-key-outline" size="16" />
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip :text="cuadro.activo ? 'Desactivar cuadro' : 'Activar cuadro'" location="top">
+                    <template #activator="{ props: tipProps }">
+                      <v-btn v-bind="tipProps" icon size="x-small" variant="text" :color="cuadro.activo ? 'error' : 'success'" aria-label="Cambiar estado" @click="toggleEstado(cuadro)">
+                        <v-icon :icon="cuadro.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
                 </div>
               </div>
             </div>

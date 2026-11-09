@@ -113,15 +113,27 @@
             <div class="d-flex align-center justify-space-between">
               <span class="text-body-2 text-medium-emphasis">{{ cargoMap[asp.cargo_id] || '—' }}</span>
               <div class="d-flex ga-1">
-                <v-btn icon size="x-small" variant="text" aria-label="Ver ficha" @click="abrirFicha(asp)">
-                  <v-icon icon="mdi-eye-outline" size="16" />
-                </v-btn>
-                <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar ASP" @click="abrirEditar(asp)">
-                  <v-icon icon="mdi-pencil-outline" size="16" />
-                </v-btn>
-                <v-btn icon size="x-small" variant="text" color="warning" aria-label="Cambiar estado" @click="abrirEstado(asp)">
-                  <v-icon icon="mdi-swap-horizontal" size="16" />
-                </v-btn>
+                <v-tooltip text="Ver ficha" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Ver ficha" @click="abrirFicha(asp)">
+                      <v-icon icon="mdi-eye-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Editar ASP" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar ASP" @click="abrirEditar(asp)">
+                      <v-icon icon="mdi-pencil-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Cambiar estado" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="warning" aria-label="Cambiar estado" @click="abrirEstado(asp)">
+                      <v-icon icon="mdi-swap-horizontal" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
               </div>
             </div>
           </div>

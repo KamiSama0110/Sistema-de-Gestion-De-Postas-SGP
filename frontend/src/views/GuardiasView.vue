@@ -96,9 +96,13 @@
               <span v-if="g.tardanza_minutos > 0" class="text-error font-weight-medium">+{{ g.tardanza_minutos }} min</span>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirDetalle(g)">
-                <v-icon icon="mdi-eye-outline" size="16" />
-              </v-btn>
+              <v-tooltip text="Ver detalle" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirDetalle(g)">
+                    <v-icon icon="mdi-eye-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
               <v-btn
                 v-if="g.estado === 'planificada'"
                 icon size="x-small" variant="text" color="primary"

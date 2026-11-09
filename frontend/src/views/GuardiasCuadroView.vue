@@ -154,13 +154,13 @@
                 <span v-if="g.fin_real" class="ml-3">Fin: {{ formatDateTime(g.fin_real) }}</span>
               </div>
               <div class="d-flex justify-end ga-1">
-                <v-btn
-                  icon size="x-small" variant="text"
-                  aria-label="Ver detalle"
-                  @click="abrirDetalle(g)"
-                >
-                  <v-icon icon="mdi-eye-outline" size="16" />
-                </v-btn>
+                <v-tooltip text="Ver detalle" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirDetalle(g)">
+                      <v-icon icon="mdi-eye-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
                 <v-btn
                   v-if="g.estado === 'planificada'"
                   icon size="x-small" variant="text" color="success"
@@ -624,7 +624,7 @@ const estadosItems = [
   { title: 'Cancelada', value: 'cancelada' },
 ]
 const estadosInfo = {
-  planificada: { color: 'info', label: 'Planificada', icon: 'mdi-calendar-clock' },
+  planificada: { color: 'blue', label: 'Planificada', icon: 'mdi-calendar-clock' },
   activa: { color: 'success', label: 'Activa', icon: 'mdi-shield-check' },
   finalizada: { color: 'grey', label: 'Finalizada', icon: 'mdi-check-bold' },
   incumplida: { color: 'error', label: 'Incumplida', icon: 'mdi-account-off' },

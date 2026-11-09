@@ -96,22 +96,27 @@
             <div class="d-flex align-center justify-space-between">
               <span class="text-body-2 text-medium-emphasis">{{ posta.total_turnos }} turno{{ posta.total_turnos !== 1 ? 's' : '' }}</span>
               <div class="d-flex ga-1">
-                <v-btn icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirFicha(posta)">
-                  <v-icon icon="mdi-eye-outline" size="16" />
-                </v-btn>
-                <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar posta" @click="abrirEditar(posta)">
-                  <v-icon icon="mdi-pencil-outline" size="16" />
-                </v-btn>
-                <v-btn
-                  icon
-                  size="x-small"
-                  variant="text"
-                  :color="posta.activa ? 'error' : 'success'"
-                  aria-label="Cambiar estado"
-                  @click="toggleActiva(posta)"
-                >
-                  <v-icon :icon="posta.activa ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
-                </v-btn>
+                <v-tooltip text="Ver detalle" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" aria-label="Ver detalle" @click="abrirFicha(posta)">
+                      <v-icon icon="mdi-eye-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Editar posta" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar posta" @click="abrirEditar(posta)">
+                      <v-icon icon="mdi-pencil-outline" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip :text="posta.activa ? 'Desactivar posta' : 'Activar posta'" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" icon size="x-small" variant="text" :color="posta.activa ? 'error' : 'success'" aria-label="Cambiar estado" @click="toggleActiva(posta)">
+                      <v-icon :icon="posta.activa ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
               </div>
             </div>
           </div>

@@ -14,7 +14,7 @@
           bg-color="grey-lighten-1"
           :aria-label="`${item.label}: ${item.value} (${Math.round(porcentaje(item))}%)`"
         />
-        <span class="grafico-barras-valor text-body-2 font-weight-medium">{{ item.value }}</span>
+        <span class="grafico-barras-valor text-body-2 font-weight-medium mono">{{ item.value }}</span>
       </div>
     </div>
   </div>
@@ -68,6 +68,10 @@ watch(() => props.items, lanzarAnimacion, { deep: true })
 .grafico-barras-valor {
   flex: 0 0 56px;
   text-align: right;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
 }
 
 :deep(.v-progress-linear__determinate) {

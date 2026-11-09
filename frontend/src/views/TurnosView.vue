@@ -92,19 +92,20 @@
               <span class="ms-2">{{ turno.asp_requeridos }} ASP{{ turno.asp_requeridos > 1 ? 's' : '' }}</span>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar turno" @click="abrirEditar(turno)">
-                <v-icon icon="mdi-pencil-outline" size="16" />
-              </v-btn>
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                :color="turno.activo ? 'error' : 'success'"
-                aria-label="Cambiar estado"
-                @click="toggleActivo(turno)"
-              >
-                <v-icon :icon="turno.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
-              </v-btn>
+              <v-tooltip text="Editar turno" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar turno" @click="abrirEditar(turno)">
+                    <v-icon icon="mdi-pencil-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="turno.activo ? 'Desactivar turno' : 'Activar turno'" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" :color="turno.activo ? 'error' : 'success'" aria-label="Cambiar estado" @click="toggleActivo(turno)">
+                    <v-icon :icon="turno.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
             </div>
           </div>
         </div>

@@ -19,7 +19,7 @@
           </div>
         </div>
         <div class="d-flex flex-column align-end ga-1">
-          <v-chip :color="estadoColor(proximaGuardia.estado)" variant="tonal" size="small" label class="font-weight-bold">
+          <v-chip :color="estadoColor(proximaGuardia.estado)" variant="elevated" size="small" label class="font-weight-bold">
             {{ estadoLabel(proximaGuardia.estado) }}
           </v-chip>
           <span class="text-body-2 text-medium-emphasis">{{ textoFaltante(proximaGuardia.fecha) }}</span>
@@ -94,7 +94,7 @@
                   </div>
                 </div>
               </div>
-              <v-chip :color="estadoColor(g.estado)" variant="tonal" size="small" label class="font-weight-bold">
+              <v-chip :color="estadoColor(g.estado)" variant="elevated" size="small" label class="font-weight-bold">
                 {{ estadoLabel(g.estado) }}
               </v-chip>
             </div>
@@ -130,15 +130,21 @@
                 <span>Solo en guardias activas o finalizadas o dentro de las 24 horas antes o después de la fecha de guardia</span>
               </v-tooltip>
 
-              <v-btn
-                variant="text"
-                size="small"
-                prepend-icon="mdi-clipboard-text-outline"
-                class="text-none"
-                @click="verIncidencias(g)"
-              >
-                Ver incidencias
-              </v-btn>
+              <v-tooltip text="Ver incidencias" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn
+                    v-bind="tipProps"
+                    variant="text"
+                    size="small"
+                    prepend-icon="mdi-clipboard-text-outline"
+                    class="text-none"
+                    aria-label="Ver incidencias"
+                    @click="verIncidencias(g)"
+                  >
+                    Ver incidencias
+                  </v-btn>
+                </template>
+              </v-tooltip>
             </div>
 
             <v-alert
@@ -215,11 +221,11 @@ const dialogIncidencias = ref(false)
 const guardiaAccion = ref(null)
 
 const estadosInfo = {
-  planificada: { color: 'info', label: 'Planificada' },
-  activa: { color: 'success', label: 'Activa' },
-  finalizada: { color: 'grey', label: 'Finalizada' },
-  incumplida: { color: 'error', label: 'Incumplida' },
-  cancelada: { color: 'error', label: 'Cancelada' },
+  planificada: { color: 'blue', label: 'Planificada', icon: 'mdi-calendar-clock' },
+  activa: { color: 'success', label: 'Activa', icon: 'mdi-shield-check' },
+  finalizada: { color: 'grey', label: 'Finalizada', icon: 'mdi-check-bold' },
+  incumplida: { color: 'error', label: 'Incumplida', icon: 'mdi-account-off' },
+  cancelada: { color: 'error', label: 'Cancelada', icon: 'mdi-cancel' },
 }
 
 function mesLabel(m) {
@@ -232,6 +238,10 @@ function estadoColor(estado) {
 
 function estadoLabel(estado) {
   return estadosInfo[estado]?.label || estado
+}
+
+function estadoIcon(estado) {
+  return estadosInfo[estado]?.icon || 'mdi-help'
 }
 
 function toDate(value) {

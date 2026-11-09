@@ -91,20 +91,20 @@
               </v-chip>
             </div>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar cargo" @click="abrirEditar(cargo)">
-                <v-icon icon="mdi-pencil-outline" size="16" />
-              </v-btn>
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                :color="cargo.activo ? 'error' : 'success'"
-                :loading="estadoEnCurso.has(cargo.id)"
-                aria-label="Cambiar estado"
-                @click="toggleEstado(cargo)"
-              >
-                <v-icon :icon="cargo.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
-              </v-btn>
+              <v-tooltip text="Editar cargo" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar cargo" @click="abrirEditar(cargo)">
+                    <v-icon icon="mdi-pencil-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="cargo.activo ? 'Desactivar cargo' : 'Activar cargo'" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" :color="cargo.activo ? 'error' : 'success'" :loading="estadoEnCurso.has(cargo.id)" aria-label="Cambiar estado" @click="toggleEstado(cargo)">
+                    <v-icon :icon="cargo.activo ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
             </div>
           </div>
         </div>

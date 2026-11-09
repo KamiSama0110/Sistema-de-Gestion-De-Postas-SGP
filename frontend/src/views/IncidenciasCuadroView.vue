@@ -101,12 +101,20 @@
             <div class="text-body-2 text-medium-emphasis mb-1">{{ formatFechaHora(inc.fecha_hora) }}</div>
             <p><strong>Descripción:</strong> {{ inc.descripcion }}</p>
             <div class="d-flex justify-end ga-1">
-              <v-btn icon size="x-small" variant="text" color="primary" aria-label="Ver detalle" @click="abrirDetalle(inc)">
-                <v-icon icon="mdi-eye-outline" size="16" />
-              </v-btn>
-              <v-btn icon size="x-small" variant="text" color="primary" aria-label="Editar" @click="abrirEditar(inc)">
-                <v-icon icon="mdi-pencil-outline" size="16" />
-              </v-btn>
+              <v-tooltip text="Ver detalle" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Ver detalle" @click="abrirDetalle(inc)">
+                    <v-icon icon="mdi-eye-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
+              <v-tooltip text="Editar" location="top">
+                <template #activator="{ props: tipProps }">
+                  <v-btn v-bind="tipProps" icon size="x-small" variant="text" color="primary" aria-label="Editar" @click="abrirEditar(inc)">
+                    <v-icon icon="mdi-pencil-outline" size="16" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
             </div>
           </div>
         </div>

@@ -59,7 +59,7 @@
                     </div>
                   </div>
                 </div>
-                <v-chip :color="planEstadoColor(plan.estado)" variant="tonal" size="x-small" label class="font-weight-bold">
+                <v-chip :color="planEstadoColor(plan.estado)" variant="elevated" size="x-small" label class="font-weight-bold">
                   {{ planEstadoLabel(plan.estado) }}
                 </v-chip>
               </div>
@@ -75,16 +75,13 @@
                   Automático
                 </v-chip>
                 <span v-else />
-                <v-btn
-                  size="x-small"
-                  variant="text"
-                  color="primary"
-                  prepend-icon="mdi-eye-outline"
-                  class="text-none"
-                  @click="verDetalle(plan)"
-                >
-                  Ver
-                </v-btn>
+                <v-tooltip text="Ver detalle" location="top">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn v-bind="tipProps" size="x-small" variant="text" color="primary" prepend-icon="mdi-eye-outline" class="text-none" aria-label="Ver detalle" @click="verDetalle(plan)">
+                      Ver
+                    </v-btn>
+                  </template>
+                </v-tooltip>
               </div>
             </div>
           </div>
@@ -104,7 +101,7 @@
               <tr v-for="plan in planes" :key="plan.id">
                 <td class="font-weight-medium text-body-1">{{ mesLabel(plan.mes) }} {{ plan.anio }}</td>
                 <td>
-                  <v-chip :color="planEstadoColor(plan.estado)" variant="tonal" size="small" label class="font-weight-bold">
+                  <v-chip :color="planEstadoColor(plan.estado)" variant="elevated" size="small" label class="font-weight-bold">
                     {{ planEstadoLabel(plan.estado) }}
                   </v-chip>
                 </td>

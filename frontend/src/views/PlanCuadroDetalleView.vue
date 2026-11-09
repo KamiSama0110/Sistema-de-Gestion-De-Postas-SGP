@@ -138,7 +138,7 @@
                     v-for="f in franjasAplicables(celda)"
                     :key="f.franja_id"
                     :color="f.guardia ? guardiaEstadoColor(f.guardia.estado) : 'error'"
-                    :variant="f.guardia ? 'tonal' : 'outlined'"
+                    :variant="f.guardia ? 'elevated' : 'outlined'"
                     size="x-small"
                     label
                     class="cal-chip"
@@ -175,7 +175,7 @@
                   v-for="f in franjasAplicables(dia)"
                   :key="f.franja_id"
                   :color="f.guardia ? guardiaEstadoColor(f.guardia.estado) : 'error'"
-                  :variant="f.guardia ? 'tonal' : 'outlined'"
+                  :variant="f.guardia ? 'elevated' : 'outlined'"
                   size="small"
                   label
                   class="cal-chip align-self-start"
@@ -221,7 +221,7 @@
                   <div class="text-body-2 text-medium-emphasis">Cuadro asignado</div>
                 </div>
               </div>
-              <v-chip :color="guardiaEstadoColor(slotGuardia.estado)" variant="tonal" size="small" label class="font-weight-bold">
+              <v-chip :color="guardiaEstadoColor(slotGuardia.estado)" variant="elevated" size="small" label class="font-weight-bold">
                 {{ guardiaEstadoLabel(slotGuardia.estado) }}
               </v-chip>
             </div>
@@ -507,11 +507,11 @@ const planEstados = {
   rechazado: { color: 'error', label: 'Rechazado' },
 }
 const guardiaEstados = {
-  planificada: { color: 'info', label: 'Planificada' },
-  activa: { color: 'success', label: 'Activa' },
-  finalizada: { color: 'grey', label: 'Finalizada' },
-  incumplida: { color: 'error', label: 'Incumplida' },
-  cancelada: { color: 'error', label: 'Cancelada' },
+  planificada: { color: 'blue', label: 'Planificada', icon: 'mdi-calendar-clock' },
+  activa: { color: 'success', label: 'Activa', icon: 'mdi-shield-check' },
+  finalizada: { color: 'grey', label: 'Finalizada', icon: 'mdi-check-bold' },
+  incumplida: { color: 'error', label: 'Incumplida', icon: 'mdi-account-off' },
+  cancelada: { color: 'error', label: 'Cancelada', icon: 'mdi-cancel' },
 }
 
 const planId = Number(route.params.id)
@@ -566,6 +566,10 @@ function guardiaEstadoColor(estado) {
 
 function guardiaEstadoLabel(estado) {
   return guardiaEstados[estado]?.label || estado
+}
+
+function guardiaEstadoIcon(estado) {
+  return guardiaEstados[estado]?.icon || 'mdi-help'
 }
 
 function diaSemanaLabel(dia) {

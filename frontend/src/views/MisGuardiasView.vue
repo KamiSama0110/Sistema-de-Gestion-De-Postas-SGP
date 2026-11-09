@@ -183,6 +183,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
+import { useAuthStore } from '../stores/auth'
 import { miGuardiaApi } from '../api/miGuardia'
 import { normalizeApiError } from '../utils/error'
 import { useToast } from '../composables/useToast'
@@ -197,6 +198,7 @@ import {
 
 const toast = useToast()
 const { mobile } = useDisplay()
+const auth = useAuthStore()
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -282,7 +284,7 @@ function textoFaltante(fecha) {
 }
 
 function puedeRegistrar(g) {
-  return puedeRegistrarIncidencia(g)
+  return puedeRegistrarIncidencia(g, auth.esAdmin.value)
 }
 
 function fueraDeFecha(g) {

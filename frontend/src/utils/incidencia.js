@@ -39,10 +39,13 @@ export function ventanaRegistro(fecha) {
   return { dentro: ahora >= inicio && ahora < fin, despues }
 }
 
-export function puedeRegistrarIncidencia(guardia) {
+export function puedeRegistrarIncidencia(guardia, esAdmin = false) {
   if (!guardia) return false
-  if (['activa', 'finalizada'].includes(guardia.estado)) return true
-  return ventanaRegistro(guardia.fecha).dentro
+  const ventana = ventanaRegistro(guardia.fecha)
+  if (esAdmin) {
+    return ventana.dentro
+  }
+  return ventana.dentro && !ventana.despues
 }
 
 export function requiereAvisoAdministrador(guardia) {

@@ -103,6 +103,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
+import { useAuthStore } from '../stores/auth'
 import IncidenciaDialog from './IncidenciaDialog.vue'
 import { miGuardiaApi } from '../api/miGuardia'
 import { incidenciaCuadroApi } from '../api/incidenciaCuadro'
@@ -128,6 +129,7 @@ const emit = defineEmits(['update:modelValue', 'changed'])
 
 const toast = useToast()
 const { xs } = useDisplay()
+const auth = useAuthStore()
 
 const incidencias = ref([])
 const cargando = ref(false)
@@ -137,7 +139,7 @@ const incidenciaEditando = ref(null)
 const permiteIncidencias = computed(() => {
   const g = props.guardia
   if (!g) return false
-  if (props.modo === 'cuadro') return puedeRegistrarIncidencia(g)
+  if (props.modo === 'cuadro') return puedeRegistrarIncidencia(g, auth.esAdmin.value)
   return ['activa', 'finalizada'].includes(g.estado)
 })
 

@@ -15,6 +15,7 @@ from app.models.enums import (
 from app.models.incidencia_cuadro import IncidenciaCuadro
 from app.models.plan_guardia_cuadro import GuardiaCuadro
 from app.models.posta import Posta
+from app.models.usuario import Usuario
 from app.schemas.incidencia import IncidenciaCreate, IncidenciaUpdate
 from app.services.asp_service import get_asp_by_id
 from app.services.posta_service import get_posta_by_id
@@ -42,15 +43,30 @@ def _validar_estado_guardia(guardia: GuardiaCuadro) -> None:
 def dentro_de_margen_24h(guardia: GuardiaCuadro, ahora: datetime | None = None) -> bool:
     ahora = ahora or datetime.now()
     inicio = datetime.combine(guardia.fecha - timedelta(days=1), time.min)
+    fin = datetime.combine(guardia.fecha + timedelta(days=1), time.min)
+    return inicio <= ahora < fin
+
+
+def dentro_de_margen_admin(guardia: GuardiaCuadro, ahora: datetime | None = None) -> bool:
+    ahora = ahora or datetime.now()
+    inicio = datetime.combine(guardia.fecha - timedelta(days=1), time.min)
     fin = datetime.combine(guardia.fecha + timedelta(days=2), time.min)
     return inicio <= ahora < fin
 
 
-def _validar_permiso_cuadro(guardia: GuardiaCuadro) -> None:
-    if guardia.estado in ESTADOS_PERMITIDOS_INCIDENCIA:
-        return
-    if dentro_de_margen_24h(guardia):
-        return
+def _validar_permiso_cuadro(
+    guardia: GuardiaCuadro, es_admin: bool = False, ahora: datetime | None = None
+) -> None:
+    ahora = ahora or datetime.now()
+    if es_admin:
+        if dentro_de_margen_admin(guardia, ahora):
+            return
+    else:
+        if guardia.estado in ESTADOS_PERMITIDOS_INCIDENCIA:
+            if dentro_de_margen_24h(guardia, ahora):
+                return
+        elif dentro_de_margen_24h(guardia, ahora):
+            return
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=(
@@ -94,9 +110,11 @@ async def crear_incidencia(
     datos: IncidenciaCreate,
     *,
     para_cuadro: bool = False,
+    usuario: Usuario | None = None,
 ) -> IncidenciaCuadro:
+    es_admin = usuario is not None and usuario.rol == "admin"
     if para_cuadro:
-        _validar_permiso_cuadro(guardia)
+        _validar_permiso_cuadro(guardia, es_admin=es_admin)
     else:
         _validar_estado_guardia(guardia)
     await _validar_vinculos(db, datos)

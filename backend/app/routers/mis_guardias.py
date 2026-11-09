@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import require_cuadro
+from app.core.security import get_current_user, require_cuadro
 from app.core.types import IdPath
 from app.models.enums import EstadoGuardiaCuadroEnum
 from app.models.usuario import Usuario
@@ -104,12 +104,13 @@ async def listar_mis_incidencias(
 async def crear_mi_incidencia(
     guardia_id: IdPath,
     datos: IncidenciaCreate,
+    usuario: Usuario = Depends(get_current_user),
     cuadro_id: int = Depends(cuadro_id_actual),
     db: AsyncSession = Depends(get_db),
 ):
     guardia = await mis_guardias_service.get_mi_guardia(db, guardia_id, cuadro_id)
     return await incidencia_cuadro_service.crear_incidencia(
-        db, guardia, datos, para_cuadro=True
+        db, guardia, datos, para_cuadro=True, usuario=usuario
     )
 
 
